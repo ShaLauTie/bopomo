@@ -124,8 +124,204 @@ h1, h2 {
 .card-2 { background: #6ec6ff; }
 .card-3 { background: #ffd166; }
 .card-4 { background: #8bd8a3; }
+.card-5 { background: #ff7b54; grid-column: span 2; }
+
+/* ---------- 打地鼠 ---------- */
+
+#screen-mole {
+  justify-content: flex-start;
+  padding-top: 96px;
+  gap: 0;
+}
+
+#screen-mole h2 { margin-bottom: 12px; }
+
+.mole-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.mole-target-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border-radius: 2rem;
+  padding: 10px 18px;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.1);
+}
+
+.mole-target-symbol {
+  font-size: 2.6rem;
+  font-weight: bold;
+  color: #ff5d8f;
+  line-height: 1;
+  min-width: 2.2rem;
+  text-align: center;
+}
+
+.mole-mini-speaker {
+  font-size: 1.8rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mole-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #5b4636;
+}
+
+.mole-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  max-width: 380px;
+  width: 100%;
+}
+
+.mole-hole {
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.hole-cup {
+  position: relative;
+  width: 88px;
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mole-body {
+  width: 74px;
+  height: 86px;
+  border-radius: 50% 50% 36% 36% / 55% 55% 45% 45%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.9rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 2px 4px rgba(0,0,0,0.3);
+  position: absolute;
+  bottom: 20px;
+  transform: translateY(120%);
+  transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+  z-index: 2;
+  box-shadow: inset 0 -6px 0 rgba(0,0,0,0.18);
+}
+
+.mole-hole.up .mole-body {
+  transform: translateY(0);
+}
+
+.mole-hole.whacked .mole-body {
+  transform: translateY(130%) scaleY(0.25);
+  transition: transform 0.12s ease-in;
+}
+
+@keyframes mole-shake {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  20%  { transform: translateY(0) rotate(-14deg) scale(1.08); }
+  60%  { transform: translateY(0) rotate(14deg) scale(1.08); }
+}
+
+.mole-hole.wrong-shake.up .mole-body {
+  animation: mole-shake 0.38s ease;
+}
+
+.hole-ground {
+  width: 88px;
+  height: 28px;
+  background: radial-gradient(ellipse at 42% 38%, #8B5E3C 0%, #5c3214 80%);
+  border-radius: 50%;
+  position: absolute;
+  bottom: 0;
+  z-index: 3;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.28);
+}
+
+.mole-gameover {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+
+.gameover-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.gameover-box .big-score {
+  font-size: 3.8rem;
+  font-weight: bold;
+  color: #ff5d8f;
+}
+
+/* 打中獎勵動畫 */
+@keyframes float-reward {
+  0%   { transform: translateY(0) scale(0.6); opacity: 1; }
+  60%  { transform: translateY(-60px) scale(1.4); opacity: 1; }
+  100% { transform: translateY(-100px) scale(1); opacity: 0; }
+}
+
+.mole-reward {
+  position: fixed;
+  font-size: 2.2rem;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 200;
+  animation: float-reward 0.7s ease-out forwards;
+}
+
+@keyframes score-bounce {
+  0%, 100% { transform: scale(1); }
+  40%       { transform: scale(1.6); color: #ff5d8f; }
+}
+
+.score-bounce {
+  display: inline-block;
+  animation: score-bounce 0.4s ease;
+}
+/* 打錯懲罰閃紅 */
+@keyframes wrong-flash {
+  0%   { opacity: 0.45; }
+  100% { opacity: 0; }
+}
+
+.mole-wrong-flash {
+  position: fixed;
+  inset: 0;
+  background: #ff2222;
+  pointer-events: none;
+  z-index: 150;
+  animation: wrong-flash 0.4s ease-out forwards;
+}
 
 /* ---------- 卡片牌（認識注音） ---------- */
+
 
 .flashcard {
   background: #ffffff;
