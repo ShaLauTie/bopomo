@@ -89,8 +89,32 @@ function speakSymbol(symbol, onEnd) {
  */
 function speakViaGoogle(text, onEnd) {
   const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=zh-TW&client=tw-ob`;
-  playAudioUrl(url, onEnd);
+  if (_currentAudio) {
+    _currentAudio.pause();
+    _currentAudio.onended = null;
+    _currentAudio = null;
+  }
+  const audio = new Audio(url);
+  _currentAudio = audio;
+  if (onEnd) audio.addEventListener("ended", onEnd, { once: true });
+  audio.play().catch(() => {
+    // Google TTS 被 CORS 擋住（HTTPS 環境）→ 自動改用瀏覽器內建語音
+    _currentAudio = null;
+    if ("speechSynthesis" in window) {
+      speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(bopomofoToSpeakable(text));
+      utter.lang = "zh-TW";
+      if (bopomofoVoice) utter.voice = bopomofoVoice;
+      utter.rate = 0.75;
+      utter.pitch = 1.1;
+      if (onEnd) utter.onend = onEnd;
+      speechSynthesis.speak(utter);
+    } else {
+      if (onEnd) setTimeout(onEnd, 800);
+    }
+  });
 }
+
 
 // ── 備用：瀏覽器內建語音（僅在 Google TTS 失敗時使用）──
 let bopomofoVoice = null;
