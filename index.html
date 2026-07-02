@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>注音樂園</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button class="home-btn" id="homeBtn" onclick="goHome()">🏠</button>
+
+<div class="feedback-banner" id="feedbackBanner"></div>
+
+<!-- 首頁 -->
+<div class="screen active" id="screen-home">
+  <h1>🎈 注音樂園 🎈</h1>
+  <div class="menu-grid">
+    <button class="menu-card card-1" onclick="showScreen('flashcards')">
+      <span class="icon">🀄</span>
+      <span>認識注音符號</span>
+    </button>
+    <button class="menu-card card-2" onclick="showScreen('match')">
+      <span class="icon">🎧</span>
+      <span>聽音找符號</span>
+    </button>
+    <button class="menu-card card-3" onclick="showScreen('pinyin')">
+      <span class="icon">🧩</span>
+      <span>拼音練習</span>
+    </button>
+    <button class="menu-card card-4" onclick="showScreen('quiz')">
+      <span class="icon">🏆</span>
+      <span>小測驗</span>
+    </button>
+  </div>
+</div>
+
+<!-- 認識注音符號牌 -->
+<div class="screen" id="screen-flashcards">
+  <h2>認識注音符號</h2>
+  <div class="flashcard" id="flashcard" onclick="speakCurrentFlashcard()">
+    <div class="symbol-big" id="fcSymbol">ㄅ</div>
+    <div class="word-emoji" id="fcEmoji">👨</div>
+    <div class="word-text" id="fcWord">爸爸</div>
+  </div>
+  <div class="card-nav">
+    <button class="nav-arrow" onclick="prevFlashcard()">⬅️</button>
+    <span class="progress-text" id="fcProgress">1 / 37</span>
+    <button class="nav-arrow" onclick="nextFlashcard()">➡️</button>
+  </div>
+</div>
+
+<!-- 聽音找符號 遊戲 -->
+<div class="screen" id="screen-match">
+  <h2>聽音找符號</h2>
+  <div class="prompt-box">
+    <button class="speaker-btn" id="matchSpeaker" onclick="replayMatchSound()">🔊</button>
+  </div>
+  <div class="choices-grid" id="matchChoices"></div>
+</div>
+
+<!-- 拼音練習 -->
+<div class="screen" id="screen-pinyin">
+  <h2>拼音練習</h2>
+  <div class="pinyin-row">
+    <div class="pinyin-slot" id="pinyinInitial" onclick="speakPart('initial')">ㄅ</div>
+    <span class="plus-sign">➕</span>
+    <div class="pinyin-slot" id="pinyinFinal" onclick="speakPart('final')">ㄚˋ</div>
+  </div>
+  <button class="big-btn combine-btn" onclick="combinePinyin()">拼起來！</button>
+  <div class="result-box" id="pinyinResult"></div>
+  <div class="card-nav">
+    <button class="nav-arrow" onclick="prevPinyin()">⬅️</button>
+    <span class="progress-text" id="pinyinProgress">1 / 22</span>
+    <button class="nav-arrow" onclick="nextPinyin()">➡️</button>
+  </div>
+</div>
+
+<!-- 小測驗 -->
+<div class="screen" id="screen-quiz">
+  <h2>小測驗</h2>
+  <div class="quiz-header">
+    <span id="quizProgress">第 1 / 8 題</span>
+    <span class="stars" id="quizStars">⭐️ 0</span>
+  </div>
+  <div id="quizQuestionArea"></div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
