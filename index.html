@@ -32,6 +32,10 @@
       <span class="icon">🏆</span>
       <span>小測驗</span>
     </button>
+    <button class="menu-card card-5" onclick="showScreen('mole')">
+      <span class="icon">🔨</span>
+      <span>打地鼠</span>
+    </button>
   </div>
 </div>
 
@@ -84,6 +88,30 @@
     <span class="stars" id="quizStars">⭐️ 0</span>
   </div>
   <div id="quizQuestionArea"></div>
+</div>
+
+<!-- 打地鼠 -->
+<div class="screen" id="screen-mole">
+  <h2>打地鼠 🔨</h2>
+  <div class="mole-header">
+    <div class="mole-target-box">
+      <button class="mole-mini-speaker" onclick="replayMoleSound()">🔊</button>
+      <span style="font-size:1rem;color:#5b4636;font-weight:bold">聽音打牠！</span>
+    </div>
+    <div class="mole-stats">
+      <span>⭐ <span id="moleScore">0</span></span>
+      <span>⏱ <span id="moleTimer">60</span>s</span>
+    </div>
+  </div>
+  <div class="mole-grid" id="moleGrid"></div>
+  <div class="mole-gameover" id="moleGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">🎉</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">時間到！</div>
+      <div class="big-score">⭐ <span id="moleFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startMoleGame()">再玩一次！</button>
+    </div>
+  </div>
 </div>
 
 <script src="data.js"></script>
