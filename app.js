@@ -162,9 +162,11 @@ function showScreen(name) {
   if (name === "match") startMatchRound();
   if (name === "pinyin") renderPinyin();
   if (name === "quiz") startQuiz();
+  if (name === "mole") startMoleGame();
 }
 
 function goHome() {
+  stopMoleGame();
   showScreen("home");
 }
 
@@ -416,4 +418,198 @@ function finishQuiz() {
     '</div>';
   document.getElementById("quizProgress").textContent = "完成！";
   speak("恭喜你，得到了 " + quizScore + " 顆星星！");
+}
+
+// ========== 打地鼠遊戲 ==========
+
+const MOLE_COUNT = 9;
+const MOLE_COLORS = [
+  '#ff6b9d','#ffa552','#ffd166','#06d6a0','#4cc9f0',
+  '#7b5ea7','#f72585','#4361ee','#3a86ff'
+];
+
+let moleScore = 0;
+let moleTimeLeft = 60;
+let moleTimerInt = null;
+let molePopTimeout = null;
+let moleTarget = null;
+let moleRunning = false;
+
+function startMoleGame() {
+  moleScore = 0;
+  moleTimeLeft = 60;
+  moleRunning = true;
+
+  document.getElementById('moleScore').textContent = '0';
+  document.getElementById('moleTimer').textContent = '60';
+  document.getElementById('moleGameover').style.display = 'none';
+
+  // 建立 9 個地洞
+  const grid = document.getElementById('moleGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < MOLE_COUNT; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'mole-hole';
+
+    const cup = document.createElement('div');
+    cup.className = 'hole-cup';
+
+    const body = document.createElement('div');
+    body.className = 'mole-body';
+    body.style.background = MOLE_COLORS[i];
+
+    const ground = document.createElement('div');
+    ground.className = 'hole-ground';
+
+    cup.appendChild(body);
+    cup.appendChild(ground);
+    hole.appendChild(cup);
+    hole.addEventListener('click', () => handleMoleClick(i));
+    grid.appendChild(hole);
+  }
+
+  pickMoleTarget();
+
+  // 倒數計時
+  clearInterval(moleTimerInt);
+  moleTimerInt = setInterval(() => {
+    moleTimeLeft--;
+    document.getElementById('moleTimer').textContent = moleTimeLeft;
+    if (moleTimeLeft <= 0) endMoleGame();
+  }, 1000);
+
+  scheduleMoleBatch();
+}
+
+function pickMoleTarget() {
+  moleTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+}
+
+function replayMoleSound() {
+  if (moleTarget) speak(moleTarget.symbol);
+}
+
+function scheduleMoleBatch() {
+  if (!moleRunning) return;
+  clearTimeout(molePopTimeout);
+
+  // 先讓全部地鼠下去
+  document.querySelectorAll('.mole-hole').forEach(h =>
+    h.classList.remove('up', 'wrong-shake', 'whacked'));
+
+  // 短暫停頓後彈出新一批
+  molePopTimeout = setTimeout(() => {
+    if (!moleRunning) return;
+    popMoleBatch();
+    // 每次新一批地鼠出現就重播目標音
+    setTimeout(() => { if (moleRunning) speak(moleTarget.symbol); }, 100);
+    molePopTimeout = setTimeout(() => scheduleMoleBatch(), 3500);
+  }, 350);
+}
+
+function popMoleBatch() {
+  const holes = document.querySelectorAll('.mole-hole');
+  const count = 3 + randomInt(2); // 3 或 4 個
+  const indices = shuffle([...Array(MOLE_COUNT).keys()]).slice(0, count);
+
+  const others = shuffle(
+    BOPOMOFO_SYMBOLS.filter(s => s.symbol !== moleTarget.symbol)
+  ).slice(0, count - 1).map(s => s.symbol);
+
+  const symbols = shuffle([moleTarget.symbol, ...others]);
+
+  indices.forEach((idx, i) => {
+    const hole = holes[idx];
+    hole.querySelector('.mole-body').textContent = symbols[i];
+    setTimeout(() => {
+      if (moleRunning) hole.classList.add('up');
+    }, i * 80);
+  });
+}
+
+function handleMoleClick(idx) {
+  if (!moleRunning) return;
+  const hole = document.querySelectorAll('.mole-hole')[idx];
+  if (!hole.classList.contains('up')) return;
+
+  const symbol = hole.querySelector('.mole-body').textContent;
+
+  if (symbol === moleTarget.symbol) {
+    // 打中！
+    moleScore++;
+    document.getElementById('moleScore').textContent = moleScore;
+    hole.classList.remove('up');
+    hole.classList.add('whacked');
+    setTimeout(() => hole.classList.remove('whacked'), 300);
+    showMoleReward(hole);
+    pickMoleTarget();
+    scheduleMoleBatch();
+  } else {
+    // 打錯：扰 3 秒
+    showMolePenalty(hole);
+    hole.classList.add('wrong-shake');
+    setTimeout(() => hole.classList.remove('wrong-shake'), 400);
+  }
+}
+
+function endMoleGame() {
+  moleRunning = false;
+  clearInterval(moleTimerInt);
+  clearTimeout(molePopTimeout);
+  document.querySelectorAll('.mole-hole').forEach(h => h.classList.remove('up'));
+
+  document.getElementById('moleFinalScore').textContent = moleScore;
+  document.getElementById('moleGameover').style.display = 'flex';
+
+  const msg = moleScore >= 15 ? '哇！你超厲害！' :
+              moleScore >= 8  ? '很棒！繼續加油！' : '再試一次！';
+  speak(msg);
+}
+
+function stopMoleGame() {
+  moleRunning = false;
+  clearInterval(moleTimerInt);
+  clearTimeout(molePopTimeout);
+}
+
+function showMoleReward(holeEl) {
+  const rect = holeEl.getBoundingClientRect();
+  const emojis = ['⭐', '🌟', '✨', '🎉'];
+  const el = document.createElement('div');
+  el.className = 'mole-reward';
+  el.textContent = emojis[randomInt(emojis.length)];
+  el.style.left = (rect.left + rect.width / 2 - 18) + 'px';
+  el.style.top  = (rect.top  + 10) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 750);
+
+  // 分數彈跳
+  const scoreEl = document.getElementById('moleScore');
+  scoreEl.classList.remove('score-bounce');
+  void scoreEl.offsetWidth;
+  scoreEl.classList.add('score-bounce');
+  setTimeout(() => scoreEl.classList.remove('score-bounce'), 400);
+}
+
+function showMolePenalty(holeEl) {
+  // 浮出 ❌
+  const rect = holeEl.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'mole-reward';
+  el.textContent = '❌';
+  el.style.left = (rect.left + rect.width / 2 - 18) + 'px';
+  el.style.top  = (rect.top  + 10) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 750);
+
+  // 紅色閃屏
+  const flash = document.createElement('div');
+  flash.className = 'mole-wrong-flash';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 400);
+
+  // 少 3 秒
+  moleTimeLeft = Math.max(0, moleTimeLeft - 3);
+  document.getElementById('moleTimer').textContent = moleTimeLeft;
+  if (moleTimeLeft <= 0) endMoleGame();
 }
