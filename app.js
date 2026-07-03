@@ -96,9 +96,12 @@ function speakViaGoogle(text, onEnd) {
   }
   const audio = new Audio(url);
   _currentAudio = audio;
-  if (onEnd) audio.addEventListener("ended", onEnd, { once: true });
-  audio.play().catch(() => {
-    // Google TTS 被 CORS 擋住（HTTPS 環境）→ 自動改用瀏覽器內建語音
+
+  let fallenBack = false;
+  function fallbackToSpeechSynthesis() {
+    // 避免 play() 的 catch 跟 <audio> 的 error 事件同時觸發兩次
+    if (fallenBack) return;
+    fallenBack = true;
     _currentAudio = null;
     if ("speechSynthesis" in window) {
       speechSynthesis.cancel();
@@ -112,7 +115,14 @@ function speakViaGoogle(text, onEnd) {
     } else {
       if (onEnd) setTimeout(onEnd, 800);
     }
-  });
+  }
+
+  if (onEnd) audio.addEventListener("ended", onEnd, { once: true });
+  // Google TTS 被 CORS 擋住時（常見於 HTTPS 環境，例如 GitHub Pages），
+  // 失敗有時不會讓 play() 的 promise reject，而是觸發 <audio> 的 error 事件，
+  // 所以兩種情況都要接住，才能穩定改用瀏覽器內建語音。
+  audio.addEventListener("error", fallbackToSpeechSynthesis, { once: true });
+  audio.play().catch(fallbackToSpeechSynthesis);
 }
 
 
@@ -345,12 +355,21 @@ function prevPinyin() {
 
 const INITIAL_SYMBOLS = BOPOMOFO_SYMBOLS.filter(s => s.category === "initial");
 
+function pickInitialWordItem(symbol) {
+  const base = BOPOMOFO_SYMBOLS.find(s => s.symbol === symbol);
+  const extras = INITIAL_WORD_EXTRAS[symbol] || [];
+  const pool = [{ word: base.word, emoji: base.emoji }, ...extras];
+  return pool[randomInt(pool.length)];
+}
+
 let wordHeadTarget = null;
 let wordHeadLocked = false;
 
 function startWordHeadRound() {
   wordHeadLocked = false;
-  wordHeadTarget = INITIAL_SYMBOLS[randomInt(INITIAL_SYMBOLS.length)];
+  const targetSymbol = INITIAL_SYMBOLS[randomInt(INITIAL_SYMBOLS.length)].symbol;
+  const item = pickInitialWordItem(targetSymbol);
+  wordHeadTarget = { symbol: targetSymbol, word: item.word, emoji: item.emoji };
 
   document.getElementById("whEmoji").textContent = wordHeadTarget.emoji;
   document.getElementById("whWord").textContent = wordHeadTarget.word;
@@ -410,8 +429,14 @@ function startMemoryGame() {
   memoryLocked = false;
 
   const picks = shuffle(INITIAL_SYMBOLS).slice(0, MEMORY_PAIR_COUNT);
-  const symbolCards = shuffle(picks.map(item => ({ symbol: item.symbol, emoji: item.emoji, kind: "symbol", matched: false })));
-  const emojiCards = shuffle(picks.map(item => ({ symbol: item.symbol, emoji: item.emoji, kind: "emoji", matched: false })));
+  const symbolCards = shuffle(picks.map(item => {
+    const w = pickInitialWordItem(item.symbol);
+    return { symbol: item.symbol, emoji: w.emoji, kind: "symbol", matched: false };
+  }));
+  const emojiCards = shuffle(picks.map(item => {
+    const w = pickInitialWordItem(item.symbol);
+    return { symbol: item.symbol, emoji: w.emoji, kind: "emoji", matched: false };
+  }));
   memoryCards = [...symbolCards, ...emojiCards];
 
   updateMemoryHeader();

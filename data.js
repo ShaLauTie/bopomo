@@ -18,7 +18,7 @@ const BOPOMOFO_SYMBOLS = [
   { symbol: "ㄔ", category: "initial", word: "吃飯", emoji: "🍚" },
   { symbol: "ㄕ", category: "initial", word: "獅子", emoji: "🦁" },
   { symbol: "ㄖ", category: "initial", word: "熱狗", emoji: "🌭" },
-  { symbol: "ㄗ", category: "initial", word: "桌子", emoji: "🪑" },
+  { symbol: "ㄗ", category: "initial", word: "嘴巴", emoji: "👄" },
   { symbol: "ㄘ", category: "initial", word: "草莓", emoji: "🍓" },
   { symbol: "ㄙ", category: "initial", word: "松鼠", emoji: "🐿️" },
   { symbol: "ㄧ", category: "medial", word: "衣服", emoji: "👕" },
@@ -104,3 +104,28 @@ const TONE_SETS = [
     { mark: "ˋ", word: "馬戲", emoji: "🎭" },
   ]},
 ];
+
+// 字首範例詞語的額外候選（增加「看圖找字頭」「記憶配對」的圖案多樣性）
+const INITIAL_WORD_EXTRAS = {
+  "ㄅ": [{ word: "杯子", emoji: "🥤" }, { word: "蝙蝠", emoji: "🦇" }],
+  "ㄆ": [{ word: "葡萄", emoji: "🍇" }, { word: "蘋果", emoji: "🍎" }],
+  "ㄇ": [{ word: "貓咪", emoji: "🐱" }, { word: "帽子", emoji: "🎩" }],
+  "ㄈ": [{ word: "蜂蜜", emoji: "🍯" }, { word: "房子", emoji: "🏠" }],
+  "ㄉ": [{ word: "蛋糕", emoji: "🎂" }, { word: "燈泡", emoji: "💡" }],
+  "ㄊ": [{ word: "太陽", emoji: "☀️" }, { word: "糖果", emoji: "🍬" }],
+  "ㄋ": [{ word: "鳥",   emoji: "🐦" }, { word: "檸檬", emoji: "🍋" }],
+  "ㄌ": [{ word: "籃球", emoji: "🏀" }, { word: "梨子", emoji: "🍐" }],
+  "ㄍ": [{ word: "鴿子", emoji: "🕊️" }, { word: "鼓",   emoji: "🥁" }],
+  "ㄎ": [{ word: "咖啡", emoji: "☕" }, { word: "可樂", emoji: "🥤" }],
+  "ㄏ": [{ word: "花",   emoji: "🌸" }, { word: "猴子", emoji: "🐵" }],
+  "ㄐ": [{ word: "腳",   emoji: "🦶" }, { word: "橘子", emoji: "🍊" }],
+  "ㄑ": [{ word: "企鵝", emoji: "🐧" }, { word: "氣球", emoji: "🎈" }],
+  "ㄒ": [{ word: "鞋子", emoji: "👟" }, { word: "熊",   emoji: "🐻" }],
+  "ㄓ": [{ word: "豬",   emoji: "🐷" }, { word: "竹子", emoji: "🎋" }],
+  "ㄔ": [{ word: "唱歌", emoji: "🎤" }, { word: "尺",   emoji: "📏" }],
+  "ㄕ": [{ word: "樹",   emoji: "🌳" }, { word: "手",   emoji: "🖐️" }],
+  "ㄖ": [{ word: "肉",   emoji: "🍖" }, { word: "日出", emoji: "🌅" }],
+  "ㄗ": [{ word: "走路", emoji: "🚶" }, { word: "足球", emoji: "⚽" }],
+  "ㄘ": [{ word: "廁所", emoji: "🚽" }, { word: "彩虹", emoji: "🌈" }],
+  "ㄙ": [{ word: "傘",   emoji: "☂️" }, { word: "送禮", emoji: "🎁" }],
+};
