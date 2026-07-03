@@ -44,6 +44,10 @@
       <span class="icon">🃏</span>
       <span>記憶配對</span>
     </button>
+    <button class="menu-card card-8" onclick="showScreen('tone')">
+      <span class="icon">🎵</span>
+      <span>聲調辨識</span>
+    </button>
   </div>
 </div>
 
@@ -142,6 +146,18 @@
     <span id="memoryMatched">配對：0 / 6</span>
   </div>
   <div class="memory-grid" id="memoryGrid"></div>
+</div>
+
+<!-- 聲調辨識 -->
+<div class="screen" id="screen-tone">
+  <h2>聲調辨識</h2>
+  <div class="prompt-box">
+    <div class="flashcard" style="cursor:pointer;height:220px;width:min(300px,70vw)" onclick="replayToneSound()">
+      <div class="word-emoji" id="toneEmoji" style="font-size:70px"></div>
+      <div class="word-text" id="toneWord"></div>
+    </div>
+  </div>
+  <div class="choices-grid" id="toneChoices"></div>
 </div>
 
 <script src="data.js"></script>

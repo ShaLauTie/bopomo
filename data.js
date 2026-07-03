@@ -64,3 +64,43 @@ const PINYIN_COMBOS = [
   { initial: "ㄕ", final: "ㄜˊ", word: "蛇", emoji: "🐍" },
   { initial: "ㄒ", final: "ㄩㄥˊ", word: "熊", emoji: "🐻" },
 ];
+
+// 聲調辨識用：同一拼寫、四種聲調的詞語組合
+const TONE_SETS = [
+  { spelling: "ㄇㄚ", tones: [
+    { mark: "",  word: "媽媽", emoji: "👩" },
+    { mark: "ˊ", word: "麻煩", emoji: "😣" },
+    { mark: "ˇ", word: "馬",   emoji: "🐴" },
+    { mark: "ˋ", word: "罵人", emoji: "😠" },
+  ]},
+  { spelling: "ㄧ", tones: [
+    { mark: "",  word: "衣服", emoji: "👕" },
+    { mark: "ˊ", word: "阿姨", emoji: "👩‍🦰" },
+    { mark: "ˇ", word: "椅子", emoji: "🪑" },
+    { mark: "ˋ", word: "容易", emoji: "👍" },
+  ]},
+  { spelling: "ㄨ", tones: [
+    { mark: "",  word: "房屋", emoji: "🏠" },
+    { mark: "ˊ", word: "無敵", emoji: "🚫" },
+    { mark: "ˇ", word: "五個", emoji: "5️⃣" },
+    { mark: "ˋ", word: "大霧", emoji: "🌫️" },
+  ]},
+  { spelling: "ㄊㄤ", tones: [
+    { mark: "",  word: "湯麵", emoji: "🍲" },
+    { mark: "ˊ", word: "糖果", emoji: "🍬" },
+    { mark: "ˇ", word: "躺下", emoji: "🛌" },
+    { mark: "ˋ", word: "燙傷", emoji: "🥵" },
+  ]},
+  { spelling: "ㄈㄢ", tones: [
+    { mark: "",  word: "帆船", emoji: "⛵" },
+    { mark: "ˊ", word: "煩惱", emoji: "😩" },
+    { mark: "ˇ", word: "反過來", emoji: "↩️" },
+    { mark: "ˋ", word: "吃飯", emoji: "🍚" },
+  ]},
+  { spelling: "ㄒㄧ", tones: [
+    { mark: "",  word: "西瓜", emoji: "🍉" },
+    { mark: "ˊ", word: "學習", emoji: "📖" },
+    { mark: "ˇ", word: "喜歡", emoji: "😊" },
+    { mark: "ˋ", word: "馬戲", emoji: "🎭" },
+  ]},
+];

@@ -126,7 +126,8 @@ h1, h2 {
 .card-4 { background: #8bd8a3; }
 .card-5 { background: #ff7b54; }
 .card-6 { background: #a78bfa; }
-.card-7 { background: #f4a261; grid-column: span 2; }
+.card-7 { background: #f4a261; }
+.card-8 { background: #2ec4b6; }
 
 /* ---------- 打地鼠 ---------- */
 

@@ -189,6 +189,7 @@ function showScreen(name) {
   if (name === "mole") startMoleGame();
   if (name === "wordhead") startWordHeadRound();
   if (name === "memory") startMemoryGame();
+  if (name === "tone") startToneRound();
 }
 
 function goHome() {
@@ -502,6 +503,55 @@ function finishMemoryGame() {
     '<button class="big-btn combine-btn" onclick="startMemoryGame()">再玩一次</button>' +
     '</div>';
   speak("太棒了，全部配對成功！");
+}
+
+// ========== 聲調辨識 遊戲 ==========
+
+let toneSet = null;
+let toneTarget = null;
+let toneLocked = false;
+
+function startToneRound() {
+  toneLocked = false;
+  toneSet = TONE_SETS[randomInt(TONE_SETS.length)];
+  toneTarget = toneSet.tones[randomInt(toneSet.tones.length)];
+
+  document.getElementById("toneEmoji").textContent = toneTarget.emoji;
+  document.getElementById("toneWord").textContent = toneTarget.word;
+
+  const choices = shuffle(toneSet.tones);
+  const grid = document.getElementById("toneChoices");
+  grid.innerHTML = "";
+  choices.forEach(choice => {
+    const btn = document.createElement("button");
+    btn.className = "choice-card";
+    btn.style.fontSize = "56px";
+    btn.textContent = toneSet.spelling + choice.mark;
+    btn.onclick = () => handleToneChoice(choice, btn);
+    grid.appendChild(btn);
+  });
+
+  replayToneSound();
+}
+
+function replayToneSound() {
+  if (toneTarget) speak(toneTarget.word);
+}
+
+function handleToneChoice(choice, btn) {
+  if (toneLocked) return;
+  const correct = choice.mark === toneTarget.mark;
+
+  if (correct) {
+    toneLocked = true;
+    btn.classList.add("correct");
+    showFeedback(true);
+    setTimeout(startToneRound, 1100);
+  } else {
+    btn.classList.add("wrong");
+    showFeedback(false);
+    setTimeout(() => btn.classList.remove("wrong"), 1200);
+  }
 }
 
 // ========== 小測驗 ==========
