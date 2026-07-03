@@ -512,9 +512,9 @@ h1, h2 {
 
 .memory-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  max-width: 480px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  max-width: min(560px, 92vw);
   width: 100%;
 }
 
@@ -523,7 +523,7 @@ h1, h2 {
   background: #6ec6ff;
   border-radius: 18px;
   border: none;
-  font-size: 42px;
+  font-size: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -548,8 +548,8 @@ h1, h2 {
 }
 
 @media (max-width: 480px) {
-  .memory-grid { grid-template-columns: repeat(3, 1fr); max-width: 340px; }
-  .memory-card { font-size: 32px; }
+  .memory-grid { grid-template-columns: repeat(6, 1fr); max-width: 94vw; gap: 8px; }
+  .memory-card { font-size: 22px; }
 }
 
 /* ---------- 小測驗 ---------- */

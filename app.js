@@ -409,13 +409,10 @@ function startMemoryGame() {
   memoryFlipped = [];
   memoryLocked = false;
 
-  const picks = shuffle(BOPOMOFO_SYMBOLS).slice(0, MEMORY_PAIR_COUNT);
-  const cards = [];
-  picks.forEach(item => {
-    cards.push({ symbol: item.symbol, emoji: item.emoji, kind: "symbol", matched: false });
-    cards.push({ symbol: item.symbol, emoji: item.emoji, kind: "emoji", matched: false });
-  });
-  memoryCards = shuffle(cards);
+  const picks = shuffle(INITIAL_SYMBOLS).slice(0, MEMORY_PAIR_COUNT);
+  const symbolCards = shuffle(picks.map(item => ({ symbol: item.symbol, emoji: item.emoji, kind: "symbol", matched: false })));
+  const emojiCards = shuffle(picks.map(item => ({ symbol: item.symbol, emoji: item.emoji, kind: "emoji", matched: false })));
+  memoryCards = [...symbolCards, ...emojiCards];
 
   updateMemoryHeader();
   renderMemoryGrid();
@@ -519,7 +516,7 @@ function startToneRound() {
   document.getElementById("toneEmoji").textContent = toneTarget.emoji;
   document.getElementById("toneWord").textContent = toneTarget.word;
 
-  const choices = shuffle(toneSet.tones);
+  const choices = toneSet.tones;
   const grid = document.getElementById("toneChoices");
   grid.innerHTML = "";
   choices.forEach(choice => {
