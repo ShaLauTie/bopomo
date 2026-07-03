@@ -222,11 +222,11 @@ function randomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
-function showFeedback(good) {
+function showFeedback(good, speakText) {
   const banner = document.getElementById("feedbackBanner");
   banner.textContent = good ? "答對了！🎉" : "再試一次 😊";
   banner.className = "feedback-banner show " + (good ? "good" : "bad");
-  speak(good ? "答對了，好棒！" : "再試一次");
+  speak(speakText || (good ? "答對了，好棒！" : "再試一次"));
   setTimeout(() => {
     banner.classList.remove("show");
   }, 900);
@@ -403,7 +403,7 @@ function handleWordHeadChoice(choice, btn) {
   if (correct) {
     wordHeadLocked = true;
     btn.classList.add("correct");
-    showFeedback(true);
+    showFeedback(true, "答對了");
     setTimeout(startWordHeadRound, 1100);
   } else {
     btn.classList.add("wrong");
