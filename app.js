@@ -435,11 +435,11 @@ function startMemoryGame() {
   const picks = shuffle(INITIAL_SYMBOLS).slice(0, MEMORY_PAIR_COUNT);
   const symbolCards = shuffle(picks.map(item => {
     const w = pickInitialWordItem(item.symbol);
-    return { symbol: item.symbol, emoji: w.emoji, kind: "symbol", matched: false };
+    return { symbol: item.symbol, emoji: w.emoji, word: w.word, kind: "symbol", matched: false };
   }));
   const emojiCards = shuffle(picks.map(item => {
     const w = pickInitialWordItem(item.symbol);
-    return { symbol: item.symbol, emoji: w.emoji, kind: "emoji", matched: false };
+    return { symbol: item.symbol, emoji: w.emoji, word: w.word, kind: "emoji", matched: false };
   }));
   memoryCards = [...symbolCards, ...emojiCards];
 
@@ -484,7 +484,11 @@ function handleMemoryFlip(idx, btn) {
 
   memoryFlipped.push(idx);
   updateMemoryCardFace(btn, card, true);
-  if (card.kind === "symbol") speak(card.symbol);
+  if (card.kind === "symbol") {
+    speak(card.symbol);
+  } else {
+    speak(card.word);
+  }
 
   if (memoryFlipped.length < 2) return;
 
