@@ -36,6 +36,14 @@
       <span class="icon">🔨</span>
       <span>打地鼠</span>
     </button>
+    <button class="menu-card card-6" onclick="showScreen('wordhead')">
+      <span class="icon">🔤</span>
+      <span>看圖找字頭</span>
+    </button>
+    <button class="menu-card card-7" onclick="showScreen('memory')">
+      <span class="icon">🃏</span>
+      <span>記憶配對</span>
+    </button>
   </div>
 </div>
 
@@ -112,6 +120,28 @@
       <button class="big-btn combine-btn" onclick="startMoleGame()">再玩一次！</button>
     </div>
   </div>
+</div>
+
+<!-- 看圖找字頭 -->
+<div class="screen" id="screen-wordhead">
+  <h2>看圖找字頭</h2>
+  <div class="prompt-box">
+    <div class="flashcard" style="cursor:pointer;height:220px;width:min(300px,70vw)" onclick="replayWordHeadSound()">
+      <div class="word-emoji" id="whEmoji" style="font-size:70px"></div>
+      <div class="word-text" id="whWord"></div>
+    </div>
+  </div>
+  <div class="choices-grid" id="whChoices"></div>
+</div>
+
+<!-- 記憶配對 -->
+<div class="screen" id="screen-memory">
+  <h2>記憶配對</h2>
+  <div class="memory-header">
+    <span id="memoryMoves">翻牌次數：0</span>
+    <span id="memoryMatched">配對：0 / 6</span>
+  </div>
+  <div class="memory-grid" id="memoryGrid"></div>
 </div>
 
 <script src="data.js"></script>

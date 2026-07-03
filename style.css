@@ -124,7 +124,9 @@ h1, h2 {
 .card-2 { background: #6ec6ff; }
 .card-3 { background: #ffd166; }
 .card-4 { background: #8bd8a3; }
-.card-5 { background: #ff7b54; grid-column: span 2; }
+.card-5 { background: #ff7b54; }
+.card-6 { background: #a78bfa; }
+.card-7 { background: #f4a261; grid-column: span 2; }
 
 /* ---------- 打地鼠 ---------- */
 
@@ -493,6 +495,60 @@ h1, h2 {
   font-size: 40px;
   color: #ff5d8f;
   font-weight: bold;
+}
+
+/* ---------- 記憶配對 ---------- */
+
+.memory-header {
+  display: flex;
+  justify-content: space-between;
+  width: min(560px, 90vw);
+  font-size: 20px;
+  color: #5b4636;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  max-width: 480px;
+  width: 100%;
+}
+
+.memory-card {
+  aspect-ratio: 1;
+  background: #6ec6ff;
+  border-radius: 18px;
+  border: none;
+  font-size: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.12);
+}
+
+.memory-card:active {
+  transform: translateY(3px);
+}
+
+.memory-card.face-up {
+  background: white;
+  color: #5b4636;
+}
+
+.memory-card.matched {
+  background: #e8f9ea;
+  color: #2e7d32;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.06);
+}
+
+@media (max-width: 480px) {
+  .memory-grid { grid-template-columns: repeat(3, 1fr); max-width: 340px; }
+  .memory-card { font-size: 32px; }
 }
 
 /* ---------- 小測驗 ---------- */

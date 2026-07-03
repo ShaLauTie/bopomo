@@ -187,6 +187,8 @@ function showScreen(name) {
   if (name === "pinyin") renderPinyin();
   if (name === "quiz") startQuiz();
   if (name === "mole") startMoleGame();
+  if (name === "wordhead") startWordHeadRound();
+  if (name === "memory") startMemoryGame();
 }
 
 function goHome() {
@@ -235,7 +237,7 @@ function renderFlashcard() {
 
 function speakCurrentFlashcard() {
   const item = BOPOMOFO_SYMBOLS[fcIndex];
-  // 先唸符號（含描述），停頓後唘唠例字
+  // 先唸符號（含描述），停頓後再唸例字
   speakSequence([item.symbol, item.word], 100);
 }
 
@@ -336,6 +338,170 @@ function nextPinyin() {
 function prevPinyin() {
   pinyinIndex = (pinyinIndex - 1 + PINYIN_COMBOS.length) % PINYIN_COMBOS.length;
   renderPinyin();
+}
+
+// ========== 看圖找字頭 遊戲 ==========
+
+const INITIAL_SYMBOLS = BOPOMOFO_SYMBOLS.filter(s => s.category === "initial");
+
+let wordHeadTarget = null;
+let wordHeadLocked = false;
+
+function startWordHeadRound() {
+  wordHeadLocked = false;
+  wordHeadTarget = INITIAL_SYMBOLS[randomInt(INITIAL_SYMBOLS.length)];
+
+  document.getElementById("whEmoji").textContent = wordHeadTarget.emoji;
+  document.getElementById("whWord").textContent = wordHeadTarget.word;
+
+  const others = shuffle(
+    INITIAL_SYMBOLS.filter(s => s.symbol !== wordHeadTarget.symbol)
+  ).slice(0, 2);
+  const choices = shuffle([wordHeadTarget, ...others]);
+
+  const grid = document.getElementById("whChoices");
+  grid.innerHTML = "";
+  choices.forEach(choice => {
+    const btn = document.createElement("button");
+    btn.className = "choice-card";
+    btn.textContent = choice.symbol;
+    btn.onclick = () => handleWordHeadChoice(choice, btn);
+    grid.appendChild(btn);
+  });
+
+  replayWordHeadSound();
+}
+
+function replayWordHeadSound() {
+  if (wordHeadTarget) speak(wordHeadTarget.word);
+}
+
+function handleWordHeadChoice(choice, btn) {
+  if (wordHeadLocked) return;
+  const correct = choice.symbol === wordHeadTarget.symbol;
+
+  if (correct) {
+    wordHeadLocked = true;
+    btn.classList.add("correct");
+    showFeedback(true);
+    setTimeout(startWordHeadRound, 1100);
+  } else {
+    btn.classList.add("wrong");
+    showFeedback(false);
+    setTimeout(() => btn.classList.remove("wrong"), 1200);
+  }
+}
+
+// ========== 記憶翻牌配對 ==========
+
+const MEMORY_PAIR_COUNT = 6;
+
+let memoryCards = [];
+let memoryFlipped = [];
+let memoryMoves = 0;
+let memoryMatchedCount = 0;
+let memoryLocked = false;
+
+function startMemoryGame() {
+  memoryMoves = 0;
+  memoryMatchedCount = 0;
+  memoryFlipped = [];
+  memoryLocked = false;
+
+  const picks = shuffle(BOPOMOFO_SYMBOLS).slice(0, MEMORY_PAIR_COUNT);
+  const cards = [];
+  picks.forEach(item => {
+    cards.push({ symbol: item.symbol, emoji: item.emoji, kind: "symbol", matched: false });
+    cards.push({ symbol: item.symbol, emoji: item.emoji, kind: "emoji", matched: false });
+  });
+  memoryCards = shuffle(cards);
+
+  updateMemoryHeader();
+  renderMemoryGrid();
+}
+
+function updateMemoryHeader() {
+  document.getElementById("memoryMoves").textContent = "翻牌次數：" + memoryMoves;
+  document.getElementById("memoryMatched").textContent =
+    "配對：" + memoryMatchedCount + " / " + MEMORY_PAIR_COUNT;
+}
+
+function renderMemoryGrid() {
+  const grid = document.getElementById("memoryGrid");
+  grid.innerHTML = "";
+  memoryCards.forEach((card, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "memory-card";
+    btn.dataset.idx = idx;
+    updateMemoryCardFace(btn, card, memoryFlipped.includes(idx));
+    btn.onclick = () => handleMemoryFlip(idx, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function updateMemoryCardFace(btn, card, faceUp) {
+  if (card.matched || faceUp) {
+    btn.textContent = card.kind === "symbol" ? card.symbol : card.emoji;
+    btn.classList.add("face-up");
+    if (card.matched) btn.classList.add("matched");
+  } else {
+    btn.textContent = "❓";
+    btn.classList.remove("face-up", "matched");
+  }
+}
+
+function handleMemoryFlip(idx, btn) {
+  if (memoryLocked) return;
+  const card = memoryCards[idx];
+  if (card.matched || memoryFlipped.includes(idx)) return;
+
+  memoryFlipped.push(idx);
+  updateMemoryCardFace(btn, card, true);
+  if (card.kind === "symbol") speak(card.symbol);
+
+  if (memoryFlipped.length < 2) return;
+
+  memoryMoves++;
+  updateMemoryHeader();
+  memoryLocked = true;
+
+  const [firstIdx, secondIdx] = memoryFlipped;
+  const first = memoryCards[firstIdx];
+  const second = memoryCards[secondIdx];
+  const isMatch = first.symbol === second.symbol && first.kind !== second.kind;
+
+  setTimeout(() => {
+    const cards = document.querySelectorAll(".memory-card");
+    if (isMatch) {
+      first.matched = true;
+      second.matched = true;
+      memoryMatchedCount++;
+      updateMemoryCardFace(cards[firstIdx], first, true);
+      updateMemoryCardFace(cards[secondIdx], second, true);
+      showFeedback(true);
+      updateMemoryHeader();
+      if (memoryMatchedCount >= MEMORY_PAIR_COUNT) {
+        setTimeout(finishMemoryGame, 700);
+      }
+    } else {
+      updateMemoryCardFace(cards[firstIdx], first, false);
+      updateMemoryCardFace(cards[secondIdx], second, false);
+    }
+    memoryFlipped = [];
+    memoryLocked = false;
+  }, 700);
+}
+
+function finishMemoryGame() {
+  const grid = document.getElementById("memoryGrid");
+  grid.innerHTML =
+    '<div class="quiz-result">' +
+    '<div class="big-score">🎉</div>' +
+    '<div class="word-text">全部配對成功！</div>' +
+    '<div class="progress-text">翻牌次數：' + memoryMoves + '</div>' +
+    '<button class="big-btn combine-btn" onclick="startMemoryGame()">再玩一次</button>' +
+    '</div>';
+  speak("太棒了，全部配對成功！");
 }
 
 // ========== 小測驗 ==========
