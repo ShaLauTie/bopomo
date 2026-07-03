@@ -403,11 +403,15 @@ function handleWordHeadChoice(choice, btn) {
   if (correct) {
     wordHeadLocked = true;
     btn.classList.add("correct");
-    showFeedback(true, "答對了");
-    setTimeout(startWordHeadRound, 1100);
+    speak(choice.symbol, () => {
+      showFeedback(true, "答對了");
+      setTimeout(startWordHeadRound, 1100);
+    });
   } else {
     btn.classList.add("wrong");
-    showFeedback(false);
+    speak(choice.symbol, () => {
+      showFeedback(false);
+    });
     setTimeout(() => btn.classList.remove("wrong"), 1200);
   }
 }
