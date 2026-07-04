@@ -304,11 +304,11 @@ function handleMatchChoice(choice, btn) {
     setTimeout(startMatchRound, 1100);
   } else {
     btn.classList.add("wrong");
-    // 說「這個是ㄉ，不是ㄅ」，念完才讓 banner 消失
+    // 整句一次念出「這個是ㄉ，不是ㄅ」，避免逐字播放造成停頓過久、不通順
     const banner = document.getElementById("feedbackBanner");
     banner.textContent = "再試一次 😊";
     banner.className = "feedback-banner show bad";
-    speakSequence(["這個是", choice.symbol, "不是", matchTarget.symbol], 300, () => {
+    speak(`這個是${choice.symbol}，不是${matchTarget.symbol}`, () => {
       setTimeout(() => banner.classList.remove("show"), 300);
     });
     setTimeout(() => btn.classList.remove("wrong"), 1200);
