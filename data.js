@@ -92,7 +92,7 @@ const TONE_SETS = [
     { mark: "ˋ", word: "燙傷", emoji: "🥵" },
   ]},
   { spelling: "ㄈㄢ", tones: [
-    { mark: "",  word: "帆船", emoji: "⛵" },
+    { mark: "",  word: "翻書", emoji: "📚" },
     { mark: "ˊ", word: "煩惱", emoji: "😩" },
     { mark: "ˇ", word: "反過來", emoji: "↩️" },
     { mark: "ˋ", word: "吃飯", emoji: "🍚" },
