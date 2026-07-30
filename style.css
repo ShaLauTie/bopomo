@@ -456,6 +456,7 @@ h1, h2 {
 }
 
 .pinyin-slot {
+  position: relative;            /* 讓音調符號可以絕對定位 */
   background: white;
   border-radius: 24px;
   width: 140px;
@@ -468,6 +469,21 @@ h1, h2 {
   cursor: pointer;
   color: #5b4636;
   border: 4px dashed #ffb703;
+}
+
+.slot-body {
+  line-height: 1;
+  color: #5b4636;
+}
+
+.slot-tone {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 26px;
+  color: #ff5d8f;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .plus-sign {
