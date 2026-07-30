@@ -637,33 +637,75 @@ h1, h2 {
   /* 小測驗 */
   .quiz-header { margin-bottom: 6px; font-size: 18px; }
 
-  /* 打地鼠：左右佈局 */
+
+  /* 打地鼠：橫式自適應 - 全部可見不需捲動 */
   #screen-mole {
-    padding-top: 8px;
+    padding: 8px;
     flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 8px;
-  }
-  #screen-mole h2 { width: 100%; margin-bottom: 4px; font-size: 18px; }
-  .mole-header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: nowrap;
+    align-items: stretch;    /* 讓 header 和 grid 都撐滿高度 */
     justify-content: flex-start;
-    width: auto;
-    max-width: 100px;
-    margin-bottom: 0;
-    gap: 8px;
+    gap: 10px;
+    overflow: hidden;        /* 絕不捲動 */
   }
-  .mole-stats { align-items: flex-start; font-size: 1.1rem; }
+  #screen-mole h2 { display: none; } /* 橫式隱藏標題節省空間 */
+
+  /* 左側資訊欄 */
+  .mole-header {
+    flex-shrink: 0;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    width: 72px;
+    max-width: 72px;
+    margin-bottom: 0;
+    padding: 4px 0;
+    gap: 0;
+  }
+  .mole-target-box {
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 8px;
+    gap: 4px;
+    border-radius: 1rem;
+  }
+  .mole-mini-speaker { font-size: 1.4rem; }
+  .mole-stats { align-items: center; gap: 6px; font-size: 1rem; }
+
+  /* 鼠洞格：用 1fr 讓 9 格均分整個畫面高度 */
   .mole-grid {
-    gap: 6px;
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: min(1.5vmin, 8px);
     max-width: none;
     width: auto;
   }
-  .hole-cup { width: 68px; height: 80px; }
-  .mole-body { width: 56px; height: 64px; font-size: 1.3rem; bottom: 16px; }
-  .hole-ground { width: 68px; height: 20px; }
+  .mole-hole {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* 洞的大小用 vmin，確保在各種橫式螢幕都適合 */
+  .hole-cup {
+    width:  min(19vmin, 90px);
+    height: min(27vmin, 116px);
+    overflow: hidden;
+  }
+  .mole-body {
+    width:  min(15.5vmin, 74px);
+    height: min(20vmin,   86px);
+    bottom: min(3.5vmin,  16px);
+    font-size: min(4.5vmin, 1.8rem);
+  }
+  .hole-ground {
+    width:  min(19vmin, 90px);
+    height: min(4.5vmin, 22px);
+  }
 }
+
 
