@@ -312,7 +312,16 @@ let pinyinIndex = 0;
 function renderPinyin() {
   const combo = PINYIN_COMBOS[pinyinIndex];
   document.getElementById("pinyinInitial").textContent = combo.initial;
-  document.getElementById("pinyinFinal").textContent = combo.final;
+
+  // 把音調符號從韻母拆開，各自顯示
+  const TONE = /[ˊˇˋ˙]/;
+  const toneChar = (combo.final.match(TONE) || [''])[0];
+  const bodyChars = combo.final.replace(TONE, '');
+  const bodySize  = bodyChars.length >= 2 ? '50px' : '76px';
+  document.getElementById("pinyinFinal").innerHTML =
+    `<span class="slot-body" style="font-size:${bodySize}">${bodyChars}</span>` +
+    (toneChar ? `<span class="slot-tone">${toneChar}</span>` : '');
+
   document.getElementById("pinyinProgress").textContent =
     (pinyinIndex + 1) + " / " + PINYIN_COMBOS.length;
   document.getElementById("pinyinResult").innerHTML = "";
