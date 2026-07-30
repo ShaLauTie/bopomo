@@ -610,7 +610,8 @@ h1, h2 {
   .flashcard .symbol-big { font-size: 100px; }
   .flashcard .word-emoji { font-size: 36px; }
   .flashcard .word-text { font-size: 18px; }
-  .card-nav { margin-top: 0; gap: 12px; flex-direction: column; justify-content: center; }
+  .card-nav { margin-top: 0; gap: 10px; }
+  #screen-flashcards .card-nav { flex-direction: column; justify-content: center; } /* 只有認識注音用直排 */
   .nav-arrow { width: 60px; height: 60px; font-size: 28px; }
   .progress-text { font-size: 16px; min-width: 60px; }
 
@@ -625,17 +626,22 @@ h1, h2 {
   }
   .choice-card { font-size: 56px; min-width: 72px; min-height: 72px; border-radius: 18px; }
 
-  /* 拼音練習：橫向緊縮 */
+  /* 拼音練習：橫向緊縮，隱藏標題節省高度 */
   #screen-pinyin { justify-content: center; gap: 4px; }
+  #screen-pinyin h2 { display: none; }  /* 橫式隱藏標題 */
   .pinyin-row { margin-bottom: 8px; gap: 10px; }
   .pinyin-slot { width: 90px; height: 90px; font-size: 52px; border-radius: 16px; }
   .plus-sign { font-size: 36px; }
-  .result-box { min-height: 60px; gap: 4px; }
-  .result-box .word-emoji { font-size: 56px; }
-  .result-box .word-text { font-size: 24px; }
+  #screen-pinyin .combine-btn { margin-bottom: 8px; }  /* 縮小間距 */
+  .result-box { min-height: 50px; gap: 4px; }
+  .result-box .word-emoji { font-size: 52px; }
+  .result-box .word-text { font-size: 22px; }
 
   /* 小測驗 */
   .quiz-header { margin-bottom: 6px; font-size: 18px; }
+  /* seeSymbol 模式 flashcard 在橫式時縮小 */
+  #screen-quiz .flashcard { height: min(220px, 34vh) !important; }
+  #screen-quiz .flashcard .symbol-big { font-size: min(140px, 24vh) !important; }
 
 
   /* 打地鼠：橫式自適應 - 全部可見不需捲動 */
