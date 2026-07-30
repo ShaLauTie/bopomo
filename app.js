@@ -187,6 +187,9 @@ function showScreen(name) {
   if (name === "pinyin") renderPinyin();
   if (name === "quiz") startQuiz();
   if (name === "mole") startMoleGame();
+  if (name === "wordhead") startWordHeadRound();
+  if (name === "memory") startMemoryGame();
+  if (name === "tone") startToneRound();
 }
 
 function goHome() {
@@ -636,4 +639,183 @@ function showMolePenalty(holeEl) {
   moleTimeLeft = Math.max(0, moleTimeLeft - 3);
   document.getElementById('moleTimer').textContent = moleTimeLeft;
   if (moleTimeLeft <= 0) endMoleGame();
+}
+
+// ========== 看圖找字頭 ==========
+
+let whTarget = null;
+let whLocked = false;
+
+function getWordForSymbol(item) {
+  const extras = (typeof INITIAL_WORD_EXTRAS !== 'undefined' && INITIAL_WORD_EXTRAS[item.symbol]) || [];
+  const all = [{ word: item.word, emoji: item.emoji }, ...extras];
+  return all[randomInt(all.length)];
+}
+
+function startWordHeadRound() {
+  whLocked = false;
+  whTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+  const chosen = getWordForSymbol(whTarget);
+
+  document.getElementById('whEmoji').textContent = chosen.emoji;
+  document.getElementById('whWord').textContent  = chosen.word;
+
+  const others = shuffle(BOPOMOFO_SYMBOLS.filter(s => s.symbol !== whTarget.symbol)).slice(0, 3);
+  const choices = shuffle([whTarget, ...others]);
+
+  const grid = document.getElementById('whChoices');
+  grid.innerHTML = '';
+  choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-card';
+    btn.textContent = c.symbol;
+    btn.onclick = () => handleWhChoice(c, btn);
+    grid.appendChild(btn);
+  });
+
+  speak(chosen.word);
+}
+
+function replayWordHeadSound() {
+  const word = document.getElementById('whWord').textContent;
+  if (word) speak(word);
+}
+
+function handleWhChoice(choice, btn) {
+  if (whLocked) return;
+  const correct = choice.symbol === whTarget.symbol;
+  if (correct) {
+    whLocked = true;
+    btn.classList.add('correct');
+    showFeedback(true);
+    setTimeout(startWordHeadRound, 1100);
+  } else {
+    btn.classList.add('wrong');
+    showFeedback(false);
+    setTimeout(() => btn.classList.remove('wrong'), 1200);
+  }
+}
+
+// ========== 記憑配對 ==========
+
+let memFlipped = [];
+let memMatched = 0;
+let memMoves   = 0;
+let memLocked  = false;
+const MEM_PAIRS = 6;
+
+function startMemoryGame() {
+  memFlipped = [];
+  memMatched = 0;
+  memMoves   = 0;
+  memLocked  = false;
+
+  document.getElementById('memoryMoves').textContent   = '翻牌次數：0';
+  document.getElementById('memoryMatched').textContent = '配對：0 / ' + MEM_PAIRS;
+
+  const chosen = shuffle(BOPOMOFO_SYMBOLS).slice(0, MEM_PAIRS);
+  const cards  = [];
+  chosen.forEach((item, i) => {
+    cards.push({ matchId: i, type: 'symbol', display: item.symbol, item });
+    cards.push({ matchId: i, type: 'emoji',  display: item.emoji,  item });
+  });
+
+  const grid = document.getElementById('memoryGrid');
+  grid.innerHTML = '';
+  shuffle(cards).forEach(card => {
+    const el = document.createElement('div');
+    el.className = 'memory-card';
+    el.style.background = card.type === 'symbol'
+      ? 'linear-gradient(135deg,#ffb7c5,#ffc078)'
+      : 'linear-gradient(135deg,#a5f3fc,#818cf8)';
+    el.innerHTML = `<div class="memory-front">？</div><div class="memory-back">${card.display}</div>`;
+    el.addEventListener('click', () => handleMemoryFlip(el, card));
+    grid.appendChild(el);
+  });
+}
+
+function handleMemoryFlip(el, card) {
+  if (memLocked) return;
+  if (el.classList.contains('flipped') || el.classList.contains('matched')) return;
+
+  el.classList.add('flipped');
+  speak(card.item.symbol);
+  memFlipped.push({ el, card });
+
+  if (memFlipped.length === 2) {
+    memMoves++;
+    document.getElementById('memoryMoves').textContent = '翻牌次數：' + memMoves;
+    const [a, b] = memFlipped;
+
+    if (a.card.matchId === b.card.matchId && a.card.type !== b.card.type) {
+      a.el.classList.add('matched');
+      b.el.classList.add('matched');
+      memFlipped = [];
+      memMatched++;
+      document.getElementById('memoryMatched').textContent = '配對：' + memMatched + ' / ' + MEM_PAIRS;
+      showFeedback(true);
+      if (memMatched === MEM_PAIRS) {
+        setTimeout(() => {
+          speak('你全部找完了！真棒！');
+          setTimeout(startMemoryGame, 2500);
+        }, 600);
+      }
+    } else {
+      memLocked = true;
+      setTimeout(() => {
+        a.el.classList.remove('flipped');
+        b.el.classList.remove('flipped');
+        memFlipped = [];
+        memLocked  = false;
+      }, 1000);
+    }
+  }
+}
+
+// ========== 聲調辨識 ==========
+
+let toneTarget = null;
+let toneSet    = null;
+let toneLocked = false;
+
+function startToneRound() {
+  toneLocked = false;
+  toneSet    = TONE_SETS[randomInt(TONE_SETS.length)];
+  toneTarget = toneSet.tones[randomInt(toneSet.tones.length)];
+
+  document.getElementById('toneEmoji').textContent = toneTarget.emoji;
+  document.getElementById('toneWord').textContent  = toneTarget.word;
+
+  speak(toneTarget.word);
+
+  const grid = document.getElementById('toneChoices');
+  grid.innerHTML = '';
+  shuffle([...toneSet.tones]).forEach(tone => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-card';
+    btn.style.fontSize   = '1.5rem';
+    btn.style.minHeight  = '80px';
+    btn.textContent = toneSet.spelling + tone.mark;
+    btn.onclick = () => handleToneChoice(tone, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function replayToneSound() {
+  if (toneTarget) speak(toneTarget.word);
+}
+
+function handleToneChoice(tone, btn) {
+  if (toneLocked) return;
+  const correct = tone.mark === toneTarget.mark;
+  if (correct) {
+    toneLocked = true;
+    btn.classList.add('correct');
+    showFeedback(true);
+    setTimeout(startToneRound, 1100);
+  } else {
+    btn.classList.add('wrong');
+    showFeedback(false);
+    setTimeout(() => btn.classList.remove('wrong'), 1200);
+  }
 }
