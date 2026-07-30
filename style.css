@@ -88,43 +88,46 @@ h1, h2 {
 
 .menu-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 28px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
   width: 100%;
-  max-width: 720px;
+  max-width: 520px;
 }
 
 .menu-card {
-  border-radius: 32px;
-  padding: 28px 16px;
-  min-height: 180px;
+  border-radius: 22px;
+  padding: 14px 8px;
+  aspect-ratio: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 6px;
   cursor: pointer;
-  box-shadow: 0 10px 0 rgba(0,0,0,0.12);
+  box-shadow: 0 7px 0 rgba(0,0,0,0.12);
   color: white;
-  font-size: 26px;
+  font-size: 14px;
   font-weight: bold;
   border: none;
 }
 
 .menu-card:active {
-  transform: translateY(6px);
+  transform: translateY(4px);
   box-shadow: 0 2px 0 rgba(0,0,0,0.12);
 }
 
 .menu-card .icon {
-  font-size: 64px;
+  font-size: 36px;
 }
 
 .card-1 { background: #ff8fab; }
 .card-2 { background: #6ec6ff; }
 .card-3 { background: #ffd166; }
 .card-4 { background: #8bd8a3; }
-.card-5 { background: #ff7b54; grid-column: span 2; }
+.card-5 { background: #ff7b54; }
+.card-6 { background: #a78bfa; }
+.card-7 { background: #34d399; }
+.card-8 { background: #fb7185; }
 
 /* ---------- 打地鼠 ---------- */
 
@@ -556,6 +559,68 @@ h1, h2 {
   border: 6px solid #ff6b6b;
 }
 
+/* ---------- 記憑配對 ---------- */
+
+.memory-header {
+  display: flex;
+  gap: 24px;
+  font-size: 1.1rem;
+  color: #5b4636;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  max-width: 460px;
+  width: 100%;
+}
+
+.memory-card {
+  aspect-ratio: 1;
+  min-height: 68px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  cursor: pointer;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 5px 0 rgba(0,0,0,0.12);
+  user-select: none;
+}
+
+.memory-card.flipped  { transform: rotateY(180deg); }
+.memory-card.matched  { transform: rotateY(180deg); opacity: 0.55; cursor: default; }
+
+.memory-front, .memory-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  backface-visibility: hidden;
+}
+
+.memory-front {
+  background: linear-gradient(135deg, #ffb7c5, #ffc078);
+  font-size: 1.6rem;
+  color: white;
+  font-weight: 900;
+}
+
+.memory-back {
+  background: white;
+  font-size: 1.8rem;
+  transform: rotateY(180deg);
+  color: #5b4636;
+}
+
 /* ── 窄螢幕（直式小螢幕）── */
 @media (max-width: 480px) {
   .flashcard .symbol-big { font-size: 150px; }
@@ -573,24 +638,23 @@ h1, h2 {
   .home-btn { width: 48px; height: 48px; font-size: 20px; top: 6px; left: 6px; }
   .big-btn { font-size: 18px; padding: 10px 20px; min-height: 48px; }
 
-  /* 首頁：5 張卡片排成一行 */
-  #screen-home { justify-content: center; gap: 8px; }
-  #screen-home h1 { font-size: 24px; margin-bottom: 8px; }
+  /* 首頁：8 張卡片 4×2 */
+  #screen-home { justify-content: center; gap: 6px; }
+  #screen-home h1 { font-size: 22px; margin-bottom: 6px; }
   .menu-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
+    gap: 6px;
     max-width: 100%;
   }
-  .card-5 { grid-column: span 1; } /* 橫式不需要跨欄 */
   .menu-card {
     min-height: 0;
-    height: clamp(70px, 18vh, 110px);
-    padding: 8px 6px;
-    font-size: 13px;
-    gap: 4px;
-    border-radius: 18px;
+    aspect-ratio: auto;
+    height: clamp(52px, 15vh, 78px);
+    padding: 4px;
+    font-size: 10px;
+    gap: 2px;
+    border-radius: 12px;
   }
-  .menu-card .icon { font-size: 32px; }
+  .menu-card .icon { font-size: 20px; }
 
   /* 認識注音：卡片縮小，左右排 */
   #screen-flashcards {
