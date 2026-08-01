@@ -427,16 +427,21 @@ function handleQuizAnswer(correct, btn) {
   if (correct) {
     btn.classList.add("correct");
     quizScore++;
+    showFeedback(true);
+    updateQuizHeader();
+    setTimeout(() => {
+      quizQuestionNum++;
+      nextQuizQuestion();
+    }, 1100);
   } else {
     btn.classList.add("wrong");
+    showFeedback(false);
+    // 答錯：停留同一題，讓孩子再試一次
+    setTimeout(() => {
+      btn.classList.remove("wrong");
+      quizLocked = false;
+    }, 1200);
   }
-  showFeedback(correct);
-  updateQuizHeader();
-
-  setTimeout(() => {
-    quizQuestionNum++;
-    nextQuizQuestion();
-  }, 1100);
 }
 
 function finishQuiz() {
@@ -799,7 +804,8 @@ function startToneRound() {
 
   const grid = document.getElementById('toneChoices');
   grid.innerHTML = '';
-  shuffle([...toneSet.tones]).forEach(tone => {
+  // 固定順序：一聲→二聲→三聲→四聲
+  toneSet.tones.forEach(tone => {
     const btn = document.createElement('button');
     btn.className = 'choice-card';
     btn.style.fontSize   = '1.5rem';
