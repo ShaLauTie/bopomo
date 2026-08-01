@@ -800,7 +800,8 @@ function startToneRound() {
   document.getElementById('toneEmoji').textContent = toneTarget.emoji;
   document.getElementById('toneWord').textContent  = toneTarget.word;
 
-  speak(toneTarget.word);
+  // 用 speakFallback 直接走 speechSynthesis，避免 Google TTS CORS 延遲
+  speakFallback(toneTarget.word);
 
   const grid = document.getElementById('toneChoices');
   grid.innerHTML = '';
@@ -817,7 +818,7 @@ function startToneRound() {
 }
 
 function replayToneSound() {
-  if (toneTarget) speak(toneTarget.word);
+  if (toneTarget) speakFallback(toneTarget.word);
 }
 
 function handleToneChoice(tone, btn) {
