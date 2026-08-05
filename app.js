@@ -179,6 +179,12 @@ function speakSequence(texts, gapMs = 350, onDone) {
 // ========== 畫面切換 ==========
 
 function showScreen(name) {
+  // 切換畫面時，停止所有進行中的音訊（防止跨畫面干擾）
+  if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
+  if (_toneAudio)    { _toneAudio.pause();    _toneAudio    = null; }
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  setFcLocked(false); // 解鎖閃卡箭頭
+
   document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
   document.getElementById("screen-" + name).classList.add("active");
 
@@ -853,17 +859,32 @@ function startToneRound() {
   });
 }
 
+// 聲調遙戲專用的獨立 Audio（不受 _currentAudio 干擾）
+let _toneAudio = null;
+
 /**
- * 先播放注音拼寫的 WAV 音檔（永辺有效），
- * WAV 播完後再嘗試以 Google TTS 唔出完整中文詞語。
+ * 直接用獨立 Audio 播放注音字母 WAV，
+ * 不經過 _currentAudio 連鎖，任何裝置都一定有音。
  */
 function playToneQuestion() {
   if (!toneTarget || !toneSet) return;
-  const chars = [...toneSet.spelling]; // e.g. ['ㄇ', 'ㄚ']
-  speakSequence(chars, 130, () => {
-    // WAV 播完，再唔完整中文詞（使用原本 speak 鏈，嘗試 Google TTS 再 fallback）
-    speak(toneTarget.word);
-  });
+  if (_toneAudio) { _toneAudio.pause(); _toneAudio = null; }
+
+  const wavFiles = [...toneSet.spelling]
+    .map(ch => BPMF_TO_WAV[ch])
+    .filter(Boolean)
+    .map(f => MOE_BASE + f);
+
+  if (wavFiles.length === 0) return;
+  let i = 0;
+  function next() {
+    if (i >= wavFiles.length) { _toneAudio = null; return; }
+    const a = new Audio(wavFiles[i++]);
+    _toneAudio = a;
+    a.onended = () => { setTimeout(next, 120); };
+    a.play().catch(() => { setTimeout(next, 350); });
+  }
+  next();
 }
 
 function replayToneSound() {
