@@ -225,6 +225,17 @@ function showFeedback(good) {
 // ========== 認識注音符號牌 ==========
 
 let fcIndex = 0;
+let fcSpeaking = false;
+let fcSpeakTimer = null;
+
+function setFcLocked(locked) {
+  fcSpeaking = locked;
+  if (fcSpeakTimer) { clearTimeout(fcSpeakTimer); fcSpeakTimer = null; }
+  const nav = document.querySelector('#screen-flashcards .card-nav');
+  if (nav) nav.style.opacity = locked ? '0.35' : '1';
+  // 保険：最多鎖 6 秒，防止語音標籤沒回呼
+  if (locked) fcSpeakTimer = setTimeout(() => setFcLocked(false), 6000);
+}
 
 function renderFlashcard() {
   const item = BOPOMOFO_SYMBOLS[fcIndex];
@@ -233,21 +244,25 @@ function renderFlashcard() {
   document.getElementById("fcWord").textContent = item.word;
   document.getElementById("fcProgress").textContent =
     (fcIndex + 1) + " / " + BOPOMOFO_SYMBOLS.length;
+  // 鎖住箭頭，唔完才解鎖
+  setFcLocked(true);
   speakCurrentFlashcard();
 }
 
 function speakCurrentFlashcard() {
   const item = BOPOMOFO_SYMBOLS[fcIndex];
-  // 先唸符號（含描述），停頓後唘唠例字
-  speakSequence([item.symbol, item.word], 100);
+  // 先唔符號，停頓後唔例字，全部唔完才解鎖
+  speakSequence([item.symbol, item.word], 200, () => setFcLocked(false));
 }
 
 function nextFlashcard() {
+  if (fcSpeaking) return;  // 正在唔讀，忽略點擊
   fcIndex = (fcIndex + 1) % BOPOMOFO_SYMBOLS.length;
   renderFlashcard();
 }
 
 function prevFlashcard() {
+  if (fcSpeaking) return;  // 正在唔讀，忽略點擊
   fcIndex = (fcIndex - 1 + BOPOMOFO_SYMBOLS.length) % BOPOMOFO_SYMBOLS.length;
   renderFlashcard();
 }
@@ -586,10 +601,16 @@ function handleMoleClick(idx) {
     pickMoleTarget();
     scheduleMoleBatch();
   } else {
-    // 打錯：扰 3 秒
+    // 打錯：暴示懲罰 + 暫停 3 秒（地鼠全部下去，停止新出現）
     showMolePenalty(hole);
     hole.classList.add('wrong-shake');
     setTimeout(() => hole.classList.remove('wrong-shake'), 400);
+    clearTimeout(molePopTimeout);
+    document.querySelectorAll('.mole-hole').forEach(h =>
+      h.classList.remove('up', 'wrong-shake', 'whacked'));
+    molePopTimeout = setTimeout(() => {
+      if (moleRunning) scheduleMoleBatch();
+    }, 3000);
   }
 }
 
@@ -792,6 +813,21 @@ let toneTarget = null;
 let toneSet    = null;
 let toneLocked = false;
 
+// 專用：用 speechSynthesis 直接唔中文詞（不呼叫 cancel，避免 iOS 問題）
+function speakChineseWord(word) {
+  if (!('speechSynthesis' in window)) return;
+  const voices = speechSynthesis.getVoices();
+  const voice  = voices.find(v => v.lang === 'zh-TW')
+              || voices.find(v => v.lang === 'zh-CN')
+              || voices.find(v => v.lang.startsWith('zh'))
+              || null;
+  const utter  = new SpeechSynthesisUtterance(word);
+  utter.lang   = 'zh-TW';
+  if (voice) utter.voice = voice;
+  utter.rate   = 0.85;
+  speechSynthesis.speak(utter);
+}
+
 function startToneRound() {
   toneLocked = false;
   toneSet    = TONE_SETS[randomInt(TONE_SETS.length)];
@@ -800,8 +836,7 @@ function startToneRound() {
   document.getElementById('toneEmoji').textContent = toneTarget.emoji;
   document.getElementById('toneWord').textContent  = toneTarget.word;
 
-  // 用 speakFallback 直接走 speechSynthesis，避免 Google TTS CORS 延遲
-  speakFallback(toneTarget.word);
+  speakChineseWord(toneTarget.word);
 
   const grid = document.getElementById('toneChoices');
   grid.innerHTML = '';
@@ -818,7 +853,7 @@ function startToneRound() {
 }
 
 function replayToneSound() {
-  if (toneTarget) speakFallback(toneTarget.word);
+  if (toneTarget) speakChineseWord(toneTarget.word);
 }
 
 function handleToneChoice(tone, btn) {
