@@ -180,6 +180,7 @@ function speakSequence(texts, gapMs = 350, onDone) {
 
 function showScreen(name) {
   // 切換畫面時，停止所有進行中的音訊（防止跨畫面干擾）
+  _fcGen++;  // 讓閃卡舊的 speakSequence callback 自動作廢
   if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
   if (_toneAudio)    { _toneAudio.pause();    _toneAudio    = null; }
   if (_whAudio)      { _whAudio.pause();      _whAudio      = null; }
@@ -234,6 +235,7 @@ function showFeedback(good) {
 let fcIndex = 0;
 let fcSpeaking = false;
 let fcSpeakTimer = null;
+let _fcGen = 0;  // 切畫面時遞增，讓舊 callback 作廢
 
 function setFcLocked(locked) {
   fcSpeaking = locked;
@@ -258,8 +260,17 @@ function renderFlashcard() {
 
 function speakCurrentFlashcard() {
   const item = BOPOMOFO_SYMBOLS[fcIndex];
-  // 先唔符號，停頓後唔例字，全部唔完才解鎖
-  speakSequence([item.symbol, item.word], 200, () => setFcLocked(false));
+  const myGen = _fcGen;  // 捕捕當前世代
+  // 先唔符號，檢查世代後唔例字，避免切畫面後舊 callback 干擾
+  speak(item.symbol, () => {
+    if (_fcGen !== myGen) return;       // 已切畫面，中止
+    setTimeout(() => {
+      if (_fcGen !== myGen) return;
+      speak(item.word, () => {
+        if (_fcGen === myGen) setFcLocked(false);
+      });
+    }, 200);
+  });
 }
 
 function nextFlashcard() {
@@ -876,11 +887,8 @@ function startToneRound() {
 let _toneAudio = null;
 
 /**
- * 念出完整中文詞語，三重保障：
- *   ① audio error 事件（403 / 網路失敗）
- *   ② play() reject（autoplay 被擋）
- *   ③ 2 秒後 readyState 安全網（play 已 resolve 但資源未載入）
- * 全部失敗才退回注音字母 WAV。
+ * 用 speechSynthesis 唔出完整中文詞（Android 內建 Google TTS 引擎），
+ * 失敗則退回注音字母 WAV。
  */
 function playToneQuestion() {
   if (!toneTarget || !toneSet) return;
@@ -889,7 +897,7 @@ function playToneQuestion() {
   const myToneSet = toneSet;
   const myWord    = toneTarget.word;
 
-  // ── WAV 備用 ──────────────────────────────
+  // WAV 備用
   function playWavFallback() {
     const wavFiles = [...myToneSet.spelling]
       .map(ch => BPMF_TO_WAV[ch])
@@ -906,24 +914,31 @@ function playToneQuestion() {
     nextWav();
   }
 
-  // ── 嘗試 Google TTS ──────────────────────
-  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q='
-    + encodeURIComponent(myWord) + '&tl=zh-TW&client=tw-ob';
-  const a = new Audio(url);
-  _toneAudio = a;
+  if (!('speechSynthesis' in window)) { playWavFallback(); return; }
 
-  let fallbackDone = false;
-  const tryFallback = () => {
-    if (fallbackDone) return;
-    fallbackDone = true;
-    if (_toneAudio === a) _toneAudio = null;
-    playWavFallback();
-  };
+  // 先取得语音列表，找中文聲音
+  const voices = speechSynthesis.getVoices();
+  const voice  = voices.find(v => v.lang === 'zh-TW')
+              || voices.find(v => v.lang === 'zh-CN')
+              || voices.find(v => v.lang.startsWith('zh'))
+              || null;
 
-  a.addEventListener('error', tryFallback, { once: true }); // ① 403 / 網路錯誤
-  a.play().catch(tryFallback);                              // ② autoplay 被擋
-  // ③ 2 秒後若資源仍未緩衝（readyState < 2），強制備用
-  setTimeout(() => { if (a.readyState < 2) tryFallback(); }, 2000);
+  // 在 cancel 後稍候再 speak（避免 iOS 上 cancel+speak 連用的沉默 bug）
+  speechSynthesis.cancel();
+  setTimeout(() => {
+    const utter = new SpeechSynthesisUtterance(myWord);
+    utter.lang  = 'zh-TW';
+    if (voice) utter.voice = voice;
+    utter.rate  = 0.85;
+    // 如果語音合成無峙問，備用 WAV
+    utter.onerror = () => playWavFallback();
+    speechSynthesis.speak(utter);
+
+    // 3 秒安全網：如果沒有開始播放，啟動 WAV
+    setTimeout(() => {
+      if (!speechSynthesis.speaking) playWavFallback();
+    }, 3000);
+  }, 80);
 }
 
 function replayToneSound() {
