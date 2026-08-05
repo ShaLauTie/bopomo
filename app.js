@@ -876,26 +876,25 @@ function startToneRound() {
 let _toneAudio = null;
 
 /**
- * 念出完整中文詞語（如「燙傷」），使用獨立 _toneAudio 不受其他畫面干擾：
- *   1. 先試 Google TTS（audio 元素，Android Chrome 可用）
- *   2. 失敗時退回注音字母 WAV 逐一播放
+ * 念出完整中文詞語，三重保障：
+ *   ① audio error 事件（403 / 網路失敗）
+ *   ② play() reject（autoplay 被擋）
+ *   ③ 2 秒後 readyState 安全網（play 已 resolve 但資源未載入）
+ * 全部失敗才退回注音字母 WAV。
  */
 function playToneQuestion() {
   if (!toneTarget || !toneSet) return;
   if (_toneAudio) { _toneAudio.pause(); _toneAudio = null; }
 
-  // ① 嘗試 Google TTS 念完整詞語
-  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q='
-    + encodeURIComponent(toneTarget.word) + '&tl=zh-TW&client=tw-ob';
-  const a = new Audio(url);
-  _toneAudio = a;
-  a.play().catch(() => {
-    // ② Google TTS 失敗 → 播注音字母 WAV 作備用
-    _toneAudio = null;
-    const wavFiles = [...toneSet.spelling]
+  const myToneSet = toneSet;
+  const myWord    = toneTarget.word;
+
+  // ── WAV 備用 ──────────────────────────────
+  function playWavFallback() {
+    const wavFiles = [...myToneSet.spelling]
       .map(ch => BPMF_TO_WAV[ch])
       .filter(Boolean)
-      .map(f => MOE_BASE + f);
+      .map(f  => MOE_BASE + f);
     let i = 0;
     function nextWav() {
       if (i >= wavFiles.length) return;
@@ -905,7 +904,26 @@ function playToneQuestion() {
       wv.play().catch(() => setTimeout(nextWav, 300));
     }
     nextWav();
-  });
+  }
+
+  // ── 嘗試 Google TTS ──────────────────────
+  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q='
+    + encodeURIComponent(myWord) + '&tl=zh-TW&client=tw-ob';
+  const a = new Audio(url);
+  _toneAudio = a;
+
+  let fallbackDone = false;
+  const tryFallback = () => {
+    if (fallbackDone) return;
+    fallbackDone = true;
+    if (_toneAudio === a) _toneAudio = null;
+    playWavFallback();
+  };
+
+  a.addEventListener('error', tryFallback, { once: true }); // ① 403 / 網路錯誤
+  a.play().catch(tryFallback);                              // ② autoplay 被擋
+  // ③ 2 秒後若資源仍未緩衝（readyState < 2），強制備用
+  setTimeout(() => { if (a.readyState < 2) tryFallback(); }, 2000);
 }
 
 function replayToneSound() {
