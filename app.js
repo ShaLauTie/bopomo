@@ -182,6 +182,7 @@ function showScreen(name) {
   // 切換畫面時，停止所有進行中的音訊（防止跨畫面干擾）
   if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
   if (_toneAudio)    { _toneAudio.pause();    _toneAudio    = null; }
+  if (_whAudio)      { _whAudio.pause();      _whAudio      = null; }
   if ('speechSynthesis' in window) speechSynthesis.cancel();
   setFcLocked(false); // 解鎖閃卡箭頭
 
@@ -693,6 +694,18 @@ function getWordForSymbol(item) {
   return all[randomInt(all.length)];
 }
 
+// 看圖找字頭專用獨立 Audio（不受 _currentAudio 干擾）
+let _whAudio = null;
+
+function playWhWord(word) {
+  if (_whAudio) { _whAudio.pause(); _whAudio = null; }
+  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q='
+    + encodeURIComponent(word) + '&tl=zh-TW&client=tw-ob';
+  const a = new Audio(url);
+  _whAudio = a;
+  a.play().catch(() => { _whAudio = null; });
+}
+
 function startWordHeadRound() {
   whLocked = false;
   whTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
@@ -714,12 +727,12 @@ function startWordHeadRound() {
     grid.appendChild(btn);
   });
 
-  speak(chosen.word);
+  playWhWord(chosen.word);
 }
 
 function replayWordHeadSound() {
   const word = document.getElementById('whWord').textContent;
-  if (word) speak(word);
+  if (word) playWhWord(word);
 }
 
 function handleWhChoice(choice, btn) {
@@ -863,28 +876,36 @@ function startToneRound() {
 let _toneAudio = null;
 
 /**
- * 直接用獨立 Audio 播放注音字母 WAV，
- * 不經過 _currentAudio 連鎖，任何裝置都一定有音。
+ * 念出完整中文詞語（如「燙傷」），使用獨立 _toneAudio 不受其他畫面干擾：
+ *   1. 先試 Google TTS（audio 元素，Android Chrome 可用）
+ *   2. 失敗時退回注音字母 WAV 逐一播放
  */
 function playToneQuestion() {
   if (!toneTarget || !toneSet) return;
   if (_toneAudio) { _toneAudio.pause(); _toneAudio = null; }
 
-  const wavFiles = [...toneSet.spelling]
-    .map(ch => BPMF_TO_WAV[ch])
-    .filter(Boolean)
-    .map(f => MOE_BASE + f);
-
-  if (wavFiles.length === 0) return;
-  let i = 0;
-  function next() {
-    if (i >= wavFiles.length) { _toneAudio = null; return; }
-    const a = new Audio(wavFiles[i++]);
-    _toneAudio = a;
-    a.onended = () => { setTimeout(next, 120); };
-    a.play().catch(() => { setTimeout(next, 350); });
-  }
-  next();
+  // ① 嘗試 Google TTS 念完整詞語
+  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q='
+    + encodeURIComponent(toneTarget.word) + '&tl=zh-TW&client=tw-ob';
+  const a = new Audio(url);
+  _toneAudio = a;
+  a.play().catch(() => {
+    // ② Google TTS 失敗 → 播注音字母 WAV 作備用
+    _toneAudio = null;
+    const wavFiles = [...toneSet.spelling]
+      .map(ch => BPMF_TO_WAV[ch])
+      .filter(Boolean)
+      .map(f => MOE_BASE + f);
+    let i = 0;
+    function nextWav() {
+      if (i >= wavFiles.length) return;
+      const wv = new Audio(wavFiles[i++]);
+      _toneAudio = wv;
+      wv.onended = () => setTimeout(nextWav, 120);
+      wv.play().catch(() => setTimeout(nextWav, 300));
+    }
+    nextWav();
+  });
 }
 
 function replayToneSound() {
