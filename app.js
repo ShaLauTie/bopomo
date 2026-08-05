@@ -836,7 +836,8 @@ function startToneRound() {
   document.getElementById('toneEmoji').textContent = toneTarget.emoji;
   document.getElementById('toneWord').textContent  = toneTarget.word;
 
-  speakChineseWord(toneTarget.word);
+  // 先播放注音字母 WAV（一定有声音），再接著嘗試唔中文詞
+  playToneQuestion();
 
   const grid = document.getElementById('toneChoices');
   grid.innerHTML = '';
@@ -852,8 +853,21 @@ function startToneRound() {
   });
 }
 
+/**
+ * 先播放注音拼寫的 WAV 音檔（永辺有效），
+ * WAV 播完後再嘗試以 Google TTS 唔出完整中文詞語。
+ */
+function playToneQuestion() {
+  if (!toneTarget || !toneSet) return;
+  const chars = [...toneSet.spelling]; // e.g. ['ㄇ', 'ㄚ']
+  speakSequence(chars, 130, () => {
+    // WAV 播完，再唔完整中文詞（使用原本 speak 鏈，嘗試 Google TTS 再 fallback）
+    speak(toneTarget.word);
+  });
+}
+
 function replayToneSound() {
-  if (toneTarget) speakChineseWord(toneTarget.word);
+  if (toneSet && toneTarget) playToneQuestion();
 }
 
 function handleToneChoice(tone, btn) {
