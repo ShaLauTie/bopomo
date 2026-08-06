@@ -113,13 +113,13 @@ function speakViaGoogle(text, onEnd) {
   _currentAudio = audio;
   if (onEnd) audio.addEventListener("ended", onEnd, { once: true });
   audio.play().catch(() => {
-    // Google TTS 被 CORS 擋住（HTTPS 環境）→ 自動改用瀏覽器內建語音
+    // 若已切畫面（_currentAudio 被清除），不再塞 speechSynthesis
+    if (_currentAudio !== audio) { if (onEnd) onEnd(); return; }
     _currentAudio = null;
     if ("speechSynthesis" in window) {
-      speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(bopomofoToSpeakable(text));
       utter.lang = "zh-TW";
-      if (bopomofoVoice) utter.voice = bopomofoVoice;
+      if (_zhVoice) utter.voice = _zhVoice;
       utter.rate = 0.75;
       utter.pitch = 1.1;
       if (onEnd) utter.onend = onEnd;
@@ -890,16 +890,23 @@ let _toneGen   = 0;
 function playToneQuestion() {
   if (!toneTarget || !toneSet) return;
   if (_toneAudio) { _toneAudio.pause(); _toneAudio = null; }
+  if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
 
   const myGen  = ++_toneGen;
-  const myWord = toneTarget.word;  // 中文詞語如「大霧」
+  const myWord = toneTarget.word;  // 只念中文詞如「馬」
 
   if (!('speechSynthesis' in window)) return;
 
-  // 延遲 200ms 再 speak：讓 showScreen 裡的 cancel() 完全生效
-  // 避免 Android Chrome cancel+speak 連用被吃掉
+  // 先清一次佇列
+  speechSynthesis.cancel();
+
+  // 延遲 200ms 讓 cancel 生效，再次清除後才 speak
   setTimeout(() => {
-    if (_toneGen !== myGen) return;  // 已換題
+    if (_toneGen !== myGen) return;
+    // 再清一次：防止其他遊戲的 error callback 在這 200ms 內偷塞了 utterance
+    speechSynthesis.cancel();
+    if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
+
     const utter = new SpeechSynthesisUtterance(myWord);
     utter.lang  = 'zh-TW';
     if (_zhVoice) utter.voice = _zhVoice;
