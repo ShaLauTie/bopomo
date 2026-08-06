@@ -75,9 +75,13 @@ function playAudioUrl(url, onEnd) {
   }
   const audio = new Audio(url);
   _currentAudio = audio;
-  if (onEnd) audio.addEventListener("ended", onEnd, { once: true });
+  const myScreenGen = _screenGen;
+  if (onEnd) audio.addEventListener("ended", () => {
+    if (_screenGen !== myScreenGen) return;
+    onEnd();
+  }, { once: true });
   audio.play().catch(() => {
-    // 無法播放時直接呼叫 onEnd，讓串接流程繼續
+    if (_screenGen !== myScreenGen) return;
     if (onEnd) setTimeout(onEnd, 800);
   });
 }
@@ -102,6 +106,8 @@ function speakSymbol(symbol, onEnd) {
  * @param {string}   text
  * @param {Function} [onEnd]
  */
+let _screenGen = 0;  // 切畫面時遞增，讓跨畫面 callback 不再塗 utterance
+
 function speakViaGoogle(text, onEnd) {
   const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=zh-TW&client=tw-ob`;
   if (_currentAudio) {
@@ -111,10 +117,13 @@ function speakViaGoogle(text, onEnd) {
   }
   const audio = new Audio(url);
   _currentAudio = audio;
-  if (onEnd) audio.addEventListener("ended", onEnd, { once: true });
+  const myScreenGen = _screenGen;
+  if (onEnd) audio.addEventListener("ended", () => {
+    if (_screenGen !== myScreenGen) return;
+    onEnd();
+  }, { once: true });
   audio.play().catch(() => {
-    // 若已切畫面（_currentAudio 被清除），不再塞 speechSynthesis
-    if (_currentAudio !== audio) { if (onEnd) onEnd(); return; }
+    if (_screenGen !== myScreenGen) { if (onEnd) onEnd(); return; }
     _currentAudio = null;
     if ("speechSynthesis" in window) {
       const utter = new SpeechSynthesisUtterance(bopomofoToSpeakable(text));
@@ -146,10 +155,10 @@ if ("speechSynthesis" in window) {
 }
 function speakFallback(text) {
   if (!("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
+  // 不呼叫 cancel()，避免清掉其他畫面正在說的話
   const utter = new SpeechSynthesisUtterance(bopomofoToSpeakable(text));
   utter.lang = "zh-TW";
-  if (bopomofoVoice) utter.voice = bopomofoVoice;
+  if (_zhVoice) utter.voice = _zhVoice;
   utter.rate = 0.75;
   utter.pitch = 1.1;
   speechSynthesis.speak(utter);
@@ -195,7 +204,8 @@ function speakSequence(texts, gapMs = 350, onDone) {
 
 function showScreen(name) {
   // 切換畫面時，停止所有進行中的音訊（防止跨畫面干擾）
-  _fcGen++;  // 讓閃卡舊的 speakSequence callback 自動作廢
+  _screenGen++;  // 讓所有舊的語音 callback 自動作廢
+  _fcGen++;      // 閃卡專用
   if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
   if (_toneAudio)    { _toneAudio.pause();    _toneAudio    = null; }
   if (_whAudio)      { _whAudio.pause();      _whAudio      = null; }
