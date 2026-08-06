@@ -859,21 +859,6 @@ let toneTarget = null;
 let toneSet    = null;
 let toneLocked = false;
 
-// 專用：用 speechSynthesis 直接唔中文詞（不呼叫 cancel，避免 iOS 問題）
-function speakChineseWord(word) {
-  if (!('speechSynthesis' in window)) return;
-  const voices = speechSynthesis.getVoices();
-  const voice  = voices.find(v => v.lang === 'zh-TW')
-              || voices.find(v => v.lang === 'zh-CN')
-              || voices.find(v => v.lang.startsWith('zh'))
-              || null;
-  const utter  = new SpeechSynthesisUtterance(word);
-  utter.lang   = 'zh-TW';
-  if (voice) utter.voice = voice;
-  utter.rate   = 0.85;
-  speechSynthesis.speak(utter);
-}
-
 function startToneRound() {
   toneLocked = false;
   toneSet    = TONE_SETS[randomInt(TONE_SETS.length)];
@@ -882,7 +867,6 @@ function startToneRound() {
   document.getElementById('toneEmoji').textContent = toneTarget.emoji;
   document.getElementById('toneWord').textContent  = toneTarget.word;
 
-  // 先播放注音字母 WAV（一定有声音），再接著嘗試唔中文詞
   playToneQuestion();
 
   const grid = document.getElementById('toneChoices');
@@ -907,17 +891,21 @@ function playToneQuestion() {
   if (!toneTarget || !toneSet) return;
   if (_toneAudio) { _toneAudio.pause(); _toneAudio = null; }
 
-  const myGen = ++_toneGen;
-  const myWord = toneTarget.word;
+  const myGen  = ++_toneGen;
+  const myWord = toneTarget.word;  // 中文詞語如「大霧」
 
   if (!('speechSynthesis' in window)) return;
 
-  // 直接 speak，不呼叫 cancel()（Android Chrome 上 cancel+speak 會靜音）
-  const utter = new SpeechSynthesisUtterance(myWord);
-  utter.lang  = 'zh-TW';
-  if (_zhVoice) utter.voice = _zhVoice;
-  utter.rate  = 0.85;
-  speechSynthesis.speak(utter);
+  // 延遲 200ms 再 speak：讓 showScreen 裡的 cancel() 完全生效
+  // 避免 Android Chrome cancel+speak 連用被吃掉
+  setTimeout(() => {
+    if (_toneGen !== myGen) return;  // 已換題
+    const utter = new SpeechSynthesisUtterance(myWord);
+    utter.lang  = 'zh-TW';
+    if (_zhVoice) utter.voice = _zhVoice;
+    utter.rate  = 0.85;
+    speechSynthesis.speak(utter);
+  }, 200);
 }
 
 function replayToneSound() {
