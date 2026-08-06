@@ -948,14 +948,20 @@ function replayToneSound() {
 function handleToneChoice(tone, btn) {
   if (toneLocked) return;
   const correct = tone.mark === toneTarget.mark;
+  // 只顯示視覺回饋，不念出聲（避免蓋掉題目語音）
+  const banner = document.getElementById("feedbackBanner");
   if (correct) {
     toneLocked = true;
     btn.classList.add('correct');
-    showFeedback(true);
+    banner.textContent = "答對了！🎉";
+    banner.className = "feedback-banner show good";
+    setTimeout(() => banner.classList.remove("show"), 900);
     setTimeout(startToneRound, 1100);
   } else {
     btn.classList.add('wrong');
-    showFeedback(false);
+    banner.textContent = "再試一次 😊";
+    banner.className = "feedback-banner show bad";
+    setTimeout(() => banner.classList.remove("show"), 900);
     setTimeout(() => btn.classList.remove('wrong'), 1200);
   }
 }
