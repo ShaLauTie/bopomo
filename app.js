@@ -710,11 +710,21 @@ let _whAudio = null;
 
 function playWhWord(word) {
   if (_whAudio) { _whAudio.pause(); _whAudio = null; }
-  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q='
-    + encodeURIComponent(word) + '&tl=zh-TW&client=tw-ob';
-  const a = new Audio(url);
-  _whAudio = a;
-  a.play().catch(() => { _whAudio = null; });
+
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  setTimeout(() => {
+    const voices = speechSynthesis.getVoices();
+    const voice  = voices.find(v => v.lang === 'zh-TW')
+                || voices.find(v => v.lang === 'zh-CN')
+                || voices.find(v => v.lang.startsWith('zh'))
+                || null;
+    const utter  = new SpeechSynthesisUtterance(word);
+    utter.lang   = 'zh-TW';
+    if (voice) utter.voice = voice;
+    utter.rate   = 0.85;
+    speechSynthesis.speak(utter);
+  }, 80);
 }
 
 function startWordHeadRound() {
