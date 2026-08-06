@@ -1,5 +1,20 @@
 // ========== 語音 ==========
 
+// 全域預載中文語音（Android Chrome 的 getVoices() 首次呼叫回空陣列）
+let _zhVoice = null;
+function _loadZhVoice() {
+  if (!('speechSynthesis' in window)) return;
+  const voices = speechSynthesis.getVoices();
+  _zhVoice = voices.find(v => v.lang === 'zh-TW')
+          || voices.find(v => v.lang === 'zh-CN')
+          || voices.find(v => v.lang.startsWith('zh'))
+          || null;
+}
+_loadZhVoice();
+if ('speechSynthesis' in window) {
+  speechSynthesis.addEventListener('voiceschanged', _loadZhVoice);
+}
+
 // 注音符號 → 代表字對照表（純代表字，供 TTS 發音用）
 const BPMF_TO_CHAR = {
   "ㄅ": "八",  "ㄆ": "怕",  "ㄇ": "媽",  "ㄈ": "發",
@@ -705,26 +720,17 @@ function getWordForSymbol(item) {
   return all[randomInt(all.length)];
 }
 
-// 看圖找字頭專用獨立 Audio（不受 _currentAudio 干擾）
+// 看圖找字頭：用預載語音念中文詞
 let _whAudio = null;
 
 function playWhWord(word) {
   if (_whAudio) { _whAudio.pause(); _whAudio = null; }
-
   if (!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  setTimeout(() => {
-    const voices = speechSynthesis.getVoices();
-    const voice  = voices.find(v => v.lang === 'zh-TW')
-                || voices.find(v => v.lang === 'zh-CN')
-                || voices.find(v => v.lang.startsWith('zh'))
-                || null;
-    const utter  = new SpeechSynthesisUtterance(word);
-    utter.lang   = 'zh-TW';
-    if (voice) utter.voice = voice;
-    utter.rate   = 0.85;
-    speechSynthesis.speak(utter);
-  }, 80);
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang  = 'zh-TW';
+  if (_zhVoice) utter.voice = _zhVoice;
+  utter.rate  = 0.85;
+  speechSynthesis.speak(utter);
 }
 
 function startWordHeadRound() {
@@ -893,65 +899,25 @@ function startToneRound() {
   });
 }
 
-// 聲調遊戲專用的獨立 Audio（不受 _currentAudio 干擾）
+// 聲調遊戲專用
 let _toneAudio = null;
-let _toneGen   = 0;  // 每次新題 +1，舊 callback 自動作廢
+let _toneGen   = 0;
 
-/**
- * 用 speechSynthesis 唸出完整中文詞（Android 內建 Google TTS 引擎），
- * 失敗則退回注音字母 WAV。
- */
 function playToneQuestion() {
   if (!toneTarget || !toneSet) return;
   if (_toneAudio) { _toneAudio.pause(); _toneAudio = null; }
 
-  const myGen     = ++_toneGen;
-  const myToneSet = toneSet;
-  const myWord    = toneTarget.word;
+  const myGen = ++_toneGen;
+  const myWord = toneTarget.word;
 
-  // WAV 備用
-  function playWavFallback() {
-    if (_toneGen !== myGen) return;  // 已換題，不播
-    const wavFiles = [...myToneSet.spelling]
-      .map(ch => BPMF_TO_WAV[ch])
-      .filter(Boolean)
-      .map(f  => MOE_BASE + f);
-    let i = 0;
-    function nextWav() {
-      if (i >= wavFiles.length) return;
-      const wv = new Audio(wavFiles[i++]);
-      _toneAudio = wv;
-      wv.onended = () => setTimeout(nextWav, 120);
-      wv.play().catch(() => setTimeout(nextWav, 300));
-    }
-    nextWav();
-  }
+  if (!('speechSynthesis' in window)) return;
 
-  if (!('speechSynthesis' in window)) { playWavFallback(); return; }
-
-  // 先取得語音列表，找中文聲音
-  const voices = speechSynthesis.getVoices();
-  const voice  = voices.find(v => v.lang === 'zh-TW')
-              || voices.find(v => v.lang === 'zh-CN')
-              || voices.find(v => v.lang.startsWith('zh'))
-              || null;
-
-  speechSynthesis.cancel();
-  setTimeout(() => {
-    if (_toneGen !== myGen) return;  // 已換題
-    const utter = new SpeechSynthesisUtterance(myWord);
-    utter.lang  = 'zh-TW';
-    if (voice) utter.voice = voice;
-    utter.rate  = 0.85;
-    utter.onerror = () => playWavFallback();
-    speechSynthesis.speak(utter);
-
-    // 3 秒安全網
-    setTimeout(() => {
-      if (_toneGen !== myGen) return;  // 已換題，不觸發
-      if (!speechSynthesis.speaking) playWavFallback();
-    }, 3000);
-  }, 80);
+  // 直接 speak，不呼叫 cancel()（Android Chrome 上 cancel+speak 會靜音）
+  const utter = new SpeechSynthesisUtterance(myWord);
+  utter.lang  = 'zh-TW';
+  if (_zhVoice) utter.voice = _zhVoice;
+  utter.rate  = 0.85;
+  speechSynthesis.speak(utter);
 }
 
 function replayToneSound() {
