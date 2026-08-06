@@ -893,22 +893,25 @@ function startToneRound() {
   });
 }
 
-// 聲調遙戲專用的獨立 Audio（不受 _currentAudio 干擾）
+// 聲調遊戲專用的獨立 Audio（不受 _currentAudio 干擾）
 let _toneAudio = null;
+let _toneGen   = 0;  // 每次新題 +1，舊 callback 自動作廢
 
 /**
- * 用 speechSynthesis 唔出完整中文詞（Android 內建 Google TTS 引擎），
+ * 用 speechSynthesis 唸出完整中文詞（Android 內建 Google TTS 引擎），
  * 失敗則退回注音字母 WAV。
  */
 function playToneQuestion() {
   if (!toneTarget || !toneSet) return;
   if (_toneAudio) { _toneAudio.pause(); _toneAudio = null; }
 
+  const myGen     = ++_toneGen;
   const myToneSet = toneSet;
   const myWord    = toneTarget.word;
 
   // WAV 備用
   function playWavFallback() {
+    if (_toneGen !== myGen) return;  // 已換題，不播
     const wavFiles = [...myToneSet.spelling]
       .map(ch => BPMF_TO_WAV[ch])
       .filter(Boolean)
@@ -926,26 +929,26 @@ function playToneQuestion() {
 
   if (!('speechSynthesis' in window)) { playWavFallback(); return; }
 
-  // 先取得语音列表，找中文聲音
+  // 先取得語音列表，找中文聲音
   const voices = speechSynthesis.getVoices();
   const voice  = voices.find(v => v.lang === 'zh-TW')
               || voices.find(v => v.lang === 'zh-CN')
               || voices.find(v => v.lang.startsWith('zh'))
               || null;
 
-  // 在 cancel 後稍候再 speak（避免 iOS 上 cancel+speak 連用的沉默 bug）
   speechSynthesis.cancel();
   setTimeout(() => {
+    if (_toneGen !== myGen) return;  // 已換題
     const utter = new SpeechSynthesisUtterance(myWord);
     utter.lang  = 'zh-TW';
     if (voice) utter.voice = voice;
     utter.rate  = 0.85;
-    // 如果語音合成無峙問，備用 WAV
     utter.onerror = () => playWavFallback();
     speechSynthesis.speak(utter);
 
-    // 3 秒安全網：如果沒有開始播放，啟動 WAV
+    // 3 秒安全網
     setTimeout(() => {
+      if (_toneGen !== myGen) return;  // 已換題，不觸發
       if (!speechSynthesis.speaking) playWavFallback();
     }, 3000);
   }, 80);
