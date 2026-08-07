@@ -964,27 +964,59 @@ let balloonCreateTimeout = null;
 let _balloonAudio = null;  // 重複使用的 Audio 元素（避免 Android 上限）
 const BALLOON_COLORS = ['#ff6b9d','#ffa552','#ffd166','#06d6a0','#4cc9f0','#7b5ea7'];
 
-// 射氣球專用播音：重複使用同一個 Audio，WAV 失敗 fallback speechSynthesis
+// 射氣球專用播音：每次新建 Audio（確保 MISS 後的 setTimeout 也能播）
 function playBalloonSymbol(symbol) {
   const bare = symbol.replace(TONE_MARKS, '');
   const wav  = BPMF_TO_WAV[bare];
   if (!wav) return;
 
-  if (!_balloonAudio) _balloonAudio = new Audio();
-  _balloonAudio.pause();
-  _balloonAudio.currentTime = 0;
-  _balloonAudio.src = MOE_BASE + wav;
-  _balloonAudio.play().catch(() => {
-    // WAV 失敗 → speechSynthesis 備用
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(BPMF_TO_CHAR[bare] || bare);
-      utter.lang = 'zh-TW';
-      if (_zhVoice) utter.voice = _zhVoice;
-      utter.rate = 0.85;
-      speechSynthesis.speak(utter);
+  // 釋放舊的 Audio 資源
+  if (_balloonAudio) {
+    _balloonAudio.pause();
+    _balloonAudio.onended = null;
+    _balloonAudio.onerror = null;
+    try { _balloonAudio.src = ''; _balloonAudio.load(); } catch(e) {}
+    _balloonAudio = null;
+  }
+
+  // 每次建新的 Audio，避免 Android 同 src 重播靜音問題
+  const audio = new Audio();
+  _balloonAudio = audio;
+  audio.src = MOE_BASE + wav;
+  audio.load();
+
+  // 嘗試播放
+  const playPromise = audio.play();
+
+  // 安全網：500ms 內如果 play 失敗或沒聲音，用 speechSynthesis 補
+  let played = false;
+  audio.onplaying = () => { played = true; };
+
+  if (playPromise && playPromise.catch) {
+    playPromise.catch(() => {
+      if (played) return;
+      played = true;
+      _speakFallbackBalloon(bare);
+    });
+  }
+
+  setTimeout(() => {
+    if (!played && _balloonAudio === audio) {
+      played = true;
+      _speakFallbackBalloon(bare);
     }
-  });
+  }, 500);
+}
+
+function _speakFallbackBalloon(bare) {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(BPMF_TO_CHAR[bare] || bare);
+    utter.lang = 'zh-TW';
+    if (_zhVoice) utter.voice = _zhVoice;
+    utter.rate = 0.85;
+    speechSynthesis.speak(utter);
+  }
 }
 
 function startBalloonGame() {
