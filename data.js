@@ -103,6 +103,90 @@ const TONE_SETS = [
     { mark: "ˇ", word: "喜歡", emoji: "😊" },
     { mark: "ˋ", word: "馬戲", emoji: "🎭" },
   ]},
+  { spelling: "ㄅㄚ", tones: [
+    { mark: "",  word: "八個", emoji: "8️⃣" },
+    { mark: "ˊ", word: "拔河", emoji: "🪢" },
+    { mark: "ˇ", word: "靶心", emoji: "🎯" },
+    { mark: "ˋ", word: "爸爸", emoji: "👨" },
+  ]},
+  { spelling: "ㄉㄚ", tones: [
+    { mark: "",  word: "搭車", emoji: "🚌" },
+    { mark: "ˊ", word: "回答", emoji: "💬" },
+    { mark: "ˇ", word: "打球", emoji: "⚾" },
+    { mark: "ˋ", word: "大人", emoji: "🧑" },
+  ]},
+  { spelling: "ㄏㄨㄚ", tones: [
+    { mark: "",  word: "花朵", emoji: "🌸" },
+    { mark: "ˊ", word: "滑梯", emoji: "🛝" },
+    { mark: "ˋ", word: "畫畫", emoji: "🎨" },
+    { mark: "ˇ", word: "說話", emoji: "🗣️" },
+  ]},
+  { spelling: "ㄩ", tones: [
+    { mark: "",  word: "迂迴", emoji: "🔄" },
+    { mark: "ˊ", word: "魚兒", emoji: "🐟" },
+    { mark: "ˇ", word: "下雨", emoji: "🌧️" },
+    { mark: "ˋ", word: "玉米", emoji: "🌽" },
+  ]},
+  { spelling: "ㄍㄨㄛ", tones: [
+    { mark: "",  word: "水果", emoji: "🍎" },
+    { mark: "ˊ", word: "國家", emoji: "🏳️" },
+    { mark: "ˇ", word: "果汁", emoji: "🧃" },
+    { mark: "ˋ", word: "經過", emoji: "🚶" },
+  ]},
+  { spelling: "ㄕㄨ", tones: [
+    { mark: "",  word: "書本", emoji: "📖" },
+    { mark: "ˊ", word: "叔叔", emoji: "👨‍🦱" },
+    { mark: "ˇ", word: "鼠", emoji: "🐭" },
+    { mark: "ˋ", word: "大樹", emoji: "🌳" },
+  ]},
+  { spelling: "ㄇㄠ", tones: [
+    { mark: "",  word: "貓咪", emoji: "🐱" },
+    { mark: "ˊ", word: "毛巾", emoji: "🧻" },
+    { mark: "ˇ", word: "帽子", emoji: "🎩" },
+    { mark: "ˋ", word: "冒險", emoji: "⛰️" },
+  ]},
+  { spelling: "ㄐㄧ", tones: [
+    { mark: "",  word: "小雞", emoji: "🐔" },
+    { mark: "ˊ", word: "及格", emoji: "✅" },
+    { mark: "ˇ", word: "幾個", emoji: "❓" },
+    { mark: "ˋ", word: "記住", emoji: "🧠" },
+  ]},
+  { spelling: "ㄌㄧ", tones: [
+    { mark: "",  word: "梨子", emoji: "🍐" },
+    { mark: "ˊ", word: "離開", emoji: "👋" },
+    { mark: "ˇ", word: "禮物", emoji: "🎁" },
+    { mark: "ˋ", word: "力氣", emoji: "💪" },
+  ]},
+  { spelling: "ㄓㄨ", tones: [
+    { mark: "",  word: "蜘蛛", emoji: "🕷️" },
+    { mark: "ˊ", word: "竹子", emoji: "🎋" },
+    { mark: "ˇ", word: "主人", emoji: "👑" },
+    { mark: "ˋ", word: "住家", emoji: "🏡" },
+  ]},
+  { spelling: "ㄎㄜ", tones: [
+    { mark: "",  word: "科學", emoji: "🔬" },
+    { mark: "ˊ", word: "殼", emoji: "🥚" },
+    { mark: "ˇ", word: "口渴", emoji: "🥤" },
+    { mark: "ˋ", word: "上課", emoji: "🏫" },
+  ]},
+  { spelling: "ㄔㄜ", tones: [
+    { mark: "",  word: "車子", emoji: "🚗" },
+    { mark: "ˊ", word: "扯斷", emoji: "💥" },
+    { mark: "ˇ", word: "扯", emoji: "🤥" },
+    { mark: "ˋ", word: "徹底", emoji: "✨" },
+  ]},
+  { spelling: "ㄋㄧㄡ", tones: [
+    { mark: "",  word: "牛奶", emoji: "🥛" },
+    { mark: "ˊ", word: "牛肉", emoji: "🐂" },
+    { mark: "ˇ", word: "扭動", emoji: "💃" },
+    { mark: "ˋ", word: "按鈕", emoji: "🔘" },
+  ]},
+  { spelling: "ㄈㄟ", tones: [
+    { mark: "",  word: "飛機", emoji: "✈️" },
+    { mark: "ˊ", word: "肥胖", emoji: "🐷" },
+    { mark: "ˇ", word: "匪徒", emoji: "🦹" },
+    { mark: "ˋ", word: "廢紙", emoji: "🗑️" },
+  ]},
 ];
 
 // 字首範例詞語的額外候選（增加「看圖找字頭」「記憶配對」的圖案多樣性）
