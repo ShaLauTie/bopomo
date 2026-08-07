@@ -206,9 +206,10 @@ function showScreen(name) {
   // 切換畫面時，停止所有進行中的音訊（防止跨畫面干擾）
   _screenGen++;  // 讓所有舊的語音 callback 自動作廢
   _fcGen++;      // 閃卡專用
-  if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
-  if (_toneAudio)    { _toneAudio.pause();    _toneAudio    = null; }
-  if (_whAudio)      { _whAudio.pause();      _whAudio      = null; }
+  if (_currentAudio)  { _currentAudio.pause();  _currentAudio  = null; }
+  if (_toneAudio)     { _toneAudio.pause();     _toneAudio     = null; }
+  if (_whAudio)       { _whAudio.pause();       _whAudio       = null; }
+  if (_balloonAudio)  { _balloonAudio.pause(); }
   if ('speechSynthesis' in window) speechSynthesis.cancel();
   setFcLocked(false); // 解鎖閃卡箭頭
 
@@ -960,7 +961,31 @@ let balloonTimerInt = null;
 let balloonRunning = false;
 let balloonTarget = null;
 let balloonCreateTimeout = null;
+let _balloonAudio = null;  // 重複使用的 Audio 元素（避免 Android 上限）
 const BALLOON_COLORS = ['#ff6b9d','#ffa552','#ffd166','#06d6a0','#4cc9f0','#7b5ea7'];
+
+// 射氣球專用播音：重複使用同一個 Audio，WAV 失敗 fallback speechSynthesis
+function playBalloonSymbol(symbol) {
+  const bare = symbol.replace(TONE_MARKS, '');
+  const wav  = BPMF_TO_WAV[bare];
+  if (!wav) return;
+
+  if (!_balloonAudio) _balloonAudio = new Audio();
+  _balloonAudio.pause();
+  _balloonAudio.currentTime = 0;
+  _balloonAudio.src = MOE_BASE + wav;
+  _balloonAudio.play().catch(() => {
+    // WAV 失敗 → speechSynthesis 備用
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(BPMF_TO_CHAR[bare] || bare);
+      utter.lang = 'zh-TW';
+      if (_zhVoice) utter.voice = _zhVoice;
+      utter.rate = 0.85;
+      speechSynthesis.speak(utter);
+    }
+  });
+}
 
 function startBalloonGame() {
   balloonScore = 0;
@@ -985,11 +1010,11 @@ function startBalloonGame() {
 
 function pickBalloonTarget() {
   balloonTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
-  speak(balloonTarget.symbol);
+  playBalloonSymbol(balloonTarget.symbol);
 }
 
 function replayBalloonSound() {
-  if (balloonTarget) speak(balloonTarget.symbol);
+  if (balloonTarget) playBalloonSymbol(balloonTarget.symbol);
 }
 
 function launchBalloons() {
@@ -1164,4 +1189,5 @@ function stopBalloonGame() {
   balloonRunning = false;
   clearInterval(balloonTimerInt);
   clearTimeout(balloonCreateTimeout);
+  if (_balloonAudio) { _balloonAudio.pause(); }
 }
