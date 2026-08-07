@@ -67,23 +67,24 @@ const PINYIN_COMBOS = [
 
 // 聲調辨識用：同一拼寫、四種聲調的詞語組合
 const TONE_SETS = [
+  // ── 每組的 word 第一個字必須對應 spelling + mark 的聲調 ──
   { spelling: "ㄇㄚ", tones: [
     { mark: "",  word: "媽媽", emoji: "👩" },
     { mark: "ˊ", word: "麻煩", emoji: "😣" },
-    { mark: "ˇ", word: "馬",   emoji: "🐴" },
+    { mark: "ˇ", word: "馬路", emoji: "🐴" },
     { mark: "ˋ", word: "罵人", emoji: "😠" },
   ]},
   { spelling: "ㄧ", tones: [
     { mark: "",  word: "衣服", emoji: "👕" },
-    { mark: "ˊ", word: "阿姨", emoji: "👩‍🦰" },
+    { mark: "ˊ", word: "移動", emoji: "🚚" },
     { mark: "ˇ", word: "椅子", emoji: "🪑" },
-    { mark: "ˋ", word: "容易", emoji: "👍" },
+    { mark: "ˋ", word: "意思", emoji: "💭" },
   ]},
   { spelling: "ㄨ", tones: [
-    { mark: "",  word: "房屋", emoji: "🏠" },
-    { mark: "ˊ", word: "無敵", emoji: "🚫" },
+    { mark: "",  word: "烏龜", emoji: "🐢" },
+    { mark: "ˊ", word: "無聊", emoji: "😴" },
     { mark: "ˇ", word: "五個", emoji: "5️⃣" },
-    { mark: "ˋ", word: "大霧", emoji: "🌫️" },
+    { mark: "ˋ", word: "物品", emoji: "📦" },
   ]},
   { spelling: "ㄊㄤ", tones: [
     { mark: "",  word: "湯麵", emoji: "🍲" },
@@ -94,14 +95,14 @@ const TONE_SETS = [
   { spelling: "ㄈㄢ", tones: [
     { mark: "",  word: "翻書", emoji: "📚" },
     { mark: "ˊ", word: "煩惱", emoji: "😩" },
-    { mark: "ˇ", word: "反過來", emoji: "↩️" },
-    { mark: "ˋ", word: "吃飯", emoji: "🍚" },
+    { mark: "ˇ", word: "反對", emoji: "↩️" },
+    { mark: "ˋ", word: "飯糰", emoji: "🍙" },
   ]},
   { spelling: "ㄒㄧ", tones: [
     { mark: "",  word: "西瓜", emoji: "🍉" },
-    { mark: "ˊ", word: "學習", emoji: "📖" },
+    { mark: "ˊ", word: "習字", emoji: "📝" },
     { mark: "ˇ", word: "喜歡", emoji: "😊" },
-    { mark: "ˋ", word: "馬戲", emoji: "🎭" },
+    { mark: "ˋ", word: "細心", emoji: "🔍" },
   ]},
   { spelling: "ㄅㄚ", tones: [
     { mark: "",  word: "八個", emoji: "8️⃣" },
@@ -111,54 +112,30 @@ const TONE_SETS = [
   ]},
   { spelling: "ㄉㄚ", tones: [
     { mark: "",  word: "搭車", emoji: "🚌" },
-    { mark: "ˊ", word: "回答", emoji: "💬" },
+    { mark: "ˊ", word: "答案", emoji: "📋" },
     { mark: "ˇ", word: "打球", emoji: "⚾" },
     { mark: "ˋ", word: "大人", emoji: "🧑" },
-  ]},
-  { spelling: "ㄏㄨㄚ", tones: [
-    { mark: "",  word: "花朵", emoji: "🌸" },
-    { mark: "ˊ", word: "滑梯", emoji: "🛝" },
-    { mark: "ˋ", word: "畫畫", emoji: "🎨" },
-    { mark: "ˇ", word: "說話", emoji: "🗣️" },
   ]},
   { spelling: "ㄩ", tones: [
     { mark: "",  word: "迂迴", emoji: "🔄" },
     { mark: "ˊ", word: "魚兒", emoji: "🐟" },
-    { mark: "ˇ", word: "下雨", emoji: "🌧️" },
+    { mark: "ˇ", word: "雨傘", emoji: "☂️" },
     { mark: "ˋ", word: "玉米", emoji: "🌽" },
   ]},
   { spelling: "ㄍㄨㄛ", tones: [
-    { mark: "",  word: "水果", emoji: "🍎" },
+    { mark: "",  word: "鍋子", emoji: "🫕" },
     { mark: "ˊ", word: "國家", emoji: "🏳️" },
     { mark: "ˇ", word: "果汁", emoji: "🧃" },
-    { mark: "ˋ", word: "經過", emoji: "🚶" },
-  ]},
-  { spelling: "ㄕㄨ", tones: [
-    { mark: "",  word: "書本", emoji: "📖" },
-    { mark: "ˊ", word: "叔叔", emoji: "👨‍🦱" },
-    { mark: "ˇ", word: "鼠", emoji: "🐭" },
-    { mark: "ˋ", word: "大樹", emoji: "🌳" },
-  ]},
-  { spelling: "ㄇㄠ", tones: [
-    { mark: "",  word: "貓咪", emoji: "🐱" },
-    { mark: "ˊ", word: "毛巾", emoji: "🧻" },
-    { mark: "ˇ", word: "帽子", emoji: "🎩" },
-    { mark: "ˋ", word: "冒險", emoji: "⛰️" },
+    { mark: "ˋ", word: "過年", emoji: "🎆" },
   ]},
   { spelling: "ㄐㄧ", tones: [
-    { mark: "",  word: "小雞", emoji: "🐔" },
+    { mark: "",  word: "雞蛋", emoji: "🐔" },
     { mark: "ˊ", word: "及格", emoji: "✅" },
     { mark: "ˇ", word: "幾個", emoji: "❓" },
     { mark: "ˋ", word: "記住", emoji: "🧠" },
   ]},
-  { spelling: "ㄌㄧ", tones: [
-    { mark: "",  word: "梨子", emoji: "🍐" },
-    { mark: "ˊ", word: "離開", emoji: "👋" },
-    { mark: "ˇ", word: "禮物", emoji: "🎁" },
-    { mark: "ˋ", word: "力氣", emoji: "💪" },
-  ]},
   { spelling: "ㄓㄨ", tones: [
-    { mark: "",  word: "蜘蛛", emoji: "🕷️" },
+    { mark: "",  word: "豬肉", emoji: "🐷" },
     { mark: "ˊ", word: "竹子", emoji: "🎋" },
     { mark: "ˇ", word: "主人", emoji: "👑" },
     { mark: "ˋ", word: "住家", emoji: "🏡" },
