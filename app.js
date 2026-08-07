@@ -1034,39 +1034,115 @@ function launchBalloons() {
 }
 
 function handleBalloonClick(sym, balloonEl) {
-  if (!balloonRunning || balloonEl.classList.contains('balloon-pop')) return;
-  
-  if (sym === balloonTarget.symbol) {
-    balloonScore++;
-    document.getElementById('balloonScore').textContent = balloonScore;
-    balloonEl.classList.add('balloon-pop');
-    
-    const myScreen = _screenGen;
-    setTimeout(() => {
-      if (myScreen !== _screenGen) return;
-      pickBalloonTarget();
-      launchBalloons();
-    }, 400);
-  } else {
-    // Penalty
-    const container = document.getElementById('balloonContainer');
-    const penalty = document.createElement('div');
-    penalty.className = 'balloon-penalty';
-    penalty.textContent = '❌';
-    container.appendChild(penalty);
-    
-    // Freeze animations
-    const balloons = document.querySelectorAll('.balloon');
-    balloons.forEach(b => {
-      b.style.animationPlayState = 'paused';
-      b.onclick = null;
-    });
-    
-    setTimeout(() => {
-      if (!balloonRunning) return;
-      penalty.remove();
-      launchBalloons();
-    }, 3000);
+  if (!balloonRunning || balloonEl.dataset.hit) return;
+  balloonEl.dataset.hit = '1';  // 防止重複點擊
+
+  const container = document.getElementById('balloonContainer');
+  const bRect = balloonEl.getBoundingClientRect();
+  const cRect = container.getBoundingClientRect();
+
+  // 氣球中心（相對於 container）
+  const bx = bRect.left - cRect.left + bRect.width / 2;
+  const by = bRect.top - cRect.top + bRect.height / 2;
+
+  // ── 飛鏢從底部中央飛向氣球 ──
+  const dart = document.createElement('div');
+  dart.className = 'dart';
+  dart.textContent = '🎯';
+  // 起點：底部中央
+  const startX = cRect.width / 2;
+  const startY = cRect.height;
+  dart.style.left = startX + 'px';
+  dart.style.top = startY + 'px';
+  // 用 transition 飛到氣球位置
+  dart.style.transition = 'left 0.3s ease-in, top 0.3s ease-in';
+  container.appendChild(dart);
+
+  requestAnimationFrame(() => {
+    dart.style.left = bx + 'px';
+    dart.style.top = by + 'px';
+  });
+
+  // 飛鏢到達後的效果
+  setTimeout(() => {
+    dart.remove();
+
+    if (sym === balloonTarget.symbol) {
+      // ── 射中！氣球爆 + 彩帶 ──
+      balloonScore++;
+      document.getElementById('balloonScore').textContent = balloonScore;
+
+      // 分數彈跳
+      const scoreEl = document.getElementById('balloonScore');
+      scoreEl.classList.remove('score-bounce');
+      void scoreEl.offsetWidth;
+      scoreEl.classList.add('score-bounce');
+
+      balloonEl.classList.add('balloon-pop');
+
+      // 彩帶粒子從氣球位置噴射
+      spawnConfetti(container, bx, by);
+
+      const myScreen = _screenGen;
+      setTimeout(() => {
+        if (myScreen !== _screenGen) return;
+        pickBalloonTarget();
+        launchBalloons();
+      }, 600);
+
+    } else {
+      // ── 射不中！MISS ──
+      balloonEl.dataset.hit = '';  // 允許再點
+
+      // MISS 文字
+      const miss = document.createElement('div');
+      miss.className = 'miss-text';
+      miss.textContent = 'MISS!';
+      miss.style.left = (bx - 45) + 'px';
+      miss.style.top = (by - 20) + 'px';
+      container.appendChild(miss);
+      setTimeout(() => miss.remove(), 1000);
+
+      // 懲罰遮罩
+      const penalty = document.createElement('div');
+      penalty.className = 'balloon-penalty';
+      penalty.textContent = '😵';
+      container.appendChild(penalty);
+
+      // 凍結氣球
+      document.querySelectorAll('.balloon').forEach(b => {
+        b.style.animationPlayState = 'paused';
+        b.onclick = null;
+      });
+
+      setTimeout(() => {
+        if (!balloonRunning) return;
+        penalty.remove();
+        launchBalloons();
+      }, 3000);
+    }
+  }, 320);  // 飛鏢飛行時間
+}
+
+// 彩帶粒子噴射
+function spawnConfetti(container, cx, cy) {
+  const colors = ['#ff6b9d','#ffd166','#06d6a0','#4cc9f0','#7b5ea7','#ff5252','#ffab40'];
+  for (let i = 0; i < 18; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = cx + 'px';
+    c.style.top = cy + 'px';
+    c.style.background = colors[i % colors.length];
+    c.style.width = (6 + Math.random() * 8) + 'px';
+    c.style.height = (6 + Math.random() * 8) + 'px';
+    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    // 隨機方向
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 40 + Math.random() * 80;
+    c.style.setProperty('--cx', Math.cos(angle) * dist + 'px');
+    c.style.setProperty('--cy', Math.sin(angle) * dist - 30 + 'px');
+    container.appendChild(c);
+    setTimeout(() => c.remove(), 950);
   }
 }
 
