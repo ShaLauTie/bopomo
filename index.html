@@ -48,6 +48,10 @@
       <span class="icon">🎵</span>
       <span>聲調辨識</span>
     </button>
+    <button class="menu-card card-9" onclick="showScreen('balloon')">
+      <span class="icon">🎯</span>
+      <span>射氣球</span>
+    </button>
   </div>
 </div>
 
@@ -158,6 +162,31 @@
     </div>
   </div>
   <div class="choices-grid" id="toneChoices"></div>
+</div>
+
+<!-- 射氣球 -->
+<div class="screen" id="screen-balloon">
+  <h2>射氣球 🎯</h2>
+  <div class="mole-header">
+    <div class="mole-target-box">
+      <button class="mole-mini-speaker" onclick="replayBalloonSound()">🔊</button>
+      <span style="font-size:1rem;color:#5b4636;font-weight:bold">聽音射氣球！</span>
+    </div>
+    <div class="mole-stats">
+      <span>⭐ <span id="balloonScore">0</span></span>
+      <span>⏱ <span id="balloonTimer">45</span>s</span>
+    </div>
+  </div>
+  <div class="balloon-container" id="balloonContainer"></div>
+  
+  <div class="mole-gameover" id="balloonGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">🎉</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">時間到！</div>
+      <div class="big-score">⭐ <span id="balloonFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startBalloonGame()">再玩一次！</button>
+    </div>
+  </div>
 </div>
 
 <script src="data.js"></script>
