@@ -223,10 +223,12 @@ function showScreen(name) {
   if (name === "wordhead") startWordHeadRound();
   if (name === "memory") startMemoryGame();
   if (name === "tone") startToneRound();
+  if (name === "balloon") startBalloonGame();
 }
 
 function goHome() {
   stopMoleGame();
+  stopBalloonGame();
   showScreen("home");
 }
 
@@ -948,4 +950,142 @@ function handleToneChoice(tone, btn) {
     setTimeout(() => banner.classList.remove("show"), 900);
     setTimeout(() => btn.classList.remove('wrong'), 1200);
   }
+}
+
+// ========== 射氣球 ==========
+
+let balloonScore = 0;
+let balloonTimeLeft = 45;
+let balloonTimerInt = null;
+let balloonRunning = false;
+let balloonTarget = null;
+let balloonCreateTimeout = null;
+const BALLOON_COLORS = ['#ff6b9d','#ffa552','#ffd166','#06d6a0','#4cc9f0','#7b5ea7'];
+
+function startBalloonGame() {
+  balloonScore = 0;
+  balloonTimeLeft = 45;
+  balloonRunning = true;
+  
+  document.getElementById('balloonScore').textContent = '0';
+  document.getElementById('balloonTimer').textContent = '45';
+  document.getElementById('balloonGameover').style.display = 'none';
+  document.getElementById('balloonContainer').innerHTML = '';
+  
+  clearInterval(balloonTimerInt);
+  balloonTimerInt = setInterval(() => {
+    balloonTimeLeft--;
+    document.getElementById('balloonTimer').textContent = balloonTimeLeft;
+    if (balloonTimeLeft <= 0) endBalloonGame();
+  }, 1000);
+  
+  pickBalloonTarget();
+  launchBalloons();
+}
+
+function pickBalloonTarget() {
+  balloonTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+  speak(balloonTarget.symbol);
+}
+
+function replayBalloonSound() {
+  if (balloonTarget) speak(balloonTarget.symbol);
+}
+
+function launchBalloons() {
+  if (!balloonRunning) return;
+  const container = document.getElementById('balloonContainer');
+  container.innerHTML = '';
+  
+  const others = shuffle(
+    BOPOMOFO_SYMBOLS.filter(s => s.symbol !== balloonTarget.symbol)
+  ).slice(0, 2).map(s => s.symbol);
+  
+  const symbols = shuffle([balloonTarget.symbol, ...others]);
+  
+  symbols.forEach((sym, i) => {
+    const balloon = document.createElement('div');
+    balloon.className = 'balloon';
+    balloon.style.background = BALLOON_COLORS[randomInt(BALLOON_COLORS.length)];
+    balloon.style.left = (15 + i * 30) + '%';
+    balloon.textContent = sym;
+    
+    const string = document.createElement('div');
+    string.className = 'balloon-string';
+    balloon.appendChild(string);
+    
+    balloon.onclick = () => handleBalloonClick(sym, balloon);
+    
+    // Auto remove and relaunch
+    balloon.addEventListener('animationend', (e) => {
+      if (e.animationName === 'floatUp' && balloonRunning) {
+        if (container.contains(balloon)) {
+          // If the correct one flew away, just relaunch
+          if (sym === balloonTarget.symbol && !document.querySelector('.balloon-penalty')) {
+             clearTimeout(balloonCreateTimeout);
+             balloonCreateTimeout = setTimeout(launchBalloons, 500);
+          }
+        }
+      }
+    });
+    
+    container.appendChild(balloon);
+  });
+}
+
+function handleBalloonClick(sym, balloonEl) {
+  if (!balloonRunning || balloonEl.classList.contains('balloon-pop')) return;
+  
+  if (sym === balloonTarget.symbol) {
+    balloonScore++;
+    document.getElementById('balloonScore').textContent = balloonScore;
+    balloonEl.classList.add('balloon-pop');
+    
+    const myScreen = _screenGen;
+    setTimeout(() => {
+      if (myScreen !== _screenGen) return;
+      pickBalloonTarget();
+      launchBalloons();
+    }, 400);
+  } else {
+    // Penalty
+    const container = document.getElementById('balloonContainer');
+    const penalty = document.createElement('div');
+    penalty.className = 'balloon-penalty';
+    penalty.textContent = '❌';
+    container.appendChild(penalty);
+    
+    // Freeze animations
+    const balloons = document.querySelectorAll('.balloon');
+    balloons.forEach(b => {
+      b.style.animationPlayState = 'paused';
+      b.onclick = null;
+    });
+    
+    setTimeout(() => {
+      if (!balloonRunning) return;
+      penalty.remove();
+      launchBalloons();
+    }, 3000);
+  }
+}
+
+function endBalloonGame() {
+  balloonRunning = false;
+  clearInterval(balloonTimerInt);
+  clearTimeout(balloonCreateTimeout);
+  document.getElementById('balloonContainer').innerHTML = '';
+  
+  document.getElementById('balloonFinalScore').textContent = balloonScore;
+  document.getElementById('balloonGameover').style.display = 'flex';
+  
+  const msg = balloonScore >= 15 ? '哇！你超厲害！' :
+              balloonScore >= 8  ? '很棒！繼續加油！' : '再試一次！';
+  speak(msg);
+}
+
+function stopBalloonGame() {
+  balloonRunning = false;
+  clearInterval(balloonTimerInt);
+  clearTimeout(balloonCreateTimeout);
 }
