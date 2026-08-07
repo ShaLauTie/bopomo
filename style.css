@@ -88,7 +88,7 @@ h1, h2 {
 
 .menu-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   width: 100%;
   max-width: 520px;
@@ -128,6 +128,100 @@ h1, h2 {
 .card-6 { background: #a78bfa; }
 .card-7 { background: #34d399; }
 .card-8 { background: #fb7185; }
+.card-9 { background: #22d3ee; }
+
+/* ---------- 射氣球 ---------- */
+
+#screen-balloon {
+  justify-content: flex-start;
+  padding-top: 96px;
+  gap: 0;
+}
+
+#screen-balloon h2 { margin-bottom: 12px; }
+
+.balloon-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  flex: 1;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.balloon {
+  position: absolute;
+  bottom: -100px;
+  width: 70px;
+  height: 84px;
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 2px 4px rgba(0,0,0,0.3);
+  cursor: pointer;
+  box-shadow: inset -5px -5px 10px rgba(0,0,0,0.1);
+  animation: floatUp 4.5s linear forwards, sway 2s ease-in-out infinite alternate;
+  z-index: 5;
+}
+
+.balloon::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid rgba(0,0,0,0.2);
+}
+
+.balloon-string {
+  position: absolute;
+  bottom: -38px;
+  left: 50%;
+  width: 2px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateX(-50%);
+}
+
+@keyframes floatUp {
+  0% { bottom: -100px; }
+  100% { bottom: 100%; }
+}
+
+@keyframes sway {
+  0% { transform: translateX(-15px); }
+  100% { transform: translateX(15px); }
+}
+
+.balloon-pop {
+  animation: pop 0.2s ease-out forwards;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.8; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.balloon-penalty {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 34, 34, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5rem;
+  z-index: 10;
+  pointer-events: none;
+}
 
 /* ---------- 打地鼠 ---------- */
 
@@ -656,12 +750,13 @@ h1, h2 {
   .home-btn { width: 48px; height: 48px; font-size: 20px; top: 6px; left: 6px; }
   .big-btn { font-size: 18px; padding: 10px 20px; min-height: 48px; }
 
-  /* 首頁：8 張卡片 4×2 */
+  /* 首頁：9 張卡片 3x3 */
   #screen-home { justify-content: center; gap: 6px; }
   #screen-home h1 { font-size: 22px; margin-bottom: 6px; }
   .menu-grid {
     gap: 6px;
     max-width: 100%;
+    grid-template-columns: repeat(3, 1fr);
   }
   .menu-card {
     min-height: 0;
@@ -793,6 +888,26 @@ h1, h2 {
   .hole-ground {
     width:  min(19vmin, 90px);
     height: min(4.5vmin, 22px);
+  }
+
+  /* 射氣球：橫式自適應 */
+  #screen-balloon {
+    padding: 8px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
+    overflow: hidden;
+  }
+  #screen-balloon h2 { display: none; }
+  .balloon-container {
+    margin-top: 0;
+  }
+  .balloon {
+    width: 50px;
+    height: 60px;
+    font-size: 1.5rem;
   }
 }
 
