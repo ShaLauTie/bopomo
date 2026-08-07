@@ -1010,7 +1010,6 @@ function startBalloonGame() {
 
 function pickBalloonTarget() {
   balloonTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
-  playBalloonSymbol(balloonTarget.symbol);
 }
 
 function replayBalloonSound() {
@@ -1056,6 +1055,9 @@ function launchBalloons() {
     
     container.appendChild(balloon);
   });
+
+  // 氣球出現後立刻念題目
+  playBalloonSymbol(balloonTarget.symbol);
 }
 
 function handleBalloonClick(sym, balloonEl) {
