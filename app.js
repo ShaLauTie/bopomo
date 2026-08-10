@@ -1447,17 +1447,16 @@ function setupClawRound() {
   container.innerHTML = '';
   clawCapsulesData = [];
   
-  // 仿翰林排版：前後兩排，左右交錯放置 (各 4 個)
-  const backX = [30, 48, 66, 84];
-  const frontX = [39, 57, 75, 93];
+  // 放在同一排 (各 8 個)
+  const singleRowX = [18, 29, 40, 51, 62, 73, 84, 95];
   
   if (isPinyinRound) {
     // 拼音組合題
     clawTarget = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
     const targetSymbolStr = clawTarget.initial + clawTarget.final;
     
-    // 更新頂部綠色視窗顯示題目文字提示 (仿翰林)
-    document.getElementById('clawRoofDisplay').textContent = targetSymbolStr;
+    // 更新頂部綠色視窗顯示問號，僅用語音提示
+    document.getElementById('clawRoofDisplay').textContent = '❓';
     replayClawSound();
     
     const others = shuffle(
@@ -1466,10 +1465,9 @@ function setupClawRound() {
     const symbols = shuffle([clawTarget, ...others]);
     
     symbols.forEach((symObj, i) => {
-      const row = Math.floor(i / 4); // 0 = 後排, 1 = 前排
-      const col = i % 4;
-      const x = row === 0 ? backX[col] : frontX[col];
-      const y = row === 0 ? 190 : 250; // Y 座標像素
+      const row = 1; // 全部放同一排
+      const x = singleRowX[i];
+      const y = 250; // Y 座標像素
       
       const el = document.createElement('div');
       const colorClass = boxColors[i % 2];
@@ -1506,8 +1504,8 @@ function setupClawRound() {
     clawTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
     const targetSymbolStr = clawTarget.symbol;
     
-    // 更新頂部綠色視窗顯示題目文字提示 (仿翰林)
-    document.getElementById('clawRoofDisplay').textContent = targetSymbolStr;
+    // 更新頂部綠色視窗顯示問號，僅用語音提示
+    document.getElementById('clawRoofDisplay').textContent = '❓';
     replayClawSound();
     
     const others = shuffle(
@@ -1516,10 +1514,9 @@ function setupClawRound() {
     const symbols = shuffle([clawTarget, ...others]);
     
     symbols.forEach((symObj, i) => {
-      const row = Math.floor(i / 4);
-      const col = i % 4;
-      const x = row === 0 ? backX[col] : frontX[col];
-      const y = row === 0 ? 190 : 250;
+      const row = 1; // 全部放同一排
+      const x = singleRowX[i];
+      const y = 250;
       
       const el = document.createElement('div');
       const colorClass = boxColors[i % 2];
