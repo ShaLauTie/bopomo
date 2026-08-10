@@ -1585,8 +1585,8 @@ function dropClaw() {
     }
   });
   
-  // 根據抓取哪一排來決定降下深度，沒對準則降到最深
-  const targetDepth = (caughtIdx !== -1 && clawCapsulesData[caughtIdx].row === 0) ? '195px' : '255px';
+  // 只降到能碰到禮物盒的高度即可 (215px)
+  const targetDepth = '215px';
   
   setTimeout(() => {
     // 2. 夾爪下降 (Claw drop)
