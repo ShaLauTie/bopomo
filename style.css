@@ -965,4 +965,137 @@ h1, h2 {
   }
 }
 
+/* ========== 夾娃娃機 ========== */
+.claw-machine {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  background: #eef2f3;
+  border-radius: 12px;
+  border: 4px solid #f7c9c9;
+  overflow: hidden;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+}
 
+.claw-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  background: #dcdcdc;
+  box-shadow: inset 0 -2px 5px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.claw-arm {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.claw-line {
+  width: 6px;
+  height: 30px;
+  background: #a9a9a9;
+  transition: height 1s ease-in-out;
+}
+
+.claw-grabber {
+  width: 60px;
+  height: 50px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grabber-left, .grabber-right {
+  position: absolute;
+  width: 25px;
+  height: 40px;
+  border: 5px solid #777;
+  border-top: none;
+  top: 0;
+  transition: transform 0.3s ease;
+}
+
+.grabber-left {
+  left: 2px;
+  border-right: none;
+  border-radius: 0 0 0 15px;
+  transform-origin: top right;
+  transform: rotate(30deg);
+}
+
+.grabber-right {
+  right: 2px;
+  border-left: none;
+  border-radius: 0 0 15px 0;
+  transform-origin: top left;
+  transform: rotate(-30deg);
+}
+
+.claw-arm.grabbing .grabber-left { transform: rotate(5deg); }
+.claw-arm.grabbing .grabber-right { transform: rotate(-5deg); }
+
+.claw-caught {
+  position: absolute;
+  top: 15px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.claw-caught.visible { opacity: 1; }
+
+.claw-capsules {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding-bottom: 5px;
+  border-top: 4px solid #ddd;
+  background: linear-gradient(to bottom, #fafafa, #e0e0e0);
+}
+
+.capsule {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2), inset 0 0 10px rgba(255,255,255,0.5);
+  transition: opacity 0.3s;
+}
+
+.capsule.empty { opacity: 0.2; }
+
+.claw-btn {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  margin-top: 15px;
+  flex: none;
+}

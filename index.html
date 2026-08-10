@@ -52,6 +52,10 @@
       <span class="icon">🎯</span>
       <span>射氣球</span>
     </button>
+    <button class="menu-card card-10" onclick="showScreen('claw')" style="background: linear-gradient(135deg, #a2d2ff, #ffafcc);">
+      <span class="icon">🕹️</span>
+      <span>夾娃娃機</span>
+    </button>
   </div>
 </div>
 
@@ -100,7 +104,7 @@
 <div class="screen" id="screen-quiz">
   <h2>小測驗</h2>
   <div class="quiz-header">
-    <span id="quizProgress">第 1 / 8 題</span>
+    <span id="quizProgress">第 1 / 16 題</span>
     <span class="stars" id="quizStars">⭐️ 0</span>
   </div>
   <div id="quizQuestionArea"></div>
@@ -185,6 +189,46 @@
       <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">時間到！</div>
       <div class="big-score">⭐ <span id="balloonFinalScore">0</span></div>
       <button class="big-btn combine-btn" onclick="startBalloonGame()">再玩一次！</button>
+    </div>
+  </div>
+</div>
+
+<!-- 夾娃娃機 -->
+<div class="screen" id="screen-claw">
+  <h2>夾娃娃機 🕹️</h2>
+  <div class="mole-header">
+    <div class="mole-target-box">
+      <button class="mole-mini-speaker" onclick="replayClawSound()">🔊</button>
+      <span style="font-size:1rem;color:#5b4636;font-weight:bold">聽音夾扭蛋！</span>
+    </div>
+    <div class="mole-stats">
+      <span>⭐ <span id="clawScore">0</span></span>
+      <span>⏱ <span id="clawTimer">60</span>s</span>
+    </div>
+  </div>
+  
+  <div class="claw-machine" id="clawMachine">
+    <div class="claw-track" id="clawTrack">
+      <div class="claw-arm" id="clawArm">
+        <div class="claw-line"></div>
+        <div class="claw-grabber">
+          <div class="grabber-left"></div>
+          <div class="grabber-right"></div>
+          <div class="claw-caught" id="clawCaught"></div>
+        </div>
+      </div>
+    </div>
+    <div class="claw-capsules" id="clawCapsules"></div>
+  </div>
+
+  <button class="big-btn claw-btn" id="clawDropBtn" onclick="dropClaw()">抓！ (GO)</button>
+
+  <div class="mole-gameover" id="clawGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">🎉</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">時間到！</div>
+      <div class="big-score">⭐ <span id="clawFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startClawGame()">再玩一次！</button>
     </div>
   </div>
 </div>

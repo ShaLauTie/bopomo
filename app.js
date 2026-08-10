@@ -225,11 +225,13 @@ function showScreen(name) {
   if (name === "memory") startMemoryGame();
   if (name === "tone") startToneRound();
   if (name === "balloon") startBalloonGame();
+  if (name === "claw") startClawGame();
 }
 
 function goHome() {
   stopMoleGame();
   stopBalloonGame();
+  stopClawGame();
   showScreen("home");
 }
 
@@ -413,7 +415,7 @@ function prevPinyin() {
 
 // ========== 小測驗 ==========
 
-const QUIZ_LENGTH = 8;
+const QUIZ_LENGTH = 16;
 const HIGH_SCORE_KEY = "bpmf_high_score";
 
 let quizQuestionNum = 0;
@@ -442,42 +444,111 @@ function nextQuizQuestion() {
   updateQuizHeader();
 
   const area = document.getElementById("quizQuestionArea");
-  const type = Math.random() < 0.5 ? "hearSymbol" : "seeSymbol";
-  const target = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
-  const others = shuffle(
-    BOPOMOFO_SYMBOLS.filter(s => s.symbol !== target.symbol)
-  ).slice(0, 3);
+  const rand = Math.random();
+  let type = "hearSymbol";
+  if (rand < 0.2) type = "hearSymbol";
+  else if (rand < 0.4) type = "seeSymbol";
+  else if (rand < 0.6) type = "hearWord";
+  else if (rand < 0.8) type = "seePinyin";
+  else type = "hearPinyin";
 
-  if (type === "hearSymbol") {
-    const choices = shuffle([target, ...others]);
-    area.innerHTML =
-      '<div class="prompt-box"><button class="speaker-btn" id="quizSpeaker">🔊</button></div>' +
-      '<div class="choices-grid" id="quizChoices"></div>';
-    document.getElementById("quizSpeaker").onclick = () => speak(target.symbol);
-    const grid = document.getElementById("quizChoices");
-    choices.forEach(choice => {
-      const btn = document.createElement("button");
-      btn.className = "choice-card";
-      btn.textContent = choice.symbol;
-      btn.onclick = () => handleQuizAnswer(choice.symbol === target.symbol, btn);
-      grid.appendChild(btn);
-    });
-    speak(target.symbol);
+  if (type === "hearSymbol" || type === "seeSymbol" || type === "hearWord") {
+    const target = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+    const others = shuffle(
+      BOPOMOFO_SYMBOLS.filter(s => s.symbol !== target.symbol)
+    ).slice(0, 3);
+
+    if (type === "hearSymbol") {
+      const choices = shuffle([target, ...others]);
+      area.innerHTML =
+        '<div class="prompt-box"><button class="speaker-btn" id="quizSpeaker">🔊</button></div>' +
+        '<div class="choices-grid" id="quizChoices"></div>';
+      document.getElementById("quizSpeaker").onclick = () => speak(target.symbol);
+      const grid = document.getElementById("quizChoices");
+      choices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.className = "choice-card";
+        btn.textContent = choice.symbol;
+        btn.onclick = () => handleQuizAnswer(choice.symbol === target.symbol, btn);
+        grid.appendChild(btn);
+      });
+      speak(target.symbol);
+    } else if (type === "seeSymbol") {
+      const choices = shuffle([target, ...others]);
+      const targetWordObj = getWordForSymbol(target);
+      area.innerHTML =
+        '<div class="prompt-box"><div class="flashcard" style="cursor:default;height:220px;width:min(300px,70vw)">' +
+        '<div class="symbol-big" style="font-size:140px">' + target.symbol + '</div></div></div>' +
+        '<div class="choices-grid" id="quizChoices"></div>';
+      const grid = document.getElementById("quizChoices");
+      choices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.className = "choice-card";
+        btn.style.fontSize = "60px";
+        const choiceWordObj = choice.symbol === target.symbol ? targetWordObj : getWordForSymbol(choice);
+        btn.textContent = choiceWordObj.emoji;
+        btn.onclick = () => handleQuizAnswer(choice.symbol === target.symbol, btn);
+        grid.appendChild(btn);
+      });
+    } else {
+      // hearWord: Hear a vocabulary word, choose the correct symbol
+      const choices = shuffle([target, ...others]);
+      const targetWordObj = getWordForSymbol(target);
+      area.innerHTML =
+        '<div class="prompt-box"><button class="speaker-btn" id="quizSpeaker">🔊</button></div>' +
+        '<div class="choices-grid" id="quizChoices"></div>';
+      document.getElementById("quizSpeaker").onclick = () => speak(targetWordObj.word);
+      const grid = document.getElementById("quizChoices");
+      choices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.className = "choice-card";
+        btn.textContent = choice.symbol;
+        btn.onclick = () => handleQuizAnswer(choice.symbol === target.symbol, btn);
+        grid.appendChild(btn);
+      });
+      speak(targetWordObj.word);
+    }
   } else {
-    const choices = shuffle([target, ...others]);
-    area.innerHTML =
-      '<div class="prompt-box"><div class="flashcard" style="cursor:default;height:220px;width:min(300px,70vw)">' +
-      '<div class="symbol-big" style="font-size:140px">' + target.symbol + '</div></div></div>' +
-      '<div class="choices-grid" id="quizChoices"></div>';
-    const grid = document.getElementById("quizChoices");
-    choices.forEach(choice => {
-      const btn = document.createElement("button");
-      btn.className = "choice-card";
-      btn.style.fontSize = "60px";
-      btn.textContent = choice.emoji;
-      btn.onclick = () => handleQuizAnswer(choice.symbol === target.symbol, btn);
-      grid.appendChild(btn);
-    });
+    // seePinyin or hearPinyin (testing 2-character pinyin combinations)
+    const targetPinyin = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+    const othersPinyin = shuffle(
+      PINYIN_COMBOS.filter(c => c.word !== targetPinyin.word)
+    ).slice(0, 3);
+    const choices = shuffle([targetPinyin, ...othersPinyin]);
+    
+    if (type === "seePinyin") {
+      area.innerHTML =
+        '<div class="prompt-box"><div class="flashcard" style="cursor:default;height:220px;width:min(300px,70vw)">' +
+        '<div class="symbol-big" style="font-size:90px;letter-spacing:10px;">' + targetPinyin.initial + targetPinyin.final + '</div></div></div>' +
+        '<div class="choices-grid" id="quizChoices"></div>';
+      
+      const grid = document.getElementById("quizChoices");
+      choices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.className = "choice-card";
+        btn.style.fontSize = "60px";
+        btn.textContent = choice.emoji;
+        btn.onclick = () => handleQuizAnswer(choice.word === targetPinyin.word, btn);
+        grid.appendChild(btn);
+      });
+    } else {
+      // hearPinyin
+      area.innerHTML =
+        '<div class="prompt-box"><button class="speaker-btn" id="quizSpeaker">🔊</button></div>' +
+        '<div class="choices-grid" id="quizChoices"></div>';
+      document.getElementById("quizSpeaker").onclick = () => speak(targetPinyin.word);
+      
+      const grid = document.getElementById("quizChoices");
+      choices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.className = "choice-card";
+        btn.style.fontSize = "45px";
+        btn.textContent = choice.initial + choice.final;
+        btn.onclick = () => handleQuizAnswer(choice.word === targetPinyin.word, btn);
+        grid.appendChild(btn);
+      });
+      speak(targetPinyin.word);
+    }
   }
 }
 
@@ -514,7 +585,7 @@ function finishQuiz() {
   area.innerHTML =
     '<div class="quiz-result">' +
     '<div class="big-score">🏆</div>' +
-    '<div class="word-text">你得到了 ' + quizScore + ' 顆星星！</div>' +
+    '<div class="word-text">恭喜你！你得到了 ' + quizScore + ' 顆星星！</div>' +
     '<div class="progress-text">最高紀錄：' + highScore + ' 顆星星</div>' +
     '<button class="big-btn combine-btn" onclick="startQuiz()">再玩一次</button>' +
     '</div>';
@@ -728,8 +799,9 @@ let whTarget = null;
 let whLocked = false;
 
 function getWordForSymbol(item) {
-  const extras = (typeof INITIAL_WORD_EXTRAS !== 'undefined' && INITIAL_WORD_EXTRAS[item.symbol]) || [];
-  const all = [{ word: item.word, emoji: item.emoji }, ...extras];
+  const extras1 = (typeof INITIAL_WORD_EXTRAS !== 'undefined' && INITIAL_WORD_EXTRAS[item.symbol]) || [];
+  const extras2 = (typeof OTHER_WORD_EXTRAS !== 'undefined' && OTHER_WORD_EXTRAS[item.symbol]) || [];
+  const all = [{ word: item.word, emoji: item.emoji }, ...extras1, ...extras2];
   return all[randomInt(all.length)];
 }
 
@@ -1224,4 +1296,175 @@ function stopBalloonGame() {
   clearInterval(balloonTimerInt);
   clearTimeout(balloonCreateTimeout);
   if (_balloonAudio) { _balloonAudio.pause(); }
+}
+
+// ========== 夾娃娃機 ==========
+
+let clawScore = 0;
+let clawTimeLeft = 60;
+let clawTimerInt = null;
+let clawRunning = false;
+let clawTarget = null;
+let clawPos = 50; // percentage
+let clawDir = 1;
+let clawAnimFrame = null;
+let isGrabbing = false;
+let clawCapsulesData = [];
+
+function startClawGame() {
+  clawScore = 0;
+  clawTimeLeft = 60;
+  clawRunning = true;
+  isGrabbing = false;
+  clawPos = 50;
+  
+  document.getElementById('clawScore').textContent = '0';
+  document.getElementById('clawTimer').textContent = '60';
+  document.getElementById('clawGameover').style.display = 'none';
+  document.getElementById('clawDropBtn').disabled = false;
+  
+  clearInterval(clawTimerInt);
+  clawTimerInt = setInterval(() => {
+    clawTimeLeft--;
+    document.getElementById('clawTimer').textContent = clawTimeLeft;
+    if (clawTimeLeft <= 0) endClawGame();
+  }, 1000);
+  
+  setupClawRound();
+  
+  cancelAnimationFrame(clawAnimFrame);
+  animateClaw();
+}
+
+function setupClawRound() {
+  clawTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+  replayClawSound();
+  
+  const container = document.getElementById('clawCapsules');
+  container.innerHTML = '';
+  clawCapsulesData = [];
+  
+  const others = shuffle(
+    BOPOMOFO_SYMBOLS.filter(s => s.symbol !== clawTarget.symbol)
+  ).slice(0, 4);
+  const symbols = shuffle([clawTarget, ...others]);
+  
+  symbols.forEach((symObj, i) => {
+    const el = document.createElement('div');
+    el.className = 'capsule';
+    el.textContent = symObj.symbol;
+    container.appendChild(el);
+    clawCapsulesData.push({ el: el, symbol: symObj.symbol });
+  });
+}
+
+function replayClawSound() {
+  if (clawTarget) speak(clawTarget.symbol);
+}
+
+function animateClaw() {
+  if (!clawRunning || isGrabbing) return;
+  
+  clawPos += clawDir * 0.8;
+  if (clawPos >= 90) { clawPos = 90; clawDir = -1; }
+  if (clawPos <= 10) { clawPos = 10; clawDir = 1; }
+  
+  document.getElementById('clawArm').style.left = clawPos + '%';
+  clawAnimFrame = requestAnimationFrame(animateClaw);
+}
+
+function dropClaw() {
+  if (!clawRunning || isGrabbing) return;
+  isGrabbing = true;
+  document.getElementById('clawDropBtn').disabled = true;
+  
+  const arm = document.getElementById('clawArm');
+  const line = arm.querySelector('.claw-line');
+  arm.classList.add('grabbing');
+  
+  // Drop animation
+  line.style.height = '180px';
+  
+  setTimeout(() => {
+    // Check catch
+    const armRect = arm.getBoundingClientRect();
+    const armX = armRect.left + armRect.width / 2;
+    
+    let caughtIdx = -1;
+    let minDiff = 35; // Catch threshold in pixels
+    
+    clawCapsulesData.forEach((cap, i) => {
+      if (cap.el.classList.contains('empty')) return;
+      const cRect = cap.el.getBoundingClientRect();
+      const cX = cRect.left + cRect.width / 2;
+      const diff = Math.abs(armX - cX);
+      if (diff < minDiff) {
+        minDiff = diff;
+        caughtIdx = i;
+      }
+    });
+    
+    const caughtItem = document.getElementById('clawCaught');
+    if (caughtIdx !== -1) {
+      // Caught something!
+      const cap = clawCapsulesData[caughtIdx];
+      cap.el.classList.add('empty');
+      caughtItem.textContent = cap.symbol;
+      caughtItem.style.background = 'radial-gradient(circle at 30% 30%, #fff, #ff7eb3)';
+      caughtItem.classList.add('visible');
+      arm.classList.remove('grabbing');
+    } else {
+      arm.classList.remove('grabbing');
+    }
+    
+    // Pull up
+    line.style.height = '30px';
+    
+    setTimeout(() => {
+      // Reached top
+      if (caughtIdx !== -1) {
+        caughtItem.classList.remove('visible');
+        const cap = clawCapsulesData[caughtIdx];
+        if (cap.symbol === clawTarget.symbol) {
+          // Success
+          clawScore++;
+          document.getElementById('clawScore').textContent = clawScore;
+          showFeedback(true);
+          setTimeout(() => {
+            if (clawRunning) setupClawRound();
+          }, 1000);
+        } else {
+          // Fail
+          showFeedback(false);
+          cap.el.classList.remove('empty'); // drop it back
+        }
+      }
+      
+      isGrabbing = false;
+      document.getElementById('clawDropBtn').disabled = false;
+      if (clawRunning) animateClaw();
+      
+    }, 1000); // Wait for pull up
+    
+  }, 1000); // Wait for drop down
+}
+
+function endClawGame() {
+  clawRunning = false;
+  clearInterval(clawTimerInt);
+  cancelAnimationFrame(clawAnimFrame);
+  document.getElementById('clawDropBtn').disabled = true;
+  
+  document.getElementById('clawFinalScore').textContent = clawScore;
+  document.getElementById('clawGameover').style.display = 'flex';
+  
+  const msg = clawScore >= 10 ? '太神啦！夾娃娃高手！' :
+              clawScore >= 5  ? '很棒！繼續加油！' : '再試一次！';
+  speak(msg);
+}
+
+function stopClawGame() {
+  clawRunning = false;
+  clearInterval(clawTimerInt);
+  cancelAnimationFrame(clawAnimFrame);
 }
