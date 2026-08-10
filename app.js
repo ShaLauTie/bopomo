@@ -1328,8 +1328,7 @@ function stopBalloonGame() {
 // ========== 夾娃娃機 ==========
 
 let clawScore = 0;
-let clawTimeLeft = 60;
-let clawTimerInt = null;
+let clawQuestionNum = 1;
 let clawRunning = false;
 let clawTarget = null;
 let clawPos = 80; // 仿翰林，爪子一開始在右側
@@ -1339,7 +1338,7 @@ let clawMoveInterval = null;
 
 function startClawGame() {
   clawScore = 0;
-  clawTimeLeft = 60;
+  clawQuestionNum = 1;
   clawRunning = true;
   isGrabbing = false;
   clawPos = 80;
@@ -1355,16 +1354,9 @@ function startClawGame() {
   caughtItem.innerHTML = '';
 
   document.getElementById('clawScore').textContent = '0';
-  document.getElementById('clawTimer').textContent = '60';
+  document.getElementById('clawProgress').textContent = '第 1 / 5 題';
   document.getElementById('clawGameover').style.display = 'none';
   document.getElementById('btnClawDrop').disabled = false;
-  
-  clearInterval(clawTimerInt);
-  clawTimerInt = setInterval(() => {
-    clawTimeLeft--;
-    document.getElementById('clawTimer').textContent = clawTimeLeft;
-    if (clawTimeLeft <= 0) endClawGame();
-  }, 1000);
   
   setupClawRound();
   initClawControls();
@@ -1436,6 +1428,9 @@ function setupClawRound() {
     // 拼音組合題
     clawTarget = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
     const targetSymbolStr = clawTarget.initial + clawTarget.final;
+    
+    // 更新頂部綠色視窗顯示題目文字提示 (仿翰林)
+    document.getElementById('clawRoofDisplay').textContent = targetSymbolStr;
     replayClawSound();
     
     const others = shuffle(
@@ -1470,7 +1465,7 @@ function setupClawRound() {
         y: y
       });
       
-      // 點擊禮物盒可以直接將夾爪移過去並抓取 (便民設計)
+      // 點擊禮物盒可以直接將夾爪移過去並抓取
       el.onclick = () => {
         if (!clawRunning || isGrabbing) return;
         clawPos = x;
@@ -1483,6 +1478,9 @@ function setupClawRound() {
     // 單個注音題
     clawTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
     const targetSymbolStr = clawTarget.symbol;
+    
+    // 更新頂部綠色視窗顯示題目文字提示 (仿翰林)
+    document.getElementById('clawRoofDisplay').textContent = targetSymbolStr;
     replayClawSound();
     
     const others = shuffle(
@@ -1530,9 +1528,9 @@ function setupClawRound() {
 function replayClawSound() {
   if (clawTarget) {
     if (clawTarget.word) {
-      speak(clawTarget.word);
+      speak("請找出" + clawTarget.word);
     } else {
-      speak(clawTarget.symbol);
+      speak("請找出" + clawTarget.symbol);
     }
   }
 }
@@ -1550,7 +1548,7 @@ function dropClaw() {
   arm.classList.remove('closed');
   arm.classList.add('open');
   
-  // 尋找水平位置最接近的禮物盒 (5% 誤差範圍內)
+  // 尋找水平位置最接近的禮物盒 (6% 誤差範圍內)
   let caughtIdx = -1;
   let minDiff = 6;
   
@@ -1646,9 +1644,18 @@ function dropClaw() {
                   document.getElementById('btnClawDrop').disabled = false;
                   
                   if (isCorrect) {
-                    if (clawRunning) setupClawRound();
+                    if (clawQuestionNum === 5) {
+                      // 5 題全部答對，贏得挑戰！
+                      endClawGame(true);
+                    } else {
+                      // 進到下一題
+                      clawQuestionNum++;
+                      document.getElementById('clawProgress').textContent = `第 ${clawQuestionNum} / 5 題`;
+                      if (clawRunning) setupClawRound();
+                    }
                   } else {
-                    // 夾錯的話，本局不重置扭蛋，讓孩子可以繼續抓剩下的
+                    // 仿翰林：夾錯直接遊戲結束，挑戰失敗！
+                    endClawGame(false);
                   }
                 }, 1200);
               }, 600);
@@ -1667,22 +1674,31 @@ function dropClaw() {
   }, 300);
 }
 
-function endClawGame() {
+function endClawGame(isWin) {
   clawRunning = false;
-  clearInterval(clawTimerInt);
   clearInterval(clawMoveInterval);
   document.getElementById('btnClawDrop').disabled = true;
   
-  document.getElementById('clawFinalScore').textContent = clawScore;
-  document.getElementById('clawGameover').style.display = 'flex';
+  const box = document.getElementById('clawGameover');
+  const emojiEl = box.querySelector('.gameover-box div:nth-child(1)');
+  const titleEl = box.querySelector('.gameover-box div:nth-child(2)');
   
-  const msg = clawScore >= 10 ? '太神啦！夾娃娃高手！' :
-              clawScore >= 5  ? '很棒！繼續加油！' : '再試一次！';
-  speak(msg);
+  document.getElementById('clawFinalScore').textContent = clawScore;
+  
+  if (isWin) {
+    emojiEl.textContent = '🎉';
+    titleEl.textContent = '挑戰成功！';
+    speak('太神啦！你全部過關了！');
+  } else {
+    emojiEl.textContent = '😢';
+    titleEl.textContent = '挑戰失敗！';
+    speak('差一點點，再試一次吧！');
+  }
+  
+  box.style.display = 'flex';
 }
 
 function stopClawGame() {
   clawRunning = false;
-  clearInterval(clawTimerInt);
   clearInterval(clawMoveInterval);
 }
