@@ -198,8 +198,7 @@
   <h2>夾娃娃機 🕹️</h2>
   <div class="mole-header">
     <div class="mole-target-box">
-      <button class="mole-mini-speaker" onclick="replayClawSound()">🔊</button>
-      <span style="font-size:1rem;color:#5b4636;font-weight:bold">聽音夾扭蛋！</span>
+      <button class="listen-btn" id="clawSpeaker" onclick="replayClawSound()">🔊 聽題目</button>
     </div>
     <div class="mole-stats">
       <span>⭐ <span id="clawScore">0</span></span>
@@ -208,6 +207,7 @@
   </div>
   
   <div class="claw-machine" id="clawMachine">
+    <div class="striped-roof"></div>
     <div class="claw-glass"></div>
     <div class="claw-chute">📥</div>
     <div class="claw-track" id="clawTrack">
@@ -224,7 +224,19 @@
     <div class="claw-capsules" id="clawCapsules"></div>
   </div>
 
-  <button class="big-btn claw-btn" id="clawDropBtn" onclick="dropClaw()">抓！ (GO)</button>
+  <!-- 仿翰林夜市搖桿控制面板 -->
+  <div class="claw-control-panel">
+    <div class="control-joystick-area">
+      <div class="joystick-base">
+        <div class="joystick-stick" id="joystickStick"></div>
+      </div>
+    </div>
+    <div class="control-arrow-area">
+      <button class="ctrl-arrow-btn" id="btnClawLeft">◀</button>
+      <button class="ctrl-drop-btn" id="btnClawDrop" onclick="dropClaw()">●</button>
+      <button class="ctrl-arrow-btn" id="btnClawRight">▶</button>
+    </div>
+  </div>
 
   <div class="mole-gameover" id="clawGameover" style="display:none">
     <div class="gameover-box">

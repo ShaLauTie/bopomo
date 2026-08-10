@@ -969,16 +969,34 @@ h1, h2 {
 .claw-machine {
   position: relative;
   width: 100%;
-  height: 380px;
+  height: 340px;
   flex: 1;
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(to bottom, #ffebd9 0%, #ffd8be 100%);
   border-radius: 20px;
   border: 8px solid #ffafcc;
   overflow: hidden;
   margin-top: 10px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.8);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 0 20px rgba(0,0,0,0.4);
+}
+
+/* 遮陽棚 (條紋屋頂) */
+.striped-roof {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 25px;
+  background: repeating-linear-gradient(
+    45deg,
+    #ff85a1,
+    #ff85a1 15px,
+    #ffccd5 15px,
+    #ffccd5 30px
+  );
+  border-bottom: 3px solid #ff5272;
+  z-index: 12;
 }
 
 /* 玻璃反光效果 */
@@ -988,7 +1006,7 @@ h1, h2 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.03) 40%, transparent 40.1%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 40%, transparent 40.1%);
   pointer-events: none;
   z-index: 15;
 }
@@ -998,36 +1016,36 @@ h1, h2 {
   position: absolute;
   bottom: 0;
   left: 15px;
-  width: 70px;
-  height: 55px;
-  background: #222;
-  border: 4px solid #ffafcc;
+  width: 75px;
+  height: 50px;
+  background: #fff;
+  border: 5px solid #e0e0e0;
   border-bottom: none;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
   z-index: 5;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+  font-size: 1.4rem;
+  box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 -2px 8px rgba(0,0,0,0.2);
 }
 
 .claw-track {
   position: absolute;
-  top: 0;
+  top: 25px;
   left: 0;
   width: 100%;
-  height: 20px;
-  background: #333;
+  height: 15px;
+  background: #555;
   box-shadow: inset 0 -2px 5px rgba(0,0,0,0.3);
   z-index: 10;
-  border-bottom: 2px solid #555;
+  border-bottom: 2px solid #666;
 }
 
 .claw-arm {
   position: absolute;
-  top: 0;
+  top: 25px;
   left: 50%;
   width: 60px;
   display: flex;
@@ -1041,7 +1059,7 @@ h1, h2 {
   width: 4px;
   height: 30px;
   background: linear-gradient(90deg, #d3d3d3, #a9a9a9, #d3d3d3);
-  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
   transition: height 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
@@ -1055,28 +1073,38 @@ h1, h2 {
 }
 
 .grabber-base {
-  width: 20px;
+  width: 22px;
   height: 12px;
-  background: linear-gradient(to bottom, #777, #444);
+  background: linear-gradient(to bottom, #888, #555);
   border-radius: 4px;
   position: absolute;
   top: -2px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+/* 頂端金屬環 */
+.grabber-ring {
+  width: 14px;
+  height: 14px;
+  border: 3px solid #777;
+  border-radius: 50%;
+  position: absolute;
+  top: -12px;
 }
 
 .grabber-left, .grabber-right {
   position: absolute;
-  width: 22px;
-  height: 42px;
-  border: 5px solid #bdc3c7;
+  width: 20px;
+  height: 40px;
+  border: 5px solid #95a5a6;
   border-top: none;
   top: 4px;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
 }
 
 .grabber-left {
-  left: 6px;
+  left: 8px;
   border-right: none;
   border-radius: 0 0 0 16px;
   transform-origin: top right;
@@ -1084,7 +1112,7 @@ h1, h2 {
 }
 
 .grabber-right {
-  right: 6px;
+  right: 8px;
   border-left: none;
   border-radius: 0 0 16px 0;
   transform-origin: top left;
@@ -1101,20 +1129,18 @@ h1, h2 {
 
 .claw-caught {
   position: absolute;
-  top: 15px;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  top: 12px;
+  width: 58px;
+  height: 48px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
-  font-weight: bold;
   opacity: 0;
   transform: scale(0.5);
   transition: opacity 0.2s, transform 0.2s;
   z-index: 2;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .claw-caught.visible {
@@ -1124,41 +1150,64 @@ h1, h2 {
 
 .claw-capsules {
   position: absolute;
-  bottom: 0;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 85px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  padding-bottom: 8px;
-  border-top: 4px solid #333;
-  background: linear-gradient(180deg, #1f1f2e 0%, #111 100%);
-  padding-left: 90px; /* 避開出物口 */
+  height: 100%;
+  pointer-events: none;
 }
 
-/* 膠囊/扭蛋 */
+/* 禮物盒扭蛋 */
 .capsule {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  position: absolute;
+  width: 64px;
+  height: 54px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-  box-shadow: 0 5px 8px rgba(0,0,0,0.4), inset 0 -4px 8px rgba(0,0,0,0.3), inset 0 4px 8px rgba(255,255,255,0.4);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   transition: transform 0.3s, opacity 0.3s;
-  cursor: default;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 6;
 }
 
-/* 不同顏色的扭蛋 */
-.capsule-pink { background: radial-gradient(circle at 30% 30%, #ffc8dd, #ff85a1); }
-.capsule-blue { background: radial-gradient(circle at 30% 30%, #bde0fe, #a2d2ff); }
-.capsule-yellow { background: radial-gradient(circle at 30% 30%, #fefae0, #ffd166); }
-.capsule-green { background: radial-gradient(circle at 30% 30%, #e8f5e9, #06d6a0); }
-.capsule-purple { background: radial-gradient(circle at 30% 30%, #e1bee7, #b388ff); }
+/* 綠色禮物盒 */
+.capsule.box-green {
+  background: #a2e8dd;
+  border: 3px solid #7bcbb5;
+}
+/* 橘色禮物盒 */
+.capsule.box-orange {
+  background: #ffbe9e;
+  border: 3px solid #e08b68;
+}
+
+/* 禮物盒上方緞帶蝴蝶結 */
+.capsule::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  width: 24px;
+  height: 8px;
+  border-radius: 4px;
+  z-index: 2;
+}
+.capsule.box-green::before { background: #bdf0ff; }
+.capsule.box-orange::before { background: #fff2b2; }
+
+/* 垂直緞帶線條 */
+.capsule::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  z-index: 1;
+}
+.capsule.box-green::after { background: #bdf0ff; }
+.capsule.box-orange::after { background: #fff2b2; }
 
 .capsule.empty {
   opacity: 0;
@@ -1166,21 +1215,29 @@ h1, h2 {
   pointer-events: none;
 }
 
-/* 掉落動畫 */
+.capsule .bopomofo-vertical {
+  z-index: 3;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+/* 掉落禮物盒動畫 */
 .falling-capsule {
   position: absolute;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 58px;
+  height: 48px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
   z-index: 8;
   animation: fallDown 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.falling-capsule .bopomofo-vertical {
+  z-index: 3;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
 
 @keyframes fallDown {
@@ -1197,20 +1254,134 @@ h1, h2 {
   }
 }
 
-.claw-btn {
-  background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+/* 仿翰林夜市搖桿控制面板 */
+.claw-control-panel {
+  width: 100%;
+  background: #ffd1d8;
+  border: 4px solid #ff85a1;
+  border-radius: 20px;
+  padding: 12px 20px;
   margin-top: 15px;
-  flex: none;
-  font-size: 1.8rem;
-  padding: 12px 30px;
-  border-radius: 50px;
-  box-shadow: 0 6px 15px rgba(255,117,140,0.4);
-  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.6);
 }
 
-.claw-btn:active {
+.control-joystick-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.joystick-base {
+  width: 70px;
+  height: 28px;
+  background: #ff5272;
+  border-radius: 50%;
+  position: relative;
+  border: 3px solid #ff85a1;
+  box-shadow: inset 0 3px 6px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.joystick-stick {
+  width: 8px;
+  height: 45px;
+  background: linear-gradient(90deg, #e2e2e2, #b5b5b5);
+  border-radius: 4px;
+  position: absolute;
+  top: -38px;
+  left: calc(50% - 4px);
+  transform-origin: bottom center;
+  transition: transform 0.15s ease;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.joystick-stick::after {
+  content: '';
+  position: absolute;
+  top: -14px;
+  left: calc(50% - 13px);
+  width: 26px;
+  height: 26px;
+  background: radial-gradient(circle at 30% 30%, #ff6b8b, #ff003c);
+  border-radius: 50%;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 3px 5px rgba(255,255,255,0.4);
+}
+
+/* 搖桿偏轉 */
+.joystick-stick.tilt-left { transform: rotate(-20deg); }
+.joystick-stick.tilt-right { transform: rotate(20deg); }
+
+.control-arrow-area {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.ctrl-arrow-btn {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid #ff5272;
+  color: #ff5272;
+  font-size: 1.6rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, background-color 0.1s, box-shadow 0.1s;
+}
+
+.ctrl-arrow-btn:active {
+  transform: scale(0.92);
+  background-color: #ffeef2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.ctrl-drop-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #ffeaa7;
+  border: 5px solid #ffd166;
+  color: #d35400;
+  font-size: 2.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, background-color 0.1s;
+}
+
+.ctrl-drop-btn:active {
+  transform: scale(0.92);
+  background-color: #ffe28a;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* 聽題目按鈕 */
+.listen-btn {
+  background: linear-gradient(135deg, #ffb7b2 0%, #ff85a1 100%);
+  border: 3px solid #ff5272;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+}
+
+.listen-btn:active {
   transform: scale(0.95);
-  box-shadow: 0 3px 8px rgba(255,117,140,0.4);
 }
 
 /* ========== 直書注音組合 (直排) ========== */
