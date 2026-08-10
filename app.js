@@ -1678,8 +1678,7 @@ function dropClaw() {
                       if (clawRunning) setupClawRound();
                     }
                   } else {
-                    // 仿翰林：夾錯直接遊戲結束，挑戰失敗！
-                    endClawGame(false);
+                    // 夾錯了，不要結束遊戲，讓玩家可以繼續嘗試夾剩下的禮物盒
                   }
                 }, 1200);
               }, 600);
