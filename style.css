@@ -1181,8 +1181,8 @@ h1, h2 {
 /* 禮物盒扭蛋 */
 .capsule {
   position: absolute;
-  width: 64px;
-  height: 54px;
+  width: 74px;
+  height: 82px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -1245,8 +1245,8 @@ h1, h2 {
 /* 掉落禮物盒動畫 */
 .falling-capsule {
   position: absolute;
-  width: 58px;
-  height: 48px;
+  width: 68px;
+  height: 76px;
   border-radius: 8px;
   display: flex;
   align-items: center;
