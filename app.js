@@ -1318,6 +1318,16 @@ function startClawGame() {
   isGrabbing = false;
   clawPos = 50;
   
+  const arm = document.getElementById('clawArm');
+  arm.style.left = '50%';
+  arm.style.transition = '';
+  arm.className = 'claw-arm';
+  const line = arm.querySelector('.claw-line');
+  line.style.height = '30px';
+  const caughtItem = document.getElementById('clawCaught');
+  caughtItem.className = 'claw-caught';
+  caughtItem.textContent = '';
+
   document.getElementById('clawScore').textContent = '0';
   document.getElementById('clawTimer').textContent = '60';
   document.getElementById('clawGameover').style.display = 'none';
@@ -1336,6 +1346,8 @@ function startClawGame() {
   animateClaw();
 }
 
+const capsuleColors = ['capsule-pink', 'capsule-blue', 'capsule-yellow', 'capsule-green', 'capsule-purple'];
+
 function setupClawRound() {
   clawTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
   replayClawSound();
@@ -1351,10 +1363,11 @@ function setupClawRound() {
   
   symbols.forEach((symObj, i) => {
     const el = document.createElement('div');
-    el.className = 'capsule';
+    const colorClass = capsuleColors[i % capsuleColors.length];
+    el.className = `capsule ${colorClass}`;
     el.textContent = symObj.symbol;
     container.appendChild(el);
-    clawCapsulesData.push({ el: el, symbol: symObj.symbol });
+    clawCapsulesData.push({ el: el, symbol: symObj.symbol, colorClass: colorClass });
   });
 }
 
@@ -1380,73 +1393,131 @@ function dropClaw() {
   
   const arm = document.getElementById('clawArm');
   const line = arm.querySelector('.claw-line');
-  arm.classList.add('grabbing');
+  const caughtItem = document.getElementById('clawCaught');
   
-  // Drop animation
-  line.style.height = '180px';
+  // 1. 爪子張開 (Claw open)
+  arm.classList.remove('closed');
+  arm.classList.add('open');
   
   setTimeout(() => {
-    // Check catch
-    const armRect = arm.getBoundingClientRect();
-    const armX = armRect.left + armRect.width / 2;
-    
-    let caughtIdx = -1;
-    let minDiff = 35; // Catch threshold in pixels
-    
-    clawCapsulesData.forEach((cap, i) => {
-      if (cap.el.classList.contains('empty')) return;
-      const cRect = cap.el.getBoundingClientRect();
-      const cX = cRect.left + cRect.width / 2;
-      const diff = Math.abs(armX - cX);
-      if (diff < minDiff) {
-        minDiff = diff;
-        caughtIdx = i;
-      }
-    });
-    
-    const caughtItem = document.getElementById('clawCaught');
-    if (caughtIdx !== -1) {
-      // Caught something!
-      const cap = clawCapsulesData[caughtIdx];
-      cap.el.classList.add('empty');
-      caughtItem.textContent = cap.symbol;
-      caughtItem.style.background = 'radial-gradient(circle at 30% 30%, #fff, #ff7eb3)';
-      caughtItem.classList.add('visible');
-      arm.classList.remove('grabbing');
-    } else {
-      arm.classList.remove('grabbing');
-    }
-    
-    // Pull up
-    line.style.height = '30px';
+    // 2. 夾爪下降 (Claw drop)
+    line.style.height = '260px';
     
     setTimeout(() => {
-      // Reached top
-      if (caughtIdx !== -1) {
-        caughtItem.classList.remove('visible');
-        const cap = clawCapsulesData[caughtIdx];
-        if (cap.symbol === clawTarget.symbol) {
-          // Success
-          clawScore++;
-          document.getElementById('clawScore').textContent = clawScore;
-          showFeedback(true);
-          setTimeout(() => {
-            if (clawRunning) setupClawRound();
-          }, 1000);
-        } else {
-          // Fail
-          showFeedback(false);
-          cap.el.classList.remove('empty'); // drop it back
+      // 3. 抵達底部，計算碰撞 (Reach bottom - calculate collision)
+      const armRect = arm.getBoundingClientRect();
+      const armX = armRect.left + armRect.width / 2;
+      
+      let caughtIdx = -1;
+      let minDiff = 40; // 抓取感應範圍 (pixels)
+      
+      clawCapsulesData.forEach((cap, i) => {
+        if (cap.el.classList.contains('empty')) return;
+        const cRect = cap.el.getBoundingClientRect();
+        const cX = cRect.left + cRect.width / 2;
+        const diff = Math.abs(armX - cX);
+        if (diff < minDiff) {
+          minDiff = diff;
+          caughtIdx = i;
         }
+      });
+      
+      // 4. 爪子收緊 (Clasp claws)
+      arm.classList.remove('open');
+      arm.classList.add('closed');
+      
+      let colorClass = '';
+      let caughtSymbol = '';
+      if (caughtIdx !== -1) {
+        const cap = clawCapsulesData[caughtIdx];
+        cap.el.classList.add('empty');
+        caughtSymbol = cap.symbol;
+        colorClass = cap.colorClass;
+        
+        // 爪中顯示被夾到的球
+        caughtItem.textContent = cap.symbol;
+        caughtItem.className = `claw-caught visible ${colorClass}`;
       }
       
-      isGrabbing = false;
-      document.getElementById('clawDropBtn').disabled = false;
-      if (clawRunning) animateClaw();
+      setTimeout(() => {
+        // 5. 夾爪升起 (Pull up)
+        line.style.height = '30px';
+        
+        setTimeout(() => {
+          // 6. 升到頂端 (Reached top)
+          if (caughtIdx !== -1) {
+            // 移動到左側出物口 (Move to chute on left)
+            arm.style.transition = 'left 0.8s ease-in-out';
+            arm.style.left = '50px'; // 對準出物口 X 座標
+            
+            setTimeout(() => {
+              // 7. 鬆開爪子，扭蛋掉落 (Open claws & drop)
+              arm.classList.remove('closed');
+              arm.classList.add('open');
+              caughtItem.classList.remove('visible');
+              
+              // 產生掉落扭蛋實體與動畫 (Create falling capsule animation)
+              const machine = document.getElementById('clawMachine');
+              const fallEl = document.createElement('div');
+              fallEl.className = `falling-capsule ${colorClass}`;
+              fallEl.style.left = '25px'; // 出物口中心座標
+              fallEl.style.top = '70px';
+              fallEl.textContent = caughtSymbol;
+              machine.appendChild(fallEl);
+              
+              setTimeout(() => {
+                fallEl.remove();
+              }, 600);
+              
+              // 判斷是否夾對 (Verify result)
+              const cap = clawCapsulesData[caughtIdx];
+              const isCorrect = cap.symbol === clawTarget.symbol;
+              
+              if (isCorrect) {
+                clawScore++;
+                document.getElementById('clawScore').textContent = clawScore;
+                showFeedback(true);
+              } else {
+                showFeedback(false);
+              }
+              
+              setTimeout(() => {
+                // 8. 爪子回歸原位 (Move back to original drop X coordinate)
+                arm.style.left = clawPos + '%';
+                
+                setTimeout(() => {
+                  // 9. 清除暫時 transition，恢復遊戲
+                  arm.style.transition = '';
+                  arm.classList.remove('open');
+                  
+                  isGrabbing = false;
+                  document.getElementById('clawDropBtn').disabled = false;
+                  
+                  if (isCorrect) {
+                    if (clawRunning) setupClawRound();
+                  } else {
+                    if (clawRunning) animateClaw();
+                  }
+                }, 800);
+              }, 600); // 配合掉落與 Banner 時間
+              
+            }, 800); // 等待移動到出物口
+            
+          } else {
+            // 沒抓到，重置爪子並繼續 (Missed - reset & resume)
+            arm.classList.remove('closed');
+            isGrabbing = false;
+            document.getElementById('clawDropBtn').disabled = false;
+            if (clawRunning) animateClaw();
+          }
+          
+        }, 800); // 等待上升完畢
+        
+      }, 500); // 夾住靜止時間
       
-    }, 1000); // Wait for pull up
+    }, 800); // 等待下降完畢
     
-  }, 1000); // Wait for drop down
+  }, 300); // 等待開爪時間
 }
 
 function endClawGame() {
