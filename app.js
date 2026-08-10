@@ -1469,7 +1469,7 @@ function setupClawRound() {
       const row = Math.floor(i / 4); // 0 = 後排, 1 = 前排
       const col = i % 4;
       const x = row === 0 ? backX[col] : frontX[col];
-      const y = row === 0 ? 45 : 105; // Y 座標像素
+      const y = row === 0 ? 190 : 250; // Y 座標像素
       
       const el = document.createElement('div');
       const colorClass = boxColors[i % 2];
@@ -1519,7 +1519,7 @@ function setupClawRound() {
       const row = Math.floor(i / 4);
       const col = i % 4;
       const x = row === 0 ? backX[col] : frontX[col];
-      const y = row === 0 ? 45 : 105;
+      const y = row === 0 ? 190 : 250;
       
       const el = document.createElement('div');
       const colorClass = boxColors[i % 2];
