@@ -413,6 +413,32 @@ function prevPinyin() {
   renderPinyin();
 }
 
+// 將拼音字串轉為直排 HTML 元件的輔助函式 (支援聲調置右)
+function renderPinyinHtml(bopomofoStr, baseSize = 120) {
+  const TONE = /[ˊˇˋ˙]/;
+  const toneChar = (bopomofoStr.match(TONE) || [''])[0];
+  const bodyChars = bopomofoStr.replace(TONE, '');
+  
+  // 根據字數縮小字型大小以防超出區域
+  let fontSize = baseSize;
+  if (bodyChars.length === 2) fontSize = baseSize * 0.75;
+  else if (bodyChars.length === 3) fontSize = baseSize * 0.55;
+
+  let symbolsHtml = '';
+  for (let char of bodyChars) {
+    symbolsHtml += `<div>${char}</div>`;
+  }
+  
+  return `
+    <div class="bopomofo-vertical" style="font-size: ${fontSize}px;">
+      <div class="bopomofo-stack">
+        ${symbolsHtml}
+      </div>
+      ${toneChar ? `<div class="bopomofo-tone">${toneChar}</div>` : ''}
+    </div>
+  `;
+}
+
 // ========== 小測驗 ==========
 
 const QUIZ_LENGTH = 16;
@@ -518,8 +544,9 @@ function nextQuizQuestion() {
     
     if (type === "seePinyin") {
       area.innerHTML =
-        '<div class="prompt-box"><div class="flashcard" style="cursor:default;height:220px;width:min(300px,70vw)">' +
-        '<div class="symbol-big" style="font-size:90px;letter-spacing:10px;">' + targetPinyin.initial + targetPinyin.final + '</div></div></div>' +
+        '<div class="prompt-box"><div class="flashcard" style="cursor:default;height:220px;width:min(300px,70vw);display:flex;align-items:center;justify-content:center;">' +
+        renderPinyinHtml(targetPinyin.initial + targetPinyin.final, 130) +
+        '</div></div>' +
         '<div class="choices-grid" id="quizChoices"></div>';
       
       const grid = document.getElementById("quizChoices");
@@ -542,8 +569,8 @@ function nextQuizQuestion() {
       choices.forEach(choice => {
         const btn = document.createElement("button");
         btn.className = "choice-card";
-        btn.style.fontSize = "45px";
-        btn.textContent = choice.initial + choice.final;
+        btn.style.padding = "5px";
+        btn.innerHTML = renderPinyinHtml(choice.initial + choice.final, 65);
         btn.onclick = () => handleQuizAnswer(choice.word === targetPinyin.word, btn);
         grid.appendChild(btn);
       });

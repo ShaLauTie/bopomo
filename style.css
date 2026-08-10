@@ -1213,3 +1213,42 @@ h1, h2 {
   box-shadow: 0 3px 8px rgba(255,117,140,0.4);
 }
 
+/* ========== 直書注音組合 (直排) ========== */
+.bopomofo-vertical {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.0;
+  font-family: inherit;
+  font-weight: bold;
+  color: #ff527b; /* 配合原本的字型色系 */
+}
+
+.bopomofo-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.bopomofo-stack > div {
+  margin: 1px 0;
+  display: inline-block;
+  text-align: center;
+}
+
+.bopomofo-tone {
+  align-self: center;
+  font-size: 0.55em;
+  margin-left: 4px;
+  margin-bottom: 0.3em; /* 稍微往上移，配合幾聲的符號位置 */
+  line-height: 1;
+}
+
+/* 讓小測驗按鈕內部支援 flex 置中 */
+.choice-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
