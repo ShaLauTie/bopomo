@@ -164,6 +164,31 @@ function speakFallback(text) {
   speechSynthesis.speak(utter);
 }
 
+// 輔助函式：將詞彙字與字之間加上空格，減緩語速並避免特定字元（如「烏龜」）在語音引擎中聽起來太快或碎裂
+function spaceOutVocabulary(text) {
+  const vocabWords = [];
+  if (typeof BOPOMOFO_SYMBOLS !== 'undefined') {
+    BOPOMOFO_SYMBOLS.forEach(s => { if (s.word) vocabWords.push(s.word); });
+  }
+  if (typeof PINYIN_COMBOS !== 'undefined') {
+    PINYIN_COMBOS.forEach(c => { if (c.word) vocabWords.push(c.word); });
+  }
+  
+  // 去除重複，並過濾掉長度小於 2 的字詞
+  const uniqueVocabs = [...new Set(vocabWords)].filter(w => w.length >= 2);
+  
+  // 依長度從長到短排序，避免短詞先被取代
+  uniqueVocabs.sort((a, b) => b.length - a.length);
+  
+  let result = text;
+  uniqueVocabs.forEach(word => {
+    const spaced = word.split("").join(" ");
+    result = result.replace(new RegExp(word, 'g'), " " + spaced); // 前面多加一個空格讓語音有明顯頓點
+  });
+  
+  return result.trim();
+}
+
 /**
  * 主要 speak 函式。
  * - 純注音符號（含帶聲調，如「ㄚˋ」）→ 教育部官方 WAV
@@ -178,8 +203,10 @@ function speak(text, onEnd) {
     speakSymbol(text, onEnd);
     return;
   }
+  // 將詞彙分開，減緩發音速度並避免發音碎裂
+  const spacedText = spaceOutVocabulary(text);
   // 含注音符號的複合字串 → 先轉成可唸的中文
-  speakViaGoogle(bopomofoToSpeakable(text), onEnd);
+  speakViaGoogle(bopomofoToSpeakable(spacedText), onEnd);
 }
 
 /**
