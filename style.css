@@ -1037,8 +1037,8 @@ h1, h2 {
   position: absolute;
   bottom: 0;
   left: 15px;
-  width: 75px;
-  height: 50px;
+  width: 95px;
+  height: 70px;
   background: #fff;
   border: 5px solid #e0e0e0;
   border-bottom: none;
@@ -1270,7 +1270,7 @@ h1, h2 {
     opacity: 0.8;
   }
   100% {
-    transform: translateY(180px) scale(0.6);
+    transform: translateY(240px) scale(0.6);
     opacity: 0;
   }
 }
