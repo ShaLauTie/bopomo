@@ -1555,9 +1555,9 @@ function setupClawRound() {
 function replayClawSound() {
   if (clawTarget) {
     if (clawTarget.word) {
-      speak("請找出" + clawTarget.word);
+      speak(clawTarget.word);
     } else {
-      speak("請找出" + clawTarget.symbol);
+      speak(clawTarget.symbol);
     }
   }
 }
