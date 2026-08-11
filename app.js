@@ -1436,6 +1436,66 @@ function initClawControls() {
   newBtnRight.addEventListener('mouseup', stopMove);
   newBtnRight.addEventListener('mouseleave', stopMove);
   newBtnRight.addEventListener('touchend', stopMove);
+  
+  // 搖桿拖拉邏輯
+  const joystickBase = document.querySelector('.control-joystick-area');
+  let isDraggingJoystick = false;
+  let joystickStartX = 0;
+  let currentDragDir = 0; // -1 for left, 1 for right, 0 for neutral
+  
+  function handleJoystickStart(e) {
+    if (!clawRunning || isGrabbing) return;
+    isDraggingJoystick = true;
+    joystickStartX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    stick.style.transition = 'none'; // 讓搖桿即時跟隨
+  }
+  
+  function handleJoystickMove(e) {
+    if (!isDraggingJoystick || !clawRunning || isGrabbing) return;
+    const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const diff = currentX - joystickStartX;
+    
+    let angle = diff * 0.8;
+    if (angle > 35) angle = 35;
+    if (angle < -35) angle = -35;
+    
+    // 根據角度決定夾爪移動
+    if (angle < -10) {
+      if (currentDragDir !== -1) {
+        currentDragDir = -1;
+        startMove(-1);
+      }
+    } else if (angle > 10) {
+      if (currentDragDir !== 1) {
+        currentDragDir = 1;
+        startMove(1);
+      }
+    } else {
+      if (currentDragDir !== 0) {
+        currentDragDir = 0;
+        stopMove();
+      }
+    }
+    stick.style.transform = `rotate(${angle}deg)`;
+  }
+  
+  function handleJoystickEnd() {
+    if (isDraggingJoystick) {
+      isDraggingJoystick = false;
+      currentDragDir = 0;
+      stick.style.transition = 'transform 0.15s ease';
+      stick.style.transform = '';
+      stopMove();
+    }
+  }
+  
+  joystickBase.addEventListener('mousedown', handleJoystickStart);
+  window.addEventListener('mousemove', handleJoystickMove);
+  window.addEventListener('mouseup', handleJoystickEnd);
+  
+  joystickBase.addEventListener('touchstart', handleJoystickStart, { passive: true });
+  window.addEventListener('touchmove', handleJoystickMove, { passive: true });
+  window.addEventListener('touchend', handleJoystickEnd);
 }
 
 // 扭蛋顏色交替 (綠色/橘色禮物盒)
