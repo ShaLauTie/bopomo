@@ -1447,8 +1447,8 @@ function setupClawRound() {
   container.innerHTML = '';
   clawCapsulesData = [];
   
-  // 放在同一排 (各 8 個)
-  const singleRowX = [18, 29, 40, 51, 62, 73, 84, 95];
+  // 放在同一排，改為 5 個，避免直式螢幕太擠
+  const singleRowX = [20, 38, 56, 74, 92];
   
   if (isPinyinRound) {
     // 拼音組合題
@@ -1461,7 +1461,7 @@ function setupClawRound() {
     
     const others = shuffle(
       PINYIN_COMBOS.filter(c => (c.initial + c.final) !== targetSymbolStr)
-    ).slice(0, 7);
+    ).slice(0, 4);
     const symbols = shuffle([clawTarget, ...others]);
     
     symbols.forEach((symObj, i) => {
@@ -1510,7 +1510,7 @@ function setupClawRound() {
     
     const others = shuffle(
       BOPOMOFO_SYMBOLS.filter(s => s.symbol !== targetSymbolStr)
-    ).slice(0, 7);
+    ).slice(0, 4);
     const symbols = shuffle([clawTarget, ...others]);
     
     symbols.forEach((symObj, i) => {
@@ -1572,9 +1572,9 @@ function dropClaw() {
   arm.classList.remove('closed');
   arm.classList.add('open');
   
-  // 尋找水平位置最接近的禮物盒 (6% 誤差範圍內)
+  // 尋找水平位置最接近的禮物盒 (8% 誤差範圍內)
   let caughtIdx = -1;
-  let minDiff = 6;
+  let minDiff = 8;
   
   clawCapsulesData.forEach((cap, i) => {
     if (cap.el.classList.contains('empty')) return;
