@@ -1438,22 +1438,15 @@ function initClawControls() {
   newBtnRight.addEventListener('touchend', stopMove);
   
   // 搖桿拖拉邏輯
-  const joystickBase = document.querySelector('.control-joystick-area');
+  const joystickArea = document.querySelector('.control-joystick-area');
+  const baseEl = document.querySelector('.joystick-base');
   let isDraggingJoystick = false;
-  let joystickStartX = 0;
   let currentDragDir = 0; // -1 for left, 1 for right, 0 for neutral
   
-  function handleJoystickStart(e) {
-    if (!clawRunning || isGrabbing) return;
-    isDraggingJoystick = true;
-    joystickStartX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-    stick.style.transition = 'none'; // 讓搖桿即時跟隨
-  }
-  
-  function handleJoystickMove(e) {
-    if (!isDraggingJoystick || !clawRunning || isGrabbing) return;
-    const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-    const diff = currentX - joystickStartX;
+  function updateJoystickPosition(clientX) {
+    const baseRect = baseEl.getBoundingClientRect();
+    const centerX = baseRect.left + baseRect.width / 2;
+    const diff = clientX - centerX;
     
     let angle = diff * 0.8;
     if (angle > 35) angle = 35;
@@ -1479,6 +1472,21 @@ function initClawControls() {
     stick.style.transform = `rotate(${angle}deg)`;
   }
   
+  function handleJoystickStart(e) {
+    if (!clawRunning || isGrabbing) return;
+    isDraggingJoystick = true;
+    stick.style.transition = 'none'; // 讓搖桿即時跟隨
+    
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    updateJoystickPosition(clientX);
+  }
+  
+  function handleJoystickMove(e) {
+    if (!isDraggingJoystick || !clawRunning || isGrabbing) return;
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    updateJoystickPosition(clientX);
+  }
+  
   function handleJoystickEnd() {
     if (isDraggingJoystick) {
       isDraggingJoystick = false;
@@ -1489,11 +1497,11 @@ function initClawControls() {
     }
   }
   
-  joystickBase.addEventListener('mousedown', handleJoystickStart);
+  joystickArea.addEventListener('mousedown', handleJoystickStart);
   window.addEventListener('mousemove', handleJoystickMove);
   window.addEventListener('mouseup', handleJoystickEnd);
   
-  joystickBase.addEventListener('touchstart', handleJoystickStart, { passive: true });
+  joystickArea.addEventListener('touchstart', handleJoystickStart, { passive: true });
   window.addEventListener('touchmove', handleJoystickMove, { passive: true });
   window.addEventListener('touchend', handleJoystickEnd);
 }
