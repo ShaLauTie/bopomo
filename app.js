@@ -1375,7 +1375,7 @@ function startClawGame() {
   arm.style.transition = '';
   arm.className = 'claw-arm';
   const line = arm.querySelector('.claw-line');
-  line.style.height = '30px';
+  line.style.height = '10px';
   const caughtItem = document.getElementById('clawCaught');
   caughtItem.className = 'claw-caught';
   caughtItem.innerHTML = '';
@@ -1412,8 +1412,8 @@ function initClawControls() {
         return;
       }
       clawPos += dir * 0.8;
-      if (clawPos < 25) clawPos = 25; // 限制左側，避開出物口
-      if (clawPos > 92) clawPos = 92; // 限制右側
+      if (clawPos < 15) clawPos = 15; // 左邊界
+      if (clawPos > 85) clawPos = 85; // 右邊界限制右側
       document.getElementById('clawArm').style.left = clawPos + '%';
     }, 16);
   };
@@ -1516,7 +1516,7 @@ function setupClawRound() {
   clawCapsulesData = [];
   
   // 放在同一排，改為 5 個，避免直式螢幕太擠
-  const singleRowX = [20, 38, 56, 74, 92];
+  const singleRowX = [15, 32, 50, 68, 85];
   
   if (isPinyinRound) {
     // 拼音組合題
@@ -1539,7 +1539,7 @@ function setupClawRound() {
       const el = document.createElement('div');
       const colorClass = boxColors[i % 2];
       el.className = `capsule ${colorClass}`;
-      el.style.left = `${x}%`;
+      el.style.left = `calc(${x}% - 37px)`;
       el.style.bottom = `15px`; // 改用 bottom 定位，隨螢幕高度自適應
       
       const symStr = symObj.initial + symObj.final;
@@ -1586,7 +1586,7 @@ function setupClawRound() {
       const el = document.createElement('div');
       const colorClass = boxColors[i % 2];
       el.className = `capsule ${colorClass}`;
-      el.style.left = `${x}%`;
+      el.style.left = `calc(${x}% - 37px)`;
       el.style.bottom = `15px`; // 改用 bottom 定位
       
       const symStr = symObj.symbol;
@@ -1676,7 +1676,7 @@ function dropClaw() {
       
       setTimeout(() => {
         // 4. 夾爪升起 (Pull up)
-        line.style.height = '30px';
+        line.style.height = '10px';
         
         setTimeout(() => {
           // 5. 升到頂端後移動 (Move to chute)

@@ -1105,7 +1105,7 @@ h1, h2 {
 
 .claw-line {
   width: 4px;
-  height: 30px;
+  height: 10px;
   background: linear-gradient(90deg, #d3d3d3, #a9a9a9, #d3d3d3);
   box-shadow: 0 0 4px rgba(0,0,0,0.4);
   transition: height 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
