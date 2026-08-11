@@ -1467,13 +1467,12 @@ function setupClawRound() {
     symbols.forEach((symObj, i) => {
       const row = 1; // 全部放同一排
       const x = singleRowX[i];
-      const y = 250; // Y 座標像素
       
       const el = document.createElement('div');
       const colorClass = boxColors[i % 2];
       el.className = `capsule ${colorClass}`;
       el.style.left = `${x}%`;
-      el.style.top = `${y}px`;
+      el.style.bottom = `15px`; // 改用 bottom 定位，隨螢幕高度自適應
       
       const symStr = symObj.initial + symObj.final;
       el.innerHTML = renderPinyinHtml(symStr, 34);
@@ -1486,8 +1485,7 @@ function setupClawRound() {
         word: symObj.word,
         colorClass: colorClass,
         row: row,
-        x: x,
-        y: y
+        x: x
       });
       
       // 點擊禮物盒可以直接將夾爪移過去並抓取
@@ -1516,13 +1514,12 @@ function setupClawRound() {
     symbols.forEach((symObj, i) => {
       const row = 1; // 全部放同一排
       const x = singleRowX[i];
-      const y = 250;
       
       const el = document.createElement('div');
       const colorClass = boxColors[i % 2];
       el.className = `capsule ${colorClass}`;
       el.style.left = `${x}%`;
-      el.style.top = `${y}px`;
+      el.style.bottom = `15px`; // 改用 bottom 定位
       
       const symStr = symObj.symbol;
       el.innerHTML = renderPinyinHtml(symStr, 34);
@@ -1535,8 +1532,7 @@ function setupClawRound() {
         word: symStr,
         colorClass: colorClass,
         row: row,
-        x: x,
-        y: y
+        x: x
       });
       
       el.onclick = () => {
@@ -1585,8 +1581,8 @@ function dropClaw() {
     }
   });
   
-  // 只降到能碰到禮物盒的高度即可 (215px)
-  const targetDepth = '215px';
+  // 只降到能碰到禮物盒的高度即可 (動態計算)
+  const targetDepth = 'calc(100% - 105px)';
   
   setTimeout(() => {
     // 2. 夾爪下降 (Claw drop)
@@ -1626,14 +1622,22 @@ function dropClaw() {
               arm.classList.add('open');
               caughtItem.classList.remove('visible');
               
-              // 出物口掉落特效 (Falling animation)
+              // 出物口掉落特效 (動態計算掉落距離)
               const machine = document.getElementById('clawMachine');
               const fallEl = document.createElement('div');
               fallEl.className = `falling-capsule ${colorClass}`;
               fallEl.style.left = '25px';
               fallEl.style.top = '70px';
+              fallEl.style.transition = 'top 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.6s, transform 0.6s';
               fallEl.innerHTML = renderPinyinHtml(caughtSymbol, 28);
               machine.appendChild(fallEl);
+              
+              // 強制重繪以觸發動畫
+              void fallEl.offsetWidth;
+              
+              fallEl.style.top = 'calc(100% - 70px)';
+              fallEl.style.opacity = '0';
+              fallEl.style.transform = 'scale(0.6)';
               
               setTimeout(() => {
                 fallEl.remove();
