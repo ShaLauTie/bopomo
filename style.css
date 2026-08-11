@@ -982,16 +982,30 @@ h1, h2 {
   box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 0 20px rgba(0,0,0,0.4);
 }
 
-/* 讓夾娃娃機頂部資訊列置頂 (避免被往下捲時看不見) */
+/* 隱藏夾娃娃機標題以騰出空間 */
+#screen-claw h2 {
+  display: none;
+}
+
+/* 讓夾娃娃機資訊列(聽題目、分數)「絕對浮動」在頂部，不佔用版面高度，並強制橫向排列 */
 #screen-claw .mole-header {
-  position: sticky;
-  top: -24px;
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 40px);
+  max-width: 400px;
+  height: auto;
+  flex-direction: row !important;
+  justify-content: space-between;
+  align-items: center;
   z-index: 50;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(4px);
-  padding: 10px;
+  padding: 8px 16px;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  margin-bottom: 0;
 }
 
 /* 遮陽棚 (條紋屋頂) */
