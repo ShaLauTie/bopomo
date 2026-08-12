@@ -1374,9 +1374,9 @@ function startClawGame() {
   const arm = document.getElementById('clawArm');
   arm.style.left = '80%';
   arm.style.transition = '';
+  arm.style.top = '32px';
   arm.className = 'claw-arm';
   const line = arm.querySelector('.claw-line');
-  line.style.height = '10px';
   const caughtItem = document.getElementById('clawCaught');
   caughtItem.className = 'claw-caught';
   caughtItem.innerHTML = '';
@@ -1651,11 +1651,12 @@ function dropClaw() {
   });
   
   // 只降到能碰到禮物盒的高度即可 (動態計算)
-  const targetDepth = 'calc(100% - 105px)';
+  const targetDepth = 'calc(100% - 75px)';
   
   setTimeout(() => {
     // 2. 夾爪下降 (Claw drop)
-    line.style.height = targetDepth;
+    arm.style.transition = 'top 1s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    arm.style.top = targetDepth;
     
     setTimeout(() => {
       // 3. 抓取收爪 (Clasp claws)
@@ -1677,7 +1678,7 @@ function dropClaw() {
       
       setTimeout(() => {
         // 4. 夾爪升起 (Pull up)
-        line.style.height = '10px';
+        arm.style.top = '32px';
         
         setTimeout(() => {
           // 5. 升到頂端後移動 (Move to chute)

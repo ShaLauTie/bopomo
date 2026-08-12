@@ -1104,11 +1104,14 @@ h1, h2 {
 }
 
 .claw-line {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
   width: 4px;
-  height: 10px;
+  height: 800px;
   background: linear-gradient(90deg, #d3d3d3, #a9a9a9, #d3d3d3);
   box-shadow: 0 0 4px rgba(0,0,0,0.4);
-  transition: height 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .claw-grabber {
@@ -1247,12 +1250,7 @@ h1, h2 {
 
 /* 垂直緞帶線條 */
 .capsule::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 8px;
-  z-index: 1;
+  display: none;
 }
 .capsule.box-green::after { background: #bdf0ff; }
 .capsule.box-orange::after { background: #fff2b2; }
