@@ -153,10 +153,10 @@ const TONE_SETS = [
     { mark: "ˋ", word: "徹底", emoji: "✨" },
   ]},
   { spelling: "ㄋㄧㄡ", tones: [
-    { mark: "",  word: "牛奶", emoji: "🥛" },
-    { mark: "ˊ", word: "牛肉", emoji: "🐂" },
-    { mark: "ˇ", word: "扭動", emoji: "💃" },
-    { mark: "ˋ", word: "按鈕", emoji: "🔘" },
+    { mark: "",  word: "小妞", emoji: "👧" },
+    { mark: "ˊ", word: "牛奶", emoji: "🥛" },
+    { mark: "ˇ", word: "按鈕", emoji: "🔘" },
+    { mark: "ˋ", word: "脾氣拗", emoji: "😠" },
   ]},
   { spelling: "ㄈㄟ", tones: [
     { mark: "",  word: "飛機", emoji: "✈️" },

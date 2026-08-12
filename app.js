@@ -1016,7 +1016,8 @@ function startToneRound() {
     btn.className = 'choice-card';
     btn.style.fontSize   = '1.5rem';
     btn.style.minHeight  = '80px';
-    btn.textContent = toneSet.spelling + tone.mark;
+    btn.style.padding    = '5px';
+    btn.innerHTML = renderPinyinHtml(toneSet.spelling + tone.mark, 45);
     btn.onclick = () => handleToneChoice(tone, btn);
     grid.appendChild(btn);
   });
