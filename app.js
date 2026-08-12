@@ -1651,7 +1651,8 @@ function dropClaw() {
   });
   
   // 只降到能碰到禮物盒的高度即可 (動態計算)
-  const targetDepth = 'calc(100% - 75px)';
+  const machineHeight = document.getElementById('clawMachine').offsetHeight;
+  const targetDepth = (machineHeight - 110) + 'px';
   
   setTimeout(() => {
     // 2. 夾爪下降 (Claw drop)
