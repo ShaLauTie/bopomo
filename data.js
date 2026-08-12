@@ -148,8 +148,7 @@ const TONE_SETS = [
   ]},
   { spelling: "ㄔㄜ", tones: [
     { mark: "",  word: "車子", emoji: "🚗" },
-    { mark: "ˊ", word: "扯斷", emoji: "💥" },
-    { mark: "ˇ", word: "扯", emoji: "🤥" },
+    { mark: "ˇ", word: "扯斷", emoji: "💥" },
     { mark: "ˋ", word: "徹底", emoji: "✨" },
   ]},
   { spelling: "ㄋㄧㄡ", tones: [
