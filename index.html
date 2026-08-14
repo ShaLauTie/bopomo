@@ -3,144 +3,144 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>注音樂�?</title>
-<link rel="stylesheet" href="style.css?v=22">
+<title>注音樂園</title>
+<link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
 
-<button class="home-btn" id="homeBtn" onclick="goHome()">??</button>
+<button class="home-btn" id="homeBtn" onclick="goHome()">🏠</button>
 
 <div class="feedback-banner" id="feedbackBanner"></div>
 
-<!-- 首�? -->
+<!-- 首頁 -->
 <div class="screen active" id="screen-home">
-  <h1>?? 注音樂�? ??</h1>
+  <h1>🎈 注音樂園 🎈</h1>
   <div class="menu-grid">
     <button class="menu-card card-1" onclick="showScreen('flashcards')">
-      <span class="icon">?�?/span>
-      <span>認�?注音符�?</span>
+      <span class="icon">🀄</span>
+      <span>認識注音符號</span>
     </button>
     <button class="menu-card card-2" onclick="showScreen('match')">
-      <span class="icon">?��</span>
-      <span>?�音?�符??/span>
+      <span class="icon">🎧</span>
+      <span>聽音找符號</span>
     </button>
     <button class="menu-card card-3" onclick="showScreen('pinyin')">
-      <span class="icon">?��</span>
-      <span>?�音練�?</span>
+      <span class="icon">🧩</span>
+      <span>拼音練習</span>
     </button>
     <button class="menu-card card-4" onclick="showScreen('quiz')">
-      <span class="icon">??</span>
-      <span>小測�?/span>
+      <span class="icon">🏆</span>
+      <span>小測驗</span>
     </button>
     <button class="menu-card card-5" onclick="showScreen('mole')">
-      <span class="icon">?��</span>
-      <span>?�地�?/span>
+      <span class="icon">🔨</span>
+      <span>打地鼠</span>
     </button>
     <button class="menu-card card-6" onclick="showScreen('wordhead')">
-      <span class="icon">?��</span>
-      <span>?��??��???/span>
+      <span class="icon">🔤</span>
+      <span>看圖找字頭</span>
     </button>
     <button class="menu-card card-7" onclick="showScreen('memory')">
-      <span class="icon">??</span>
-      <span>記憶?��?</span>
+      <span class="icon">🃏</span>
+      <span>記憶配對</span>
     </button>
     <button class="menu-card card-8" onclick="showScreen('tone')">
-      <span class="icon">?��</span>
-      <span>?�調辨�?</span>
+      <span class="icon">🎵</span>
+      <span>聲調辨識</span>
     </button>
     <button class="menu-card card-9" onclick="showScreen('balloon')">
-      <span class="icon">?��</span>
-      <span>射氣??/span>
+      <span class="icon">🎯</span>
+      <span>射氣球</span>
     </button>
     <button class="menu-card card-10" onclick="showScreen('claw')" style="background: linear-gradient(135deg, #a2d2ff, #ffafcc);">
-      <span class="icon">?���?/span>
-      <span>夾�?娃�?</span>
+      <span class="icon">🕹️</span>
+      <span>夾娃娃機</span>
     </button>
     <button class="menu-card card-11" onclick="window.open('https://nightmarket.hle.com.tw/', '_blank')" style="display: none; background: linear-gradient(135deg, #fbc2eb, #a6c1ee);">
-      <span class="icon">?��</span>
-      <span>夜�??��???/span>
+      <span class="icon">🎡</span>
+      <span>夜市ㄅㄆㄇ</span>
     </button>
   </div>
 </div>
 
-<!-- 認�?注音符�???-->
+<!-- 認識注音符號牌 -->
 <div class="screen" id="screen-flashcards">
-  <h2>認�?注音符�?</h2>
+  <h2>認識注音符號</h2>
   <div class="flashcard" id="flashcard" onclick="speakCurrentFlashcard()">
-    <div class="symbol-big" id="fcSymbol">??/div>
-    <div class="word-emoji" id="fcEmoji">?��</div>
-    <div class="word-text" id="fcWord">?�爸</div>
+    <div class="symbol-big" id="fcSymbol">ㄅ</div>
+    <div class="word-emoji" id="fcEmoji">👨</div>
+    <div class="word-text" id="fcWord">爸爸</div>
   </div>
   <div class="card-nav">
-    <button class="nav-arrow" onclick="prevFlashcard()">⬅�?</button>
+    <button class="nav-arrow" onclick="prevFlashcard()">⬅️</button>
     <span class="progress-text" id="fcProgress">1 / 37</span>
-    <button class="nav-arrow" onclick="nextFlashcard()">?��?</button>
+    <button class="nav-arrow" onclick="nextFlashcard()">➡️</button>
   </div>
 </div>
 
-<!-- ?�音?�符???�戲 -->
+<!-- 聽音找符號 遊戲 -->
 <div class="screen" id="screen-match">
-  <h2>?�音?�符??/h2>
+  <h2>聽音找符號</h2>
   <div class="prompt-box">
-    <button class="speaker-btn" id="matchSpeaker" onclick="replayMatchSound()">??</button>
+    <button class="speaker-btn" id="matchSpeaker" onclick="replayMatchSound()">🔊</button>
   </div>
   <div class="choices-grid" id="matchChoices"></div>
 </div>
 
-<!-- ?�音練�? -->
+<!-- 拼音練習 -->
 <div class="screen" id="screen-pinyin">
-  <h2>?�音練�?</h2>
+  <h2>拼音練習</h2>
   <div class="pinyin-row">
-    <div class="pinyin-slot" id="pinyinInitial" onclick="speakPart('initial')">??/div>
-    <span class="plus-sign">??/span>
-    <div class="pinyin-slot" id="pinyinFinal" onclick="speakPart('final')">?��?/div>
+    <div class="pinyin-slot" id="pinyinInitial" onclick="speakPart('initial')">ㄅ</div>
+    <span class="plus-sign">➕</span>
+    <div class="pinyin-slot" id="pinyinFinal" onclick="speakPart('final')">ㄚˋ</div>
   </div>
-  <button class="big-btn combine-btn" onclick="combinePinyin()">?�起來�?</button>
+  <button class="big-btn combine-btn" onclick="combinePinyin()">拼起來！</button>
   <div class="result-box" id="pinyinResult"></div>
   <div class="card-nav">
-    <button class="nav-arrow" onclick="prevPinyin()">⬅�?</button>
+    <button class="nav-arrow" onclick="prevPinyin()">⬅️</button>
     <span class="progress-text" id="pinyinProgress">1 / 22</span>
-    <button class="nav-arrow" onclick="nextPinyin()">?��?</button>
+    <button class="nav-arrow" onclick="nextPinyin()">➡️</button>
   </div>
 </div>
 
-<!-- 小測�?-->
+<!-- 小測驗 -->
 <div class="screen" id="screen-quiz">
-  <h2>小測�?/h2>
+  <h2>小測驗</h2>
   <div class="quiz-header">
-    <span id="quizProgress">�?1 / 16 �?/span>
-    <span class="stars" id="quizStars">⭐�? 0</span>
+    <span id="quizProgress">第 1 / 16 題</span>
+    <span class="stars" id="quizStars">⭐️ 0</span>
   </div>
   <div id="quizQuestionArea"></div>
 </div>
 
-<!-- ?�地�?-->
+<!-- 打地鼠 -->
 <div class="screen" id="screen-mole">
-  <h2>?�地�??��</h2>
+  <h2>打地鼠 🔨</h2>
   <div class="mole-header">
     <div class="mole-target-box">
-      <button class="mole-mini-speaker" onclick="replayMoleSound()">??</button>
-      <span style="font-size:1rem;color:#5b4636;font-weight:bold">?�音?��?�?/span>
+      <button class="mole-mini-speaker" onclick="replayMoleSound()">🔊</button>
+      <span style="font-size:1rem;color:#5b4636;font-weight:bold">聽音打牠！</span>
     </div>
     <div class="mole-stats">
-      <span>�?<span id="moleScore">0</span></span>
-      <span>??<span id="moleTimer">60</span>s</span>
+      <span>⭐ <span id="moleScore">0</span></span>
+      <span>⏱ <span id="moleTimer">60</span>s</span>
     </div>
   </div>
   <div class="mole-grid" id="moleGrid"></div>
   <div class="mole-gameover" id="moleGameover" style="display:none">
     <div class="gameover-box">
-      <div style="font-size:3.5rem">??</div>
-      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">?��??��?</div>
-      <div class="big-score">�?<span id="moleFinalScore">0</span></div>
-      <button class="big-btn combine-btn" onclick="startMoleGame()">?�玩一次�?</button>
+      <div style="font-size:3.5rem">🎉</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">時間到！</div>
+      <div class="big-score">⭐ <span id="moleFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startMoleGame()">再玩一次！</button>
     </div>
   </div>
 </div>
 
-<!-- ?��??��???-->
+<!-- 看圖找字頭 -->
 <div class="screen" id="screen-wordhead">
-  <h2>?��??��???/h2>
+  <h2>看圖找字頭</h2>
   <div class="prompt-box">
     <div class="flashcard" style="cursor:pointer;height:220px;width:min(300px,70vw)" onclick="replayWordHeadSound()">
       <div class="word-emoji" id="whEmoji" style="font-size:70px"></div>
@@ -150,19 +150,19 @@
   <div class="choices-grid" id="whChoices"></div>
 </div>
 
-<!-- 記憶?��? -->
+<!-- 記憶配對 -->
 <div class="screen" id="screen-memory">
-  <h2>記憶?��?</h2>
+  <h2>記憶配對</h2>
   <div class="memory-header">
-    <span id="memoryMoves">翻�?次數�?</span>
-    <span id="memoryMatched">?��?�? / 6</span>
+    <span id="memoryMoves">翻牌次數：0</span>
+    <span id="memoryMatched">配對：0 / 6</span>
   </div>
   <div class="memory-grid" id="memoryGrid"></div>
 </div>
 
-<!-- ?�調辨�? -->
+<!-- 聲調辨識 -->
 <div class="screen" id="screen-tone">
-  <h2>?�調辨�?</h2>
+  <h2>聲調辨識</h2>
   <div class="prompt-box">
     <div class="flashcard" style="cursor:pointer;height:220px;width:min(300px,70vw)" onclick="replayToneSound()">
       <div class="word-emoji" id="toneEmoji" style="font-size:70px"></div>
@@ -172,41 +172,41 @@
   <div class="choices-grid" id="toneChoices"></div>
 </div>
 
-<!-- 射氣??-->
+<!-- 射氣球 -->
 <div class="screen" id="screen-balloon">
-  <h2>射氣???��</h2>
+  <h2>射氣球 🎯</h2>
   <div class="mole-header">
     <div class="mole-target-box">
-      <button class="mole-mini-speaker" onclick="replayBalloonSound()">??</button>
-      <span style="font-size:1rem;color:#5b4636;font-weight:bold">?�音射氣?��?</span>
+      <button class="mole-mini-speaker" onclick="replayBalloonSound()">🔊</button>
+      <span style="font-size:1rem;color:#5b4636;font-weight:bold">聽音射氣球！</span>
     </div>
     <div class="mole-stats">
-      <span>�?<span id="balloonScore">0</span></span>
-      <span>??<span id="balloonTimer">45</span>s</span>
+      <span>⭐ <span id="balloonScore">0</span></span>
+      <span>⏱ <span id="balloonTimer">45</span>s</span>
     </div>
   </div>
   <div class="balloon-container" id="balloonContainer"></div>
   
   <div class="mole-gameover" id="balloonGameover" style="display:none">
     <div class="gameover-box">
-      <div style="font-size:3.5rem">??</div>
-      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">?��??��?</div>
-      <div class="big-score">�?<span id="balloonFinalScore">0</span></div>
-      <button class="big-btn combine-btn" onclick="startBalloonGame()">?�玩一次�?</button>
+      <div style="font-size:3.5rem">🎉</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">時間到！</div>
+      <div class="big-score">⭐ <span id="balloonFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startBalloonGame()">再玩一次！</button>
     </div>
   </div>
 </div>
 
-<!-- 夾�?娃�? -->
+<!-- 夾娃娃機 -->
 <div class="screen" id="screen-claw">
-  <h2>夾�?娃�? ?���?/h2>
+  <h2>夾娃娃機 🕹️</h2>
   <div class="mole-header">
     <div class="mole-target-box">
-      <button class="listen-btn" id="clawSpeaker" onclick="replayClawSound()">?? ?��???/button>
+      <button class="listen-btn" id="clawSpeaker" onclick="replayClawSound()">🔊 聽題目</button>
     </div>
     <div class="mole-stats">
-      <span>�?<span id="clawScore">0</span></span>
-      <span>?? <span id="clawProgress">�?1 / 5 �?/span></span>
+      <span>⭐ <span id="clawScore">0</span></span>
+      <span>📋 <span id="clawProgress">第 1 / 5 題</span></span>
     </div>
   </div>
   
@@ -215,7 +215,7 @@
       <div class="roof-display-window" id="clawRoofDisplay"></div>
     </div>
     <div class="claw-glass"></div>
-    <div class="claw-chute">?��</div>
+    <div class="claw-chute">📥</div>
     <div class="claw-track" id="clawTrack">
       <div class="claw-arm" id="clawArm">
         <div class="claw-line"></div>
@@ -230,7 +230,7 @@
     <div class="claw-capsules" id="clawCapsules"></div>
   </div>
 
-  <!-- 仿翰?��?市�?桿控?�面??-->
+  <!-- 仿翰林夜市搖桿控制面板 -->
   <div class="claw-control-panel">
     <div class="control-joystick-area">
       <div class="joystick-base">
@@ -238,23 +238,23 @@
       </div>
     </div>
     <div class="control-arrow-area">
-      <button class="ctrl-arrow-btn" id="btnClawLeft">?�</button>
-      <button class="ctrl-drop-btn" id="btnClawDrop" onclick="dropClaw()">??/button>
-      <button class="ctrl-arrow-btn" id="btnClawRight">??/button>
+      <button class="ctrl-arrow-btn" id="btnClawLeft">◀</button>
+      <button class="ctrl-drop-btn" id="btnClawDrop" onclick="dropClaw()">●</button>
+      <button class="ctrl-arrow-btn" id="btnClawRight">▶</button>
     </div>
   </div>
 
   <div class="mole-gameover" id="clawGameover" style="display:none">
     <div class="gameover-box">
-      <div style="font-size:3.5rem">??</div>
-      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">?��??��?</div>
-      <div class="big-score">�?<span id="clawFinalScore">0</span></div>
-      <button class="big-btn combine-btn" onclick="startClawGame()">?�玩一次�?</button>
+      <div style="font-size:3.5rem">🎉</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">時間到！</div>
+      <div class="big-score">⭐ <span id="clawFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startClawGame()">再玩一次！</button>
     </div>
   </div>
 </div>
 
-<script src="data.js?v=22"></script>
-<script src="app.js?v=22"></script>
+<script src="data.js?v=23"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
