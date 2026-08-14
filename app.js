@@ -1386,7 +1386,8 @@ function startClawGame() {
   document.getElementById('clawGameover').style.display = 'none';
   document.getElementById('btnClawDrop').disabled = false;
   
-  setupClawRound();
+  initClawCapsules();
+  pickNextClawTarget();
   initClawControls();
 }
 
@@ -1510,108 +1511,71 @@ function initClawControls() {
 // 扭蛋顏色交替 (綠色/橘色禮物盒)
 const boxColors = ['box-green', 'box-orange'];
 
-function setupClawRound() {
+function initClawCapsules() {
   const isPinyinRound = Math.random() < 0.5; // 50% 機率出拼音組合題，50% 單個注音題
   const container = document.getElementById('clawCapsules');
   container.innerHTML = '';
   clawCapsulesData = [];
   
-  // 放在同一排，改為 5 個，避免直式螢幕太擠
   const singleRowX = [15, 32, 50, 68, 85];
+  let symbols = [];
   
   if (isPinyinRound) {
-    // 拼音組合題
-    clawTarget = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
-    const targetSymbolStr = clawTarget.initial + clawTarget.final;
-    
-    // 更新頂部綠色視窗顯示問號，僅用語音提示
-    document.getElementById('clawRoofDisplay').textContent = '❓';
-    replayClawSound();
-    
-    const others = shuffle(
-      PINYIN_COMBOS.filter(c => (c.initial + c.final) !== targetSymbolStr)
-    ).slice(0, 4);
-    const symbols = shuffle([clawTarget, ...others]);
-    
-    symbols.forEach((symObj, i) => {
-      const row = 1; // 全部放同一排
-      const x = singleRowX[i];
-      
-      const el = document.createElement('div');
-      const colorClass = boxColors[i % 2];
-      el.className = `capsule ${colorClass}`;
-      el.style.left = `calc(${x}% - 37px)`;
-      el.style.bottom = `15px`; // 改用 bottom 定位，隨螢幕高度自適應
-      
-      const symStr = symObj.initial + symObj.final;
-      el.innerHTML = renderPinyinHtml(symStr, 34);
-      
-      container.appendChild(el);
-      clawCapsulesData.push({
-        el: el,
-        symbol: symStr,
-        isPinyin: true,
-        word: symObj.word,
-        colorClass: colorClass,
-        row: row,
-        x: x
-      });
-      
-      // 點擊禮物盒可以直接將夾爪移過去並抓取
-      el.onclick = () => {
-        if (!clawRunning || isGrabbing) return;
-        clawPos = x;
-        document.getElementById('clawArm').style.left = clawPos + '%';
-        dropClaw();
-      };
-    });
-    
+    symbols = shuffle(PINYIN_COMBOS).slice(0, 5);
   } else {
-    // 單個注音題
-    clawTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
-    const targetSymbolStr = clawTarget.symbol;
-    
-    // 更新頂部綠色視窗顯示問號，僅用語音提示
-    document.getElementById('clawRoofDisplay').textContent = '❓';
-    replayClawSound();
-    
-    const others = shuffle(
-      BOPOMOFO_SYMBOLS.filter(s => s.symbol !== targetSymbolStr)
-    ).slice(0, 4);
-    const symbols = shuffle([clawTarget, ...others]);
-    
-    symbols.forEach((symObj, i) => {
-      const row = 1; // 全部放同一排
-      const x = singleRowX[i];
-      
-      const el = document.createElement('div');
-      const colorClass = boxColors[i % 2];
-      el.className = `capsule ${colorClass}`;
-      el.style.left = `calc(${x}% - 37px)`;
-      el.style.bottom = `15px`; // 改用 bottom 定位
-      
-      const symStr = symObj.symbol;
-      el.innerHTML = renderPinyinHtml(symStr, 34);
-      
-      container.appendChild(el);
-      clawCapsulesData.push({
-        el: el,
-        symbol: symStr,
-        isPinyin: false,
-        word: symStr,
-        colorClass: colorClass,
-        row: row,
-        x: x
-      });
-      
-      el.onclick = () => {
-        if (!clawRunning || isGrabbing) return;
-        clawPos = x;
-        document.getElementById('clawArm').style.left = clawPos + '%';
-        dropClaw();
-      };
-    });
+    symbols = shuffle(BOPOMOFO_SYMBOLS).slice(0, 5);
   }
+  
+  symbols.forEach((symObj, i) => {
+    const x = singleRowX[i];
+    const el = document.createElement('div');
+    const colorClass = boxColors[i % 2];
+    el.className = `capsule ${colorClass}`;
+    el.style.left = `calc(${x}% - 37px)`;
+    el.style.bottom = `15px`;
+    
+    let symStr = '';
+    let isPinyin = false;
+    if (isPinyinRound) {
+      symStr = symObj.initial + symObj.final;
+      isPinyin = true;
+    } else {
+      symStr = symObj.symbol;
+    }
+    
+    el.innerHTML = renderPinyinHtml(symStr, 34);
+    container.appendChild(el);
+    
+    clawCapsulesData.push({
+      el: el,
+      symbol: symStr,
+      isPinyin: isPinyin,
+      word: symObj.word || symStr,
+      colorClass: colorClass,
+      row: 1,
+      x: x,
+      isCaught: false,
+      symObj: symObj
+    });
+    
+    el.onclick = () => {
+      if (!clawRunning || isGrabbing) return;
+      clawPos = x;
+      document.getElementById('clawArm').style.left = clawPos + '%';
+      dropClaw();
+    };
+  });
+}
+
+function pickNextClawTarget() {
+  const remaining = clawCapsulesData.filter(c => !c.isCaught);
+  if (remaining.length === 0) return;
+  
+  const targetCap = remaining[randomInt(remaining.length)];
+  clawTarget = targetCap.symObj;
+  
+  document.getElementById('clawRoofDisplay').textContent = '❓';
+  replayClawSound();
 }
 
 function replayClawSound() {
@@ -1642,13 +1606,23 @@ function dropClaw() {
   let minDiff = 8;
   
   clawCapsulesData.forEach((cap, i) => {
-    if (cap.el.classList.contains('empty')) return;
+    if (cap.el.classList.contains('empty') || cap.isCaught) return;
     const diff = Math.abs(cap.x - clawPos);
     if (diff < minDiff) {
       minDiff = diff;
       caughtIdx = i;
     }
   });
+  
+  let isCorrect = false;
+  if (caughtIdx !== -1) {
+    const cap = clawCapsulesData[caughtIdx];
+    if (cap.isPinyin) {
+      isCorrect = (cap.symbol === (clawTarget.initial + clawTarget.final));
+    } else {
+      isCorrect = (cap.symbol === clawTarget.symbol);
+    }
+  }
   
   // 只降到能碰到禮物盒的高度即可 (動態計算)
   const machineHeight = document.getElementById('clawMachine').offsetHeight;
@@ -1666,9 +1640,35 @@ function dropClaw() {
       
       let colorClass = '';
       let caughtSymbol = '';
+      
       if (caughtIdx !== -1) {
+        if (!isCorrect) {
+          // 夾錯了：夾不起來，語音提示錯誤，靜止三秒
+          showFeedback(false);
+          
+          setTimeout(() => {
+            // 4. 空爪升起
+            arm.style.top = '32px';
+            
+            setTimeout(() => {
+              // 回到原始位置
+              arm.style.left = clawPos + '%';
+              
+              setTimeout(() => {
+                arm.style.transition = '';
+                arm.classList.remove('open', 'closed');
+                isGrabbing = false;
+                document.getElementById('btnClawDrop').disabled = false;
+              }, 1200);
+            }, 800);
+          }, 3000);
+          return; // 結束夾錯的流程
+        }
+        
+        // 夾對了：正常夾取
         const cap = clawCapsulesData[caughtIdx];
         cap.el.classList.add('empty');
+        cap.isCaught = true;
         caughtSymbol = cap.symbol;
         colorClass = cap.colorClass;
         
@@ -1693,7 +1693,7 @@ function dropClaw() {
               arm.classList.add('open');
               caughtItem.classList.remove('visible');
               
-              // 出物口掉落特效 (動態計算掉落距離)
+              // 出物口掉落特效
               const machine = document.getElementById('clawMachine');
               const fallEl = document.createElement('div');
               fallEl.className = `falling-capsule ${colorClass}`;
@@ -1714,22 +1714,10 @@ function dropClaw() {
                 fallEl.remove();
               }, 600);
               
-              // 判斷是否夾對 (Verify result)
-              const cap = clawCapsulesData[caughtIdx];
-              let isCorrect = false;
-              if (cap.isPinyin) {
-                isCorrect = (cap.symbol === (clawTarget.initial + clawTarget.final));
-              } else {
-                isCorrect = (cap.symbol === clawTarget.symbol);
-              }
-              
-              if (isCorrect) {
-                clawScore++;
-                document.getElementById('clawScore').textContent = clawScore;
-                showFeedback(true);
-              } else {
-                showFeedback(false);
-              }
+              // 答對結算
+              clawScore++;
+              document.getElementById('clawScore').textContent = clawScore;
+              showFeedback(true);
               
               setTimeout(() => {
                 // 7. 爪子回到原位 (Move back)
@@ -1742,25 +1730,21 @@ function dropClaw() {
                   isGrabbing = false;
                   document.getElementById('btnClawDrop').disabled = false;
                   
-                  if (isCorrect) {
-                    if (clawQuestionNum === 5) {
-                      // 5 題全部答對，贏得挑戰！
-                      endClawGame(true);
-                    } else {
-                      // 進到下一題
-                      clawQuestionNum++;
-                      document.getElementById('clawProgress').textContent = `第 ${clawQuestionNum} / 5 題`;
-                      if (clawRunning) setupClawRound();
-                    }
+                  if (clawQuestionNum === 5) {
+                    // 5 題全部答對，贏得挑戰！
+                    endClawGame(true);
                   } else {
-                    // 夾錯了，不要結束遊戲，讓玩家可以繼續嘗試夾剩下的禮物盒
+                    // 進到下一題，從剩下的扭蛋挑選
+                    clawQuestionNum++;
+                    document.getElementById('clawProgress').textContent = `第 ${clawQuestionNum} / 5 題`;
+                    if (clawRunning) pickNextClawTarget();
                   }
                 }, 1200);
               }, 600);
               
             }, 1200);
           } else {
-            // 沒抓到，重置狀態，允許繼續操作
+            // 沒抓到 (空抓)，重置狀態，允許繼續操作
             arm.classList.remove('closed');
             isGrabbing = false;
             document.getElementById('btnClawDrop').disabled = false;
