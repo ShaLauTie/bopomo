@@ -253,12 +253,14 @@ function showScreen(name) {
   if (name === "tone") startToneRound();
   if (name === "balloon") startBalloonGame();
   if (name === "claw") startClawGame();
+  if (name === "spell") startSpellGame();
 }
 
 function goHome() {
   stopMoleGame();
   stopBalloonGame();
   stopClawGame();
+  stopSpellGame();
   showScreen("home");
 }
 
@@ -1783,4 +1785,143 @@ function endClawGame(isWin) {
 function stopClawGame() {
   clawRunning = false;
   clearInterval(clawMoveInterval);
+}
+
+// ========== 拼字工廠 ==========
+
+const SPELL_LENGTH = 10;
+
+let spellScore = 0;
+let spellQuestionNum = 0;
+let spellCombo = null;      // 目前題目（PINYIN_COMBOS 之一）
+let spellStep = 'initial';  // 'initial' → 選聲母；'final' → 選韻符
+let spellLocked = false;
+let spellRunning = false;
+
+// 所有題庫用到的韻符池（含聲調），供第二步生成干擾選項
+const SPELL_FINALS = [...new Set(PINYIN_COMBOS.map(c => c.final))];
+// 所有聲母池，供第一步生成干擾選項
+const SPELL_INITIALS = [...new Set(PINYIN_COMBOS.map(c => c.initial))];
+
+function startSpellGame() {
+  spellScore = 0;
+  spellQuestionNum = 0;
+  spellRunning = true;
+  spellLocked = false;
+  document.getElementById('spellGameover').style.display = 'none';
+  nextSpellRound();
+}
+
+function nextSpellRound() {
+  if (spellQuestionNum >= SPELL_LENGTH) {
+    endSpellGame();
+    return;
+  }
+  spellLocked = false;
+  spellStep = 'initial';
+  spellCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+
+  document.getElementById('spellEmoji').textContent = spellCombo.emoji;
+  document.getElementById('spellWord').textContent  = spellCombo.word;
+
+  // 拼字槽：兩格都清空，等孩子選
+  document.getElementById('spellSlotInitial').innerHTML = '';
+  document.getElementById('spellSlotFinal').innerHTML   = '';
+
+  renderSpellChoices('initial');
+  speak(spellCombo.word);
+}
+
+function updateSpellHint() {
+  const hint = document.getElementById('spellHint');
+  hint.textContent = spellStep === 'initial' ? '先選「聲母」🔊' : '再選「韻符」🔊';
+}
+
+function renderSpellChoices(step) {
+  updateSpellHint();
+
+  let correct, pool;
+  if (step === 'initial') {
+    correct = spellCombo.initial;
+    pool = SPELL_INITIALS;
+  } else {
+    correct = spellCombo.final;
+    pool = SPELL_FINALS;
+  }
+
+  const others = shuffle(pool.filter(v => v !== correct)).slice(0, 3);
+  const choices = shuffle([correct, ...others]);
+
+  const grid = document.getElementById('spellChoices');
+  grid.innerHTML = '';
+  choices.forEach(value => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-card';
+    btn.style.padding = '5px';
+    btn.innerHTML = renderPinyinHtml(value, 55);
+    btn.onclick = () => handleSpellChoice(value, step, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function handleSpellChoice(value, step, btn) {
+  if (spellLocked || !spellRunning) return;
+  if (step !== spellStep) return;  // 防止上一步殘留按鈕誤觸
+
+  const correct = step === 'initial'
+    ? value === spellCombo.initial
+    : value === spellCombo.final;
+
+  if (!correct) {
+    btn.classList.add('wrong');
+    showFeedback(false);
+    setTimeout(() => btn.classList.remove('wrong'), 1200);
+    return;
+  }
+
+  btn.classList.add('correct');
+
+  if (step === 'initial') {
+    // 第一步答對：填入聲母，進到第二步
+    document.getElementById('spellSlotInitial').innerHTML = renderPinyinHtml(spellCombo.initial, 56);
+    speak(spellCombo.initial);
+    spellStep = 'final';
+    setTimeout(() => {
+      if (spellRunning) renderSpellChoices('final');
+    }, 550);
+  } else {
+    // 第二步答對：整題完成
+    spellLocked = true;
+    document.getElementById('spellSlotFinal').innerHTML = renderPinyinHtml(spellCombo.final, 56);
+    document.getElementById('spellChoices').innerHTML = '';
+
+    spellScore++;
+    spellQuestionNum++;
+
+    // 拼起來唸出完整詞
+    speak(spellCombo.word);
+    showFeedback(true);
+
+    setTimeout(() => {
+      if (spellRunning) nextSpellRound();
+    }, 1300);
+  }
+}
+
+function replaySpellSound() {
+  if (spellCombo) speak(spellCombo.word);
+}
+
+function endSpellGame() {
+  spellRunning = false;
+  document.getElementById('spellFinalScore').textContent = spellScore;
+  document.getElementById('spellGameover').style.display = 'flex';
+  const msg = spellScore >= SPELL_LENGTH ? '太厲害了！全部拼對！' :
+              spellScore >= 6            ? '很棒！繼續加油！' : '再試一次！';
+  speak(msg);
+}
+
+function stopSpellGame() {
+  spellRunning = false;
+  spellLocked = false;
 }

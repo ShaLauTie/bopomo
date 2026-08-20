@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=23">
+<link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 
@@ -55,6 +55,10 @@
     <button class="menu-card card-10" onclick="showScreen('claw')" style="background: linear-gradient(135deg, #a2d2ff, #ffafcc);">
       <span class="icon">🕹️</span>
       <span>夾娃娃機</span>
+    </button>
+    <button class="menu-card card-12" onclick="showScreen('spell')" style="background: linear-gradient(135deg, #ffd166, #ff7b54);">
+      <span class="icon">🏭</span>
+      <span>拼字工廠</span>
     </button>
     <button class="menu-card card-11" onclick="window.open('https://nightmarket.hle.com.tw/', '_blank')" style="display: none; background: linear-gradient(135deg, #fbc2eb, #a6c1ee);">
       <span class="icon">🎡</span>
@@ -254,7 +258,37 @@
   </div>
 </div>
 
-<script src="data.js?v=23"></script>
-<script src="app.js?v=23"></script>
+<!-- 拼字工廠 -->
+<div class="screen" id="screen-spell">
+  <h2>拼字工廠 🏭</h2>
+  <div class="prompt-box">
+    <div class="flashcard" style="cursor:pointer;height:180px;width:min(280px,66vw)" onclick="replaySpellSound()">
+      <div class="word-emoji" id="spellEmoji" style="font-size:64px"></div>
+      <div class="word-text" id="spellWord"></div>
+    </div>
+  </div>
+
+  <div class="spell-step-hint" id="spellHint">先選「聲母」🔊</div>
+
+  <div class="pinyin-row spell-slot-row">
+    <div class="pinyin-slot" id="spellSlotInitial"></div>
+    <span class="plus-sign">➕</span>
+    <div class="pinyin-slot" id="spellSlotFinal"></div>
+  </div>
+
+  <div class="choices-grid" id="spellChoices"></div>
+
+  <div class="mole-gameover" id="spellGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">🏆</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">全部拼完了！</div>
+      <div class="big-score">⭐ <span id="spellFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startSpellGame()">再玩一次！</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js?v=24"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>

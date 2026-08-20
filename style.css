@@ -639,6 +639,35 @@ h1, h2 {
   color: #5b4636;
 }
 
+/* ---------- 拼字工廠 ---------- */
+
+.spell-step-hint {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ff5d8f;
+  margin: 4px 0 12px;
+  text-align: center;
+}
+
+.spell-slot-row {
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.spell-slot-row .pinyin-slot {
+  width: 96px;
+  height: 96px;
+  font-size: 52px;
+  cursor: default;
+}
+
+/* 空槽（尚未選）顯示淡淡問號提示 */
+.spell-slot-row .pinyin-slot:empty::before {
+  content: "？";
+  color: #e0cfa8;
+  font-size: 48px;
+}
+
 .combine-btn {
   background: #8bd8a3;
   margin-bottom: 24px;
@@ -867,6 +896,16 @@ h1, h2 {
   .result-box { min-height: 50px; gap: 4px; }
   .result-box .word-emoji { font-size: 52px; }
   .result-box .word-text { font-size: 22px; }
+
+  /* 拼字工廠：橫式緊縮 */
+  #screen-spell { justify-content: center; gap: 4px; }
+  #screen-spell h2 { display: none; }
+  #screen-spell .flashcard { height: min(120px, 30vh) !important; }
+  #screen-spell .word-emoji { font-size: 44px !important; }
+  .spell-step-hint { font-size: 17px; margin: 2px 0 6px; }
+  .spell-slot-row { margin-bottom: 8px; gap: 10px; }
+  .spell-slot-row .pinyin-slot { width: 74px; height: 74px; font-size: 40px; border-radius: 16px; }
+  .spell-slot-row .pinyin-slot:empty::before { font-size: 34px; }
 
   /* 小測驗 */
   .quiz-header { margin-bottom: 6px; font-size: 18px; }
