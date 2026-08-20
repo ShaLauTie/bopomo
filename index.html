@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=27">
+<link rel="stylesheet" href="style.css?v=28">
 </head>
 <body>
 
@@ -43,6 +43,18 @@
     <button class="menu-card card-13" onclick="showScreen('picture')" style="background: linear-gradient(135deg, #5eead4, #60a5fa);">
       <span class="icon">🖼️</span>
       <span>看圖選注音</span>
+    </button>
+    <button class="menu-card card-14" onclick="showScreen('train')" style="background: linear-gradient(135deg, #facc15, #fb923c);">
+      <span class="icon">🚂</span>
+      <span>注音小火車</span>
+    </button>
+    <button class="menu-card card-15" onclick="showScreen('monster')" style="background: linear-gradient(135deg, #c084fc, #f472b6);">
+      <span class="icon">👾</span>
+      <span>怪獸吃錯音</span>
+    </button>
+    <button class="menu-card card-16" onclick="showScreen('island')" style="background: linear-gradient(135deg, #34d399, #38bdf8);">
+      <span class="icon">🏝️</span>
+      <span>注音拼圖島</span>
     </button>
     <button class="menu-card card-7" onclick="showScreen('memory')">
       <span class="icon">🃏</span>
@@ -262,6 +274,106 @@
   </div>
 </div>
 
+<!-- 注音小火車 -->
+<div class="screen" id="screen-train">
+  <h2>注音小火車 🚂</h2>
+  <div class="picture-header">
+    <span id="trainProgress">第 1 / 8 題</span>
+    <span class="stars" id="trainStars">⭐ 0</span>
+  </div>
+
+  <div class="train-board">
+    <div class="train-picture" onclick="replayTrainSound()">
+      <div class="train-emoji" id="trainEmoji"></div>
+      <div class="train-word" id="trainWord"></div>
+      <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayTrainSound()">🔊</button>
+    </div>
+    <div class="train-track">
+      <div class="train-car">
+        <div class="train-car-label">聲母</div>
+        <div class="train-car-value" id="trainInitialCar"></div>
+      </div>
+      <div class="train-car">
+        <div class="train-car-label">韻符</div>
+        <div class="train-car-value" id="trainFinalCar"></div>
+      </div>
+      <div class="train-car">
+        <div class="train-car-label">聲調</div>
+        <div class="train-car-value tone-value" id="trainToneCar"></div>
+      </div>
+    </div>
+  </div>
+  <div class="spell-step-hint" id="trainHint">先選聲母</div>
+  <div class="choices-grid train-choices" id="trainChoices"></div>
+
+  <div class="mole-gameover" id="trainGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">🚂</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">火車到站！</div>
+      <div class="big-score">⭐ <span id="trainFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startTrainGame()">再玩一次！</button>
+    </div>
+  </div>
+</div>
+
+<!-- 怪獸吃錯音 -->
+<div class="screen" id="screen-monster">
+  <h2>怪獸吃錯音 👾</h2>
+  <div class="picture-header">
+    <span id="monsterProgress">第 1 / 10 題</span>
+    <span class="stars" id="monsterStars">⭐ 0</span>
+  </div>
+
+  <div class="monster-stage">
+    <div class="monster-card" onclick="replayMonsterSound()">
+      <div class="monster-face" id="monsterFace">👾</div>
+      <div class="monster-food-picture">
+        <div class="picture-emoji" id="monsterEmoji"></div>
+        <div class="picture-word" id="monsterWord"></div>
+      </div>
+      <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayMonsterSound()">🔊</button>
+    </div>
+    <div class="monster-mouth">餵正確注音</div>
+  </div>
+  <div class="choices-grid monster-choices" id="monsterChoices"></div>
+
+  <div class="mole-gameover" id="monsterGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">👾</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">怪獸吃飽了！</div>
+      <div class="big-score">⭐ <span id="monsterFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startMonsterGame()">再玩一次！</button>
+    </div>
+  </div>
+</div>
+
+<!-- 注音拼圖島 -->
+<div class="screen" id="screen-island">
+  <h2>注音拼圖島 🏝️</h2>
+  <div class="picture-header">
+    <span id="islandProgress">第 1 / 8 題</span>
+    <span class="stars" id="islandStars">⭐ 0</span>
+  </div>
+
+  <div class="island-card" onclick="replayIslandSound()">
+    <div class="picture-emoji" id="islandEmoji"></div>
+    <div class="picture-word" id="islandWord"></div>
+    <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayIslandSound()">🔊</button>
+  </div>
+  <div class="island-tower" id="islandTower"></div>
+  <div class="spell-step-hint" id="islandHint">依照順序拼出注音</div>
+  <div class="choices-grid island-pieces" id="islandPieces"></div>
+
+  <div class="mole-gameover" id="islandGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">🏝️</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">拼圖完成！</div>
+      <div class="big-score">⭐ <span id="islandFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startIslandGame()">再玩一次！</button>
+    </div>
+  </div>
+</div>
+
 <!-- 看圖選注音 -->
 <div class="screen" id="screen-picture">
   <h2>看圖選注音 🖼️</h2>
@@ -316,7 +428,7 @@
   </div>
 </div>
 
-<script src="data.js?v=27"></script>
-<script src="app.js?v=27"></script>
+<script src="data.js?v=28"></script>
+<script src="app.js?v=28"></script>
 </body>
 </html>

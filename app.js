@@ -250,6 +250,9 @@ function showScreen(name) {
   if (name === "mole") startMoleGame();
   if (name === "wordhead") startWordHeadRound();
   if (name === "picture") startPictureGame();
+  if (name === "train") startTrainGame();
+  if (name === "monster") startMonsterGame();
+  if (name === "island") startIslandGame();
   if (name === "memory") startMemoryGame();
   if (name === "tone") startToneRound();
   if (name === "balloon") startBalloonGame();
@@ -263,6 +266,9 @@ function goHome() {
   stopClawGame();
   stopSpellGame();
   stopPictureGame();
+  stopTrainGame();
+  stopMonsterGame();
+  stopIslandGame();
   showScreen("home");
 }
 
@@ -1028,6 +1034,465 @@ function endPictureGame() {
 function stopPictureGame() {
   pictureRunning = false;
   pictureLocked = false;
+}
+
+// ========== 新遊戲共用工具 ==========
+
+const GAME_TONE_RE = /[ˊˇˋ˙]/;
+const GAME_TONE_RE_GLOBAL = /[ˊˇˋ˙]/g;
+const GAME_TONE_OPTIONS = ["", "ˊ", "ˇ", "ˋ", "˙"];
+
+function uniqueValues(values) {
+  return [...new Set(values.filter(value => value !== undefined && value !== null))];
+}
+
+function buildChoiceValues(correctValue, pool, count = 4) {
+  const cleanPool = uniqueValues(pool);
+  const others = shuffle(cleanPool.filter(value => value !== correctValue)).slice(0, count - 1);
+  return shuffle([correctValue, ...others]);
+}
+
+function comboParts(combo) {
+  const toneMatch = combo.final.match(GAME_TONE_RE);
+  const tone = toneMatch ? toneMatch[0] : "";
+  return {
+    initial: combo.initial,
+    finalBody: combo.final.replace(GAME_TONE_RE_GLOBAL, ""),
+    tone,
+    full: comboSpelling(combo)
+  };
+}
+
+function toneLabel(tone) {
+  if (tone === "ˊ") return "ˊ 二聲";
+  if (tone === "ˇ") return "ˇ 三聲";
+  if (tone === "ˋ") return "ˋ 四聲";
+  if (tone === "˙") return "˙ 輕聲";
+  return "一聲";
+}
+
+function toneSpeakText(tone) {
+  if (tone === "ˊ") return "二聲";
+  if (tone === "ˇ") return "三聲";
+  if (tone === "ˋ") return "四聲";
+  if (tone === "˙") return "輕聲";
+  return "一聲";
+}
+
+function isTonePiece(value) {
+  return value === "" || /^[ˊˇˋ˙]$/.test(value);
+}
+
+function renderGameChoiceHtml(value, baseSize = 68, extraClass = "game-bopomofo") {
+  if (isTonePiece(value)) {
+    return `<span class="tone-choice-mark">${toneLabel(value)}</span>`;
+  }
+  return renderPinyinHtml(value, baseSize, extraClass);
+}
+
+function speakGamePiece(value) {
+  if (isTonePiece(value)) speak(toneSpeakText(value));
+  else speak(value);
+}
+
+function fullSpellingPieces(spelling) {
+  const toneMatch = spelling.match(GAME_TONE_RE);
+  const tone = toneMatch ? toneMatch[0] : "";
+  const body = spelling.replace(GAME_TONE_RE_GLOBAL, "");
+  const pieces = Array.from(body);
+  if (tone) pieces.push(tone);
+  return pieces;
+}
+
+// ========== 注音小火車 ==========
+
+const TRAIN_LENGTH = 8;
+let trainScore = 0;
+let trainQuestionNum = 0;
+let trainCombo = null;
+let trainStep = 0;
+let trainRunning = false;
+let trainLocked = false;
+
+function startTrainGame() {
+  trainScore = 0;
+  trainQuestionNum = 0;
+  trainStep = 0;
+  trainRunning = true;
+  trainLocked = false;
+  document.getElementById("trainGameover").style.display = "none";
+  nextTrainRound();
+}
+
+function nextTrainRound() {
+  if (trainQuestionNum >= TRAIN_LENGTH) {
+    endTrainGame();
+    return;
+  }
+
+  trainCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  trainStep = 0;
+  trainLocked = false;
+
+  document.getElementById("trainProgress").textContent = `第 ${trainQuestionNum + 1} / ${TRAIN_LENGTH} 題`;
+  document.getElementById("trainStars").textContent = `⭐ ${trainScore}`;
+  document.getElementById("trainEmoji").textContent = trainCombo.emoji;
+  document.getElementById("trainWord").textContent = trainCombo.word;
+  document.getElementById("trainInitialCar").innerHTML = "";
+  document.getElementById("trainFinalCar").innerHTML = "";
+  document.getElementById("trainToneCar").textContent = "";
+
+  updateTrainHint();
+  renderTrainChoices();
+  speak(trainCombo.word);
+}
+
+function trainExpectedValue() {
+  const parts = comboParts(trainCombo);
+  if (trainStep === 0) return parts.initial;
+  if (trainStep === 1) return parts.finalBody;
+  return parts.tone;
+}
+
+function updateTrainHint() {
+  const hints = ["先選聲母", "再選韻符", "最後選聲調"];
+  document.getElementById("trainHint").textContent = hints[trainStep] || "火車準備出發";
+}
+
+function renderTrainChoices() {
+  const parts = comboParts(trainCombo);
+  const grid = document.getElementById("trainChoices");
+  grid.innerHTML = "";
+
+  let values;
+  if (trainStep === 0) {
+    values = buildChoiceValues(
+      parts.initial,
+      BOPOMOFO_SYMBOLS.filter(item => item.category === "initial").map(item => item.symbol),
+      4
+    );
+  } else if (trainStep === 1) {
+    values = buildChoiceValues(
+      parts.finalBody,
+      PINYIN_COMBOS.map(combo => comboParts(combo).finalBody),
+      4
+    );
+  } else {
+    values = buildChoiceValues(parts.tone, GAME_TONE_OPTIONS, 4);
+  }
+
+  values.forEach(value => {
+    const btn = document.createElement("button");
+    btn.className = "choice-card train-choice-card";
+    btn.innerHTML = renderGameChoiceHtml(value, trainStep === 1 ? 58 : 70, "game-bopomofo train-bopomofo");
+    btn.onclick = () => handleTrainChoice(value, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function handleTrainChoice(value, btn) {
+  if (!trainRunning || trainLocked || !trainCombo) return;
+  const expected = trainExpectedValue();
+
+  if (value !== expected) {
+    btn.classList.add("wrong");
+    showFeedback(false);
+    setTimeout(() => btn.classList.remove("wrong"), 1100);
+    return;
+  }
+
+  btn.classList.add("correct");
+  fillTrainCar(value);
+  trainStep++;
+
+  if (trainStep >= 3) {
+    trainLocked = true;
+    trainScore++;
+    trainQuestionNum++;
+    document.getElementById("trainStars").textContent = `⭐ ${trainScore}`;
+    showFeedback(true);
+    speak(trainCombo.word);
+    setTimeout(() => {
+      if (trainRunning) nextTrainRound();
+    }, 1200);
+    return;
+  }
+
+  speakGamePiece(value);
+  updateTrainHint();
+  setTimeout(() => {
+    if (trainRunning) renderTrainChoices();
+  }, 350);
+}
+
+function fillTrainCar(value) {
+  if (trainStep === 0) {
+    document.getElementById("trainInitialCar").innerHTML = renderPinyinHtml(value, 52, "game-bopomofo train-car-bopomofo");
+  } else if (trainStep === 1) {
+    document.getElementById("trainFinalCar").innerHTML = renderPinyinHtml(value, 50, "game-bopomofo train-car-bopomofo");
+  } else {
+    document.getElementById("trainToneCar").textContent = toneLabel(value);
+  }
+}
+
+function replayTrainSound() {
+  if (trainCombo) speak(trainCombo.word);
+}
+
+function endTrainGame() {
+  trainRunning = false;
+  document.getElementById("trainFinalScore").textContent = trainScore;
+  document.getElementById("trainGameover").style.display = "flex";
+  const msg = trainScore >= TRAIN_LENGTH ? "小火車全部接對了！" :
+              trainScore >= 5 ? "很棒，聲母韻符聲調越來越熟了！" : "再玩一次，慢慢接每一節車廂！";
+  speak(msg);
+}
+
+function stopTrainGame() {
+  trainRunning = false;
+  trainLocked = false;
+}
+
+// ========== 怪獸吃錯音 ==========
+
+const MONSTER_LENGTH = 10;
+let monsterScore = 0;
+let monsterQuestionNum = 0;
+let monsterCombo = null;
+let monsterRunning = false;
+let monsterLocked = false;
+
+function startMonsterGame() {
+  monsterScore = 0;
+  monsterQuestionNum = 0;
+  monsterRunning = true;
+  monsterLocked = false;
+  document.getElementById("monsterGameover").style.display = "none";
+  nextMonsterRound();
+}
+
+function nextMonsterRound() {
+  if (monsterQuestionNum >= MONSTER_LENGTH) {
+    endMonsterGame();
+    return;
+  }
+
+  monsterCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  monsterLocked = false;
+
+  document.getElementById("monsterProgress").textContent = `第 ${monsterQuestionNum + 1} / ${MONSTER_LENGTH} 題`;
+  document.getElementById("monsterStars").textContent = `⭐ ${monsterScore}`;
+  document.getElementById("monsterFace").textContent = "👾";
+  document.getElementById("monsterEmoji").textContent = monsterCombo.emoji;
+  document.getElementById("monsterWord").textContent = monsterCombo.word;
+
+  const correctSpelling = comboSpelling(monsterCombo);
+  const values = buildChoiceValues(correctSpelling, PINYIN_COMBOS.map(comboSpelling), 4);
+  const grid = document.getElementById("monsterChoices");
+  grid.innerHTML = "";
+  values.forEach(value => {
+    const btn = document.createElement("button");
+    btn.className = "choice-card monster-choice-card";
+    btn.innerHTML = renderGameChoiceHtml(value, 72, "game-bopomofo monster-bopomofo");
+    btn.onclick = () => handleMonsterChoice(value, btn);
+    grid.appendChild(btn);
+  });
+
+  speak(monsterCombo.word);
+}
+
+function replayMonsterSound() {
+  if (monsterCombo) speak(monsterCombo.word);
+}
+
+function handleMonsterChoice(value, btn) {
+  if (!monsterRunning || monsterLocked || !monsterCombo) return;
+  const correct = value === comboSpelling(monsterCombo);
+
+  if (!correct) {
+    btn.classList.add("wrong");
+    document.getElementById("monsterFace").textContent = "😖";
+    showFeedback(false);
+    setTimeout(() => {
+      btn.classList.remove("wrong");
+      if (monsterRunning) document.getElementById("monsterFace").textContent = "👾";
+    }, 1100);
+    return;
+  }
+
+  monsterLocked = true;
+  btn.classList.add("correct");
+  document.getElementById("monsterFace").textContent = "😋";
+  monsterScore++;
+  monsterQuestionNum++;
+  document.getElementById("monsterStars").textContent = `⭐ ${monsterScore}`;
+  showFeedback(true);
+  speak(monsterCombo.word);
+
+  setTimeout(() => {
+    if (monsterRunning) nextMonsterRound();
+  }, 1200);
+}
+
+function endMonsterGame() {
+  monsterRunning = false;
+  document.getElementById("monsterFinalScore").textContent = monsterScore;
+  document.getElementById("monsterGameover").style.display = "flex";
+  const msg = monsterScore >= MONSTER_LENGTH ? "怪獸吃到全部正確注音了！" :
+              monsterScore >= 6 ? "很棒，怪獸吃得很開心！" : "再試一次，先看圖再找完整注音！";
+  speak(msg);
+}
+
+function stopMonsterGame() {
+  monsterRunning = false;
+  monsterLocked = false;
+}
+
+// ========== 注音拼圖島 ==========
+
+const ISLAND_LENGTH = 8;
+let islandScore = 0;
+let islandQuestionNum = 0;
+let islandCombo = null;
+let islandTargetPieces = [];
+let islandSelectedPieces = [];
+let islandRunning = false;
+let islandLocked = false;
+
+function startIslandGame() {
+  islandScore = 0;
+  islandQuestionNum = 0;
+  islandTargetPieces = [];
+  islandSelectedPieces = [];
+  islandRunning = true;
+  islandLocked = false;
+  document.getElementById("islandGameover").style.display = "none";
+  nextIslandRound();
+}
+
+function nextIslandRound() {
+  if (islandQuestionNum >= ISLAND_LENGTH) {
+    endIslandGame();
+    return;
+  }
+
+  islandCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  islandTargetPieces = fullSpellingPieces(comboSpelling(islandCombo));
+  islandSelectedPieces = [];
+  islandLocked = false;
+
+  document.getElementById("islandProgress").textContent = `第 ${islandQuestionNum + 1} / ${ISLAND_LENGTH} 題`;
+  document.getElementById("islandStars").textContent = `⭐ ${islandScore}`;
+  document.getElementById("islandEmoji").textContent = islandCombo.emoji;
+  document.getElementById("islandWord").textContent = islandCombo.word;
+  updateIslandHint();
+  renderIslandTower();
+  renderIslandPieces();
+  speak(islandCombo.word);
+}
+
+function renderIslandTower() {
+  const tower = document.getElementById("islandTower");
+  const targetTone = islandTargetPieces.find(piece => GAME_TONE_RE.test(piece)) || "";
+  const targetBody = islandTargetPieces.filter(piece => !GAME_TONE_RE.test(piece));
+  const selectedTone = islandSelectedPieces.find(piece => GAME_TONE_RE.test(piece)) || "";
+  const selectedBody = islandSelectedPieces.filter(piece => !GAME_TONE_RE.test(piece));
+
+  const bodyHtml = targetBody.map((piece, index) => {
+    const filled = index < selectedBody.length;
+    return `<div class="island-slot ${filled ? "filled" : ""}">${filled ? selectedBody[index] : "？"}</div>`;
+  }).join("");
+
+  const toneHtml = targetTone
+    ? `<div class="island-tone-lane"><div class="island-slot tone-slot ${selectedTone ? "filled" : ""}">${selectedTone || "？"}</div></div>`
+    : "";
+
+  tower.innerHTML = `
+    <div class="island-stack-lane">${bodyHtml}</div>
+    ${toneHtml}
+  `;
+}
+
+function renderIslandPieces() {
+  const pool = [
+    ...BOPOMOFO_SYMBOLS.map(item => item.symbol),
+    "ˊ", "ˇ", "ˋ", "˙"
+  ];
+  const values = buildChoiceValues(
+    islandTargetPieces[0],
+    [...islandTargetPieces, ...shuffle(pool)],
+    Math.max(6, islandTargetPieces.length)
+  );
+  const orderedValues = shuffle(uniqueValues([...islandTargetPieces, ...values]).slice(0, Math.max(6, islandTargetPieces.length)));
+  const grid = document.getElementById("islandPieces");
+  grid.innerHTML = "";
+
+  orderedValues.forEach(value => {
+    const used = islandSelectedPieces.includes(value);
+    const btn = document.createElement("button");
+    btn.className = `choice-card island-piece-card${used ? " used" : ""}`;
+    btn.innerHTML = renderGameChoiceHtml(value, 68, "game-bopomofo island-piece-bopomofo");
+    btn.disabled = used;
+    btn.onclick = () => handleIslandPiece(value, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function updateIslandHint() {
+  const current = islandSelectedPieces.length + 1;
+  const total = islandTargetPieces.length;
+  document.getElementById("islandHint").textContent = `依照順序拼出注音：第 ${Math.min(current, total)} / ${total} 塊`;
+}
+
+function handleIslandPiece(value, btn) {
+  if (!islandRunning || islandLocked || !islandCombo) return;
+  const expected = islandTargetPieces[islandSelectedPieces.length];
+
+  if (value !== expected) {
+    btn.classList.add("wrong");
+    showFeedback(false);
+    setTimeout(() => btn.classList.remove("wrong"), 1100);
+    return;
+  }
+
+  islandSelectedPieces.push(value);
+  btn.classList.add("correct");
+  speakGamePiece(value);
+  renderIslandTower();
+
+  if (islandSelectedPieces.length >= islandTargetPieces.length) {
+    islandLocked = true;
+    islandScore++;
+    islandQuestionNum++;
+    document.getElementById("islandStars").textContent = `⭐ ${islandScore}`;
+    showFeedback(true);
+    speak(islandCombo.word);
+    setTimeout(() => {
+      if (islandRunning) nextIslandRound();
+    }, 1200);
+    return;
+  }
+
+  updateIslandHint();
+  renderIslandPieces();
+}
+
+function replayIslandSound() {
+  if (islandCombo) speak(islandCombo.word);
+}
+
+function endIslandGame() {
+  islandRunning = false;
+  document.getElementById("islandFinalScore").textContent = islandScore;
+  document.getElementById("islandGameover").style.display = "flex";
+  const msg = islandScore >= ISLAND_LENGTH ? "拼圖島全部完成了！" :
+              islandScore >= 5 ? "很棒，注音順序越來越清楚！" : "再試一次，一塊一塊慢慢拼！";
+  speak(msg);
+}
+
+function stopIslandGame() {
+  islandRunning = false;
+  islandLocked = false;
 }
 
 // ========== 記憑配對 ==========

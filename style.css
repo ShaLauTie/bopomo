@@ -854,6 +854,328 @@ h1, h2 {
   transform: translateY(-0.08em);
 }
 
+/* ---------- 注音小火車 / 怪獸吃錯音 / 注音拼圖島 ---------- */
+
+#screen-train,
+#screen-monster,
+#screen-island {
+  justify-content: center;
+  gap: 14px;
+}
+
+#screen-train .game-bopomofo,
+#screen-monster .game-bopomofo,
+#screen-island .game-bopomofo {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-items: center;
+  column-gap: 0.05em;
+  line-height: 0.86;
+  color: #2563eb;
+}
+
+#screen-train .game-bopomofo .bopomofo-stack,
+#screen-monster .game-bopomofo .bopomofo-stack,
+#screen-island .game-bopomofo .bopomofo-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.02em;
+}
+
+#screen-train .game-bopomofo .bopomofo-stack > div,
+#screen-monster .game-bopomofo .bopomofo-stack > div,
+#screen-island .game-bopomofo .bopomofo-stack > div {
+  display: block;
+  height: 0.84em;
+  line-height: 0.84;
+  margin: 0;
+  text-align: center;
+}
+
+#screen-train .game-bopomofo .bopomofo-tone,
+#screen-monster .game-bopomofo .bopomofo-tone,
+#screen-island .game-bopomofo .bopomofo-tone {
+  align-self: center;
+  font-size: 0.48em;
+  line-height: 1;
+  margin: 0 0 0 0.04em;
+  transform: translateY(-0.08em);
+}
+
+.tone-choice-mark {
+  color: #7c2d12;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.train-board {
+  width: min(660px, 92vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.train-picture {
+  position: relative;
+  width: min(320px, 82vw);
+  min-height: 180px;
+  background: white;
+  border: 6px solid #facc15;
+  border-radius: 24px;
+  box-shadow: 0 10px 0 rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.train-emoji {
+  font-size: 82px;
+  line-height: 1;
+}
+
+.train-word {
+  color: #5b4636;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.train-track {
+  position: relative;
+  width: min(540px, 92vw);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(90px, 1fr));
+  gap: 12px;
+  padding-bottom: 18px;
+}
+
+.train-track::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 14px;
+  height: 6px;
+  border-radius: 999px;
+  background: #8b5e34;
+}
+
+.train-car {
+  position: relative;
+  min-height: 142px;
+  background: #fff7ed;
+  border: 5px solid #fb923c;
+  border-radius: 18px 18px 12px 12px;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 8px 18px;
+}
+
+.train-car::after {
+  content: "";
+  position: absolute;
+  left: 24px;
+  bottom: -13px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #5b4636;
+  box-shadow: 54px 0 0 #5b4636;
+}
+
+.train-car-label {
+  color: #9a3412;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.train-car-value {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+}
+
+.train-car-value:empty::before {
+  content: "？";
+  color: #e0cfa8;
+  font-size: 44px;
+  font-weight: 900;
+}
+
+.train-car .tone-value {
+  color: #7c2d12;
+  font-size: 24px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.train-choices,
+.monster-choices,
+.island-pieces {
+  max-width: 680px;
+  gap: 14px;
+}
+
+.train-choice-card,
+.monster-choice-card,
+.island-piece-card {
+  min-width: 126px;
+  min-height: 138px;
+  padding: 8px;
+  border-radius: 20px;
+  font-size: initial;
+}
+
+.monster-stage {
+  width: min(640px, 92vw);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.monster-card {
+  position: relative;
+  width: min(390px, 82vw);
+  min-height: 230px;
+  background: white;
+  border: 6px solid #c084fc;
+  border-radius: 28px;
+  box-shadow: 0 10px 0 rgba(0,0,0,0.12);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 20px;
+  cursor: pointer;
+}
+
+.monster-face {
+  font-size: 86px;
+  line-height: 1;
+  filter: drop-shadow(0 5px 0 rgba(0,0,0,0.12));
+}
+
+.monster-food-picture {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.monster-mouth {
+  min-width: 148px;
+  background: #1f2937;
+  color: white;
+  border: 5px solid #f9a8d4;
+  border-radius: 999px;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.14);
+  font-size: 20px;
+  font-weight: 900;
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.island-card {
+  position: relative;
+  width: min(320px, 82vw);
+  min-height: 170px;
+  background: white;
+  border: 6px solid #34d399;
+  border-radius: 26px;
+  box-shadow: 0 10px 0 rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.island-tower {
+  width: min(260px, 72vw);
+  min-height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  background: linear-gradient(180deg, #dff6ff 0%, #ecfdf5 100%);
+  border: 5px solid #38bdf8;
+  border-radius: 24px;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.1);
+}
+
+.island-stack-lane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.island-tone-lane {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.island-slot {
+  width: 74px;
+  height: 48px;
+  border-radius: 14px;
+  border: 4px dashed #93c5fd;
+  background: #ffffffcc;
+  color: #c7b98f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.island-slot.filled {
+  color: #2563eb;
+  border-style: solid;
+  border-color: #60a5fa;
+  background: white;
+}
+
+.island-slot.tone-slot {
+  width: 76px;
+  height: 46px;
+  color: #c7b98f;
+  font-size: 27px;
+}
+
+.island-slot.tone-slot.filled {
+  color: #7c2d12;
+}
+
+.island-piece-card.used,
+.island-piece-card:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .result-box {
   display: flex;
   flex-direction: column;
@@ -1007,6 +1329,25 @@ h1, h2 {
   .picture-emoji { font-size: 78px; }
   .picture-word { font-size: 32px; }
   .picture-choice-card { min-width: 112px; min-height: 132px; }
+  .train-picture { width: min(290px, 86vw); min-height: 158px; }
+  .train-emoji { font-size: 68px; }
+  .train-word { font-size: 29px; }
+  .train-track { gap: 8px; }
+  .train-car { min-height: 126px; padding: 8px 4px 16px; }
+  .train-car::after { left: 15px; box-shadow: 42px 0 0 #5b4636; }
+  .train-car-label { font-size: 15px; }
+  .train-choice-card,
+  .monster-choice-card,
+  .island-piece-card { min-width: 100px; min-height: 114px; }
+  .tone-choice-mark { font-size: 23px; }
+  .monster-stage { flex-direction: column; gap: 8px; }
+  .monster-card { width: min(310px, 86vw); min-height: 170px; padding: 14px; }
+  .monster-face { font-size: 64px; }
+  .monster-mouth { min-width: 130px; font-size: 17px; padding: 12px 16px; }
+  .island-card { width: min(290px, 86vw); min-height: 145px; }
+  .island-tower { min-height: 146px; padding: 12px; }
+  .island-slot { width: 64px; height: 42px; font-size: 30px; }
+  .island-slot.tone-slot { width: 66px; height: 42px; font-size: 22px; }
 }
 
 /* ── 橫式（手機翻轉）── */
@@ -1119,6 +1460,108 @@ h1, h2 {
   .picture-choices { gap: 10px; }
   .picture-choice-card { min-width: 82px; min-height: 92px; border-radius: 16px; }
   #screen-picture .picture-bopomofo { font-size: 40px !important; }
+
+  /* 三個新增遊戲：橫式緊縮 */
+  #screen-train,
+  #screen-monster,
+  #screen-island { justify-content: center; gap: 4px; }
+  #screen-train h2,
+  #screen-monster h2,
+  #screen-island h2 { display: none; }
+  .train-board { gap: 6px; }
+  .train-picture {
+    width: min(210px, 34vw);
+    min-height: 104px;
+    border-width: 4px;
+    border-radius: 16px;
+    gap: 0;
+  }
+  .train-emoji { font-size: 44px; }
+  .train-word { font-size: 20px; }
+  .train-track {
+    width: min(430px, 72vw);
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+  .train-track::before { bottom: 9px; height: 4px; }
+  .train-car {
+    min-height: 88px;
+    border-width: 3px;
+    border-radius: 14px 14px 10px 10px;
+    padding: 4px 4px 12px;
+  }
+  .train-car::after {
+    left: 14px;
+    bottom: -10px;
+    width: 14px;
+    height: 14px;
+    box-shadow: 38px 0 0 #5b4636;
+  }
+  .train-car-label { font-size: 13px; }
+  .train-car-value { min-height: 52px; }
+  .train-car-value:empty::before { font-size: 30px; }
+  .train-car .tone-value { font-size: 17px; }
+  .train-choices,
+  .monster-choices,
+  .island-pieces { gap: 8px; }
+  .train-choice-card,
+  .monster-choice-card,
+  .island-piece-card {
+    min-width: 78px;
+    min-height: 84px;
+    border-radius: 14px;
+    border-width: 4px;
+    padding: 4px;
+  }
+  #screen-train .train-bopomofo,
+  #screen-monster .monster-bopomofo,
+  #screen-island .island-piece-bopomofo { font-size: 40px !important; }
+  .tone-choice-mark { font-size: 17px; }
+  .monster-stage { gap: 10px; }
+  .monster-card {
+    width: min(260px, 38vw);
+    min-height: 118px;
+    border-width: 4px;
+    border-radius: 18px;
+    grid-template-columns: auto 1fr;
+    padding: 10px;
+  }
+  .monster-face { font-size: 48px; }
+  .monster-mouth {
+    min-width: 104px;
+    border-width: 4px;
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+  .island-card {
+    width: min(210px, 34vw);
+    min-height: 110px;
+    border-width: 4px;
+    border-radius: 18px;
+    gap: 0;
+  }
+  .island-tower {
+    width: min(210px, 34vw);
+    min-height: 104px;
+    border-width: 4px;
+    border-radius: 16px;
+    padding: 8px;
+    gap: 6px;
+  }
+  .island-stack-lane { gap: 3px; }
+  .island-slot {
+    width: 54px;
+    height: 30px;
+    border-width: 3px;
+    border-radius: 10px;
+    font-size: 22px;
+  }
+  .island-slot.tone-slot {
+    width: 52px;
+    height: 30px;
+    font-size: 16px;
+  }
 
   /* 小測驗 */
   .quiz-header { margin-bottom: 6px; font-size: 18px; }
