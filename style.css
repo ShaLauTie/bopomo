@@ -782,11 +782,48 @@ h1, h2 {
   justify-content: center;
   gap: 8px;
   cursor: pointer;
+  overflow: hidden;
+  transform-origin: center bottom;
+  animation: pictureCardFloat 2.7s ease-in-out infinite;
+}
+
+.picture-card::before {
+  content: "";
+  position: absolute;
+  inset: -40% -60%;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.58) 50%, transparent 65%);
+  transform: translateX(-80%) rotate(8deg);
+  animation: pictureCardShine 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.picture-card::after {
+  content: "✨";
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  font-size: 26px;
+  opacity: 0.8;
+  animation: pictureSparkle 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.picture-card.picture-enter {
+  animation: pictureCardEnter 0.48s cubic-bezier(.18,.9,.2,1.15), pictureCardFloat 2.7s ease-in-out 0.48s infinite;
+}
+
+.picture-card.picture-wrong-shake {
+  animation: pictureWrongShake 0.42s ease-in-out;
+}
+
+.picture-card.picture-correct-burst {
+  animation: pictureCorrectBurst 0.7s cubic-bezier(.18,.9,.2,1.12), pictureCardFloat 2.7s ease-in-out 0.7s infinite;
 }
 
 .picture-emoji {
   font-size: 96px;
   line-height: 1;
+  animation: pictureEmojiBounce 1.9s ease-in-out infinite;
 }
 
 .picture-word {
@@ -818,6 +855,67 @@ h1, h2 {
   min-width: 128px;
   min-height: 150px;
   padding: 8px;
+  animation: pictureChoicePop 0.34s cubic-bezier(.2,.9,.2,1.15) both;
+}
+
+.picture-choice-card:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.picture-choice-card:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.picture-choice-card:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+@keyframes pictureCardFloat {
+  0%, 100% { transform: translateY(0) rotate(-0.4deg); }
+  50% { transform: translateY(-7px) rotate(0.4deg); }
+}
+
+@keyframes pictureCardEnter {
+  0% { opacity: 0; transform: translateY(28px) scale(0.9); }
+  70% { opacity: 1; transform: translateY(-6px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pictureCardShine {
+  0%, 42% { transform: translateX(-80%) rotate(8deg); opacity: 0; }
+  55% { opacity: 0.95; }
+  76%, 100% { transform: translateX(80%) rotate(8deg); opacity: 0; }
+}
+
+@keyframes pictureSparkle {
+  0%, 100% { transform: scale(0.75) rotate(0); opacity: 0.35; }
+  50% { transform: scale(1.25) rotate(18deg); opacity: 1; }
+}
+
+@keyframes pictureEmojiBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.04); }
+}
+
+@keyframes pictureWrongShake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-10px) rotate(-2deg); }
+  40% { transform: translateX(10px) rotate(2deg); }
+  60% { transform: translateX(-6px) rotate(-1deg); }
+  80% { transform: translateX(6px) rotate(1deg); }
+}
+
+@keyframes pictureCorrectBurst {
+  0% { transform: scale(1) rotate(0); box-shadow: 0 10px 0 rgba(0,0,0,0.12); }
+  35% { transform: scale(1.08) rotate(-1deg); box-shadow: 0 16px 0 rgba(34,197,94,0.26); }
+  70% { transform: scale(0.98) rotate(1deg); }
+  100% { transform: scale(1) rotate(0); box-shadow: 0 10px 0 rgba(0,0,0,0.12); }
+}
+
+@keyframes pictureChoicePop {
+  0% { opacity: 0; transform: translateY(14px) scale(0.88); }
+  75% { opacity: 1; transform: translateY(-4px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 #screen-picture .picture-bopomofo {
@@ -1468,9 +1566,48 @@ h1, h2 {
   justify-content: center;
   gap: 4px;
   cursor: pointer;
+  overflow: hidden;
+  transform-origin: center bottom;
+  animation: islandFloat 2.8s ease-in-out infinite;
+}
+
+.island-card::before {
+  content: "";
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  bottom: 8px;
+  height: 18px;
+  background:
+    radial-gradient(circle at 12px 8px, rgba(56,189,248,0.35) 0 8px, transparent 9px),
+    radial-gradient(circle at 42px 10px, rgba(34,211,238,0.26) 0 7px, transparent 8px);
+  background-size: 58px 18px;
+  animation: islandWaterMove 1.35s linear infinite;
+  pointer-events: none;
+}
+
+.island-card::after {
+  content: "✨";
+  position: absolute;
+  right: 52px;
+  top: 18px;
+  color: #facc15;
+  font-size: 24px;
+  opacity: 0.8;
+  animation: islandSparkle 1.55s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.island-card.island-card-enter {
+  animation: islandCardEnter 0.55s cubic-bezier(.18,.9,.2,1.15), islandFloat 2.8s ease-in-out 0.55s infinite;
+}
+
+.island-card.island-card-celebrate {
+  animation: islandCelebrate 0.9s ease-out, islandFloat 2.8s ease-in-out 0.9s infinite;
 }
 
 .island-tower {
+  position: relative;
   width: min(260px, 72vw);
   min-height: 170px;
   display: flex;
@@ -1482,9 +1619,60 @@ h1, h2 {
   border: 5px solid #38bdf8;
   border-radius: 24px;
   box-shadow: 0 8px 0 rgba(0,0,0,0.1);
+  overflow: hidden;
+  transform-origin: center bottom;
+  animation: islandTowerIdle 2.1s ease-in-out infinite;
+}
+
+.island-tower::before {
+  content: "";
+  position: absolute;
+  inset: auto -20% 0;
+  height: 38%;
+  background:
+    radial-gradient(circle at 16px 8px, rgba(125,211,252,0.38) 0 10px, transparent 11px),
+    radial-gradient(circle at 50px 14px, rgba(52,211,153,0.24) 0 8px, transparent 9px);
+  background-size: 74px 36px;
+  opacity: 0.8;
+  animation: islandTowerWater 1.6s linear infinite;
+  pointer-events: none;
+}
+
+.island-tower::after {
+  content: "✦";
+  position: absolute;
+  left: 22px;
+  top: 18px;
+  color: #facc15;
+  font-size: 24px;
+  opacity: 0;
+  transform: scale(0.4);
+  pointer-events: none;
+}
+
+.island-tower.island-tower-enter {
+  animation: islandTowerEnter 0.55s cubic-bezier(.18,.9,.2,1.15), islandTowerIdle 2.1s ease-in-out 0.55s infinite;
+}
+
+.island-tower.island-tower-pop {
+  animation: islandTowerPop 0.42s cubic-bezier(.2,1.2,.2,1), islandTowerIdle 2.1s ease-in-out 0.42s infinite;
+}
+
+.island-tower.island-tower-shake {
+  animation: islandTowerShake 0.42s ease-in-out;
+}
+
+.island-tower.island-tower-complete {
+  animation: islandTowerComplete 0.92s ease-out, islandTowerIdle 2.1s ease-in-out 0.92s infinite;
+}
+
+.island-tower.island-tower-complete::after {
+  animation: islandTowerBurst 0.9s ease-out both;
 }
 
 .island-stack-lane {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1493,6 +1681,8 @@ h1, h2 {
 }
 
 .island-tone-lane {
+  position: relative;
+  z-index: 1;
   align-self: stretch;
   display: flex;
   align-items: center;
@@ -1512,6 +1702,8 @@ h1, h2 {
   font-size: 34px;
   font-weight: 900;
   line-height: 1;
+  transform-origin: center;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
 .island-slot.filled {
@@ -1532,10 +1724,132 @@ h1, h2 {
   color: #7c2d12;
 }
 
+.island-slot-pop {
+  animation: islandSlotPop 0.42s cubic-bezier(.2,1.25,.2,1);
+}
+
 .island-piece-card.used,
 .island-piece-card:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+.island-piece-card {
+  animation: islandPiecePop 0.35s cubic-bezier(.2,.9,.2,1.15) both;
+}
+
+.island-piece-card:nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.island-piece-card:nth-child(3) {
+  animation-delay: 0.08s;
+}
+
+.island-piece-card:nth-child(4) {
+  animation-delay: 0.12s;
+}
+
+.island-piece-card:nth-child(5) {
+  animation-delay: 0.16s;
+}
+
+.island-piece-card:nth-child(6) {
+  animation-delay: 0.2s;
+}
+
+.island-piece-card.piece-launch {
+  animation: islandPieceLaunch 0.45s cubic-bezier(.18,.9,.2,1.15) both;
+}
+
+@keyframes islandFloat {
+  0%, 100% { transform: translateY(0) rotate(-0.35deg); }
+  50% { transform: translateY(-6px) rotate(0.35deg); }
+}
+
+@keyframes islandCardEnter {
+  0% { opacity: 0; transform: translateY(28px) scale(0.9); }
+  70% { opacity: 1; transform: translateY(-7px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes islandCelebrate {
+  0% { transform: translateY(0) scale(1); }
+  25% { transform: translateY(-12px) scale(1.06) rotate(-2deg); }
+  55% { transform: translateY(3px) scale(0.98) rotate(2deg); }
+  100% { transform: translateY(0) scale(1) rotate(0); }
+}
+
+@keyframes islandWaterMove {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 58px 0, 58px 0; }
+}
+
+@keyframes islandSparkle {
+  0%, 100% { transform: scale(0.7) rotate(0); opacity: 0.35; }
+  50% { transform: scale(1.25) rotate(24deg); opacity: 1; }
+}
+
+@keyframes islandTowerIdle {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-3px) rotate(0.35deg); }
+}
+
+@keyframes islandTowerEnter {
+  0% { opacity: 0; transform: translateY(24px) scale(0.9); }
+  70% { opacity: 1; transform: translateY(-5px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes islandTowerWater {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 74px 0, 74px 0; }
+}
+
+@keyframes islandTowerPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.08) translateY(-6px); }
+  100% { transform: scale(1); }
+}
+
+@keyframes islandTowerShake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-8px) rotate(-1.5deg); }
+  40% { transform: translateX(8px) rotate(1.5deg); }
+  60% { transform: translateX(-5px) rotate(-1deg); }
+  80% { transform: translateX(5px) rotate(1deg); }
+}
+
+@keyframes islandTowerComplete {
+  0% { transform: scale(1); box-shadow: 0 8px 0 rgba(0,0,0,0.1); }
+  35% { transform: scale(1.12) rotate(-2deg); box-shadow: 0 14px 0 rgba(34,197,94,0.22), 0 0 32px rgba(52,211,153,0.62); }
+  70% { transform: scale(0.98) rotate(2deg); }
+  100% { transform: scale(1) rotate(0); box-shadow: 0 8px 0 rgba(0,0,0,0.1); }
+}
+
+@keyframes islandTowerBurst {
+  0% { opacity: 0; transform: scale(0.35) rotate(0); }
+  25% { opacity: 1; transform: scale(1.4) rotate(22deg); }
+  65% { opacity: 1; transform: translate(76px, 24px) scale(1) rotate(60deg); }
+  100% { opacity: 0; transform: translate(110px, -14px) scale(0.55) rotate(100deg); }
+}
+
+@keyframes islandSlotPop {
+  0% { transform: scale(0.72) rotate(-8deg); }
+  55% { transform: scale(1.18) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes islandPiecePop {
+  0% { opacity: 0; transform: translateY(14px) scale(0.86) rotate(-3deg); }
+  75% { opacity: 1; transform: translateY(-4px) scale(1.05) rotate(2deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+
+@keyframes islandPieceLaunch {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  42% { opacity: 0.85; transform: translateY(-22px) scale(1.15) rotate(-8deg); }
+  100% { opacity: 0.18; transform: translateY(-58px) scale(0.35) rotate(18deg); }
 }
 
 .result-box {

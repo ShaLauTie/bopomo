@@ -973,6 +973,7 @@ function nextPictureRound() {
   document.getElementById('pictureStars').textContent = `⭐ ${pictureScore}`;
   document.getElementById('pictureEmoji').textContent = pictureCombo.emoji;
   document.getElementById('pictureWord').textContent = pictureCombo.word;
+  resetPictureAnimationState();
 
   const correctSpelling = comboSpelling(pictureCombo);
   const others = shuffle(PINYIN_COMBOS
@@ -1004,6 +1005,7 @@ function handlePictureChoice(value, btn) {
 
   if (!correct) {
     btn.classList.add('wrong');
+    animatePictureWrong();
     showFeedback(false);
     setTimeout(() => btn.classList.remove('wrong'), 1200);
     return;
@@ -1011,6 +1013,7 @@ function handlePictureChoice(value, btn) {
 
   pictureLocked = true;
   btn.classList.add('correct');
+  animatePictureCorrect();
   pictureScore++;
   pictureQuestionNum++;
   document.getElementById('pictureStars').textContent = `⭐ ${pictureScore}`;
@@ -1034,6 +1037,31 @@ function endPictureGame() {
 function stopPictureGame() {
   pictureRunning = false;
   pictureLocked = false;
+}
+
+function resetPictureAnimationState() {
+  const card = document.querySelector("#screen-picture .picture-card");
+  if (!card) return;
+  card.classList.remove("picture-enter", "picture-correct-burst", "picture-wrong-shake");
+  void card.offsetWidth;
+  card.classList.add("picture-enter");
+}
+
+function animatePictureWrong() {
+  const card = document.querySelector("#screen-picture .picture-card");
+  if (!card) return;
+  card.classList.remove("picture-wrong-shake");
+  void card.offsetWidth;
+  card.classList.add("picture-wrong-shake");
+  setTimeout(() => card.classList.remove("picture-wrong-shake"), 500);
+}
+
+function animatePictureCorrect() {
+  const card = document.querySelector("#screen-picture .picture-card");
+  if (!card) return;
+  card.classList.remove("picture-correct-burst");
+  void card.offsetWidth;
+  card.classList.add("picture-correct-burst");
 }
 
 // ========== 新遊戲共用工具 ==========
@@ -1495,6 +1523,7 @@ function nextIslandRound() {
   updateIslandHint();
   renderIslandTower();
   renderIslandPieces();
+  resetIslandAnimationState();
   speak(islandCombo.word);
 }
 
@@ -1557,21 +1586,24 @@ function handleIslandPiece(value, btn) {
 
   if (value !== expected) {
     btn.classList.add("wrong");
+    animateIslandWrong();
     showFeedback(false);
     setTimeout(() => btn.classList.remove("wrong"), 1100);
     return;
   }
 
   islandSelectedPieces.push(value);
-  btn.classList.add("correct");
+  btn.classList.add("correct", "piece-launch");
   speakGamePiece(value);
   renderIslandTower();
+  animateIslandPiece();
 
   if (islandSelectedPieces.length >= islandTargetPieces.length) {
     islandLocked = true;
     islandScore++;
     islandQuestionNum++;
     document.getElementById("islandStars").textContent = `⭐ ${islandScore}`;
+    animateIslandComplete();
     showFeedback(true);
     speak(islandCombo.word);
     setTimeout(() => {
@@ -1600,6 +1632,61 @@ function endIslandGame() {
 function stopIslandGame() {
   islandRunning = false;
   islandLocked = false;
+}
+
+function resetIslandAnimationState() {
+  const card = document.querySelector("#screen-island .island-card");
+  const tower = document.getElementById("islandTower");
+  if (card) {
+    card.classList.remove("island-card-enter", "island-card-celebrate");
+    void card.offsetWidth;
+    card.classList.add("island-card-enter");
+  }
+  if (tower) {
+    tower.classList.remove("island-tower-enter", "island-tower-pop", "island-tower-shake", "island-tower-complete");
+    void tower.offsetWidth;
+    tower.classList.add("island-tower-enter");
+  }
+}
+
+function animateIslandPiece() {
+  const tower = document.getElementById("islandTower");
+  const filledSlots = document.querySelectorAll("#islandTower .island-slot.filled");
+  const lastSlot = filledSlots[filledSlots.length - 1];
+  if (tower) {
+    tower.classList.remove("island-tower-pop");
+    void tower.offsetWidth;
+    tower.classList.add("island-tower-pop");
+  }
+  if (lastSlot) {
+    lastSlot.classList.remove("island-slot-pop");
+    void lastSlot.offsetWidth;
+    lastSlot.classList.add("island-slot-pop");
+  }
+}
+
+function animateIslandWrong() {
+  const tower = document.getElementById("islandTower");
+  if (!tower) return;
+  tower.classList.remove("island-tower-shake");
+  void tower.offsetWidth;
+  tower.classList.add("island-tower-shake");
+  setTimeout(() => tower.classList.remove("island-tower-shake"), 500);
+}
+
+function animateIslandComplete() {
+  const card = document.querySelector("#screen-island .island-card");
+  const tower = document.getElementById("islandTower");
+  if (card) {
+    card.classList.remove("island-card-celebrate");
+    void card.offsetWidth;
+    card.classList.add("island-card-celebrate");
+  }
+  if (tower) {
+    tower.classList.remove("island-tower-complete");
+    void tower.offsetWidth;
+    tower.classList.add("island-tower-complete");
+  }
 }
 
 // ========== 記憑配對 ==========
