@@ -3267,3 +3267,736 @@ h1, h2 {
   align-items: center;
   justify-content: center;
 }
+
+/* ========== 全站加強動畫層 ========== */
+
+.screen.active h2 {
+  animation: screenTitlePop 0.55s cubic-bezier(.18,.9,.2,1.18), screenTitleFloat 2.8s ease-in-out 0.55s infinite;
+}
+
+.home-btn {
+  animation: homeButtonFloat 2.4s ease-in-out infinite;
+}
+
+.home-btn:hover,
+.home-btn:focus-visible {
+  animation: homeButtonRing 0.58s ease-in-out;
+}
+
+#screen-home h1 {
+  animation: homeTitleBounce 1s cubic-bezier(.18,.9,.2,1.18), homeTitleGlow 2.2s ease-in-out 1s infinite;
+}
+
+.menu-card {
+  position: relative;
+  overflow: hidden;
+  transform-origin: center bottom;
+  animation: menuCardEnter 0.48s cubic-bezier(.18,.9,.2,1.18) both, menuCardBob 2.6s ease-in-out 0.6s infinite;
+}
+
+.menu-card::before {
+  content: "";
+  position: absolute;
+  inset: -45% -70%;
+  background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,0.42) 50%, transparent 62%);
+  transform: translateX(-80%) rotate(8deg);
+  animation: menuCardShine 3.1s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.menu-card .icon {
+  animation: menuIconDance 1.9s ease-in-out infinite;
+}
+
+.menu-card:nth-child(2) { animation-delay: 0.04s, 0.64s; }
+.menu-card:nth-child(3) { animation-delay: 0.08s, 0.68s; }
+.menu-card:nth-child(4) { animation-delay: 0.12s, 0.72s; }
+.menu-card:nth-child(5) { animation-delay: 0.16s, 0.76s; }
+.menu-card:nth-child(6) { animation-delay: 0.2s, 0.8s; }
+.menu-card:nth-child(7) { animation-delay: 0.24s, 0.84s; }
+.menu-card:nth-child(8) { animation-delay: 0.28s, 0.88s; }
+.menu-card:nth-child(9) { animation-delay: 0.32s, 0.92s; }
+.menu-card:nth-child(10) { animation-delay: 0.36s, 0.96s; }
+.menu-card:nth-child(11) { animation-delay: 0.4s, 1s; }
+.menu-card:nth-child(12) { animation-delay: 0.44s, 1.04s; }
+.menu-card:nth-child(13) { animation-delay: 0.48s, 1.08s; }
+.menu-card:nth-child(14) { animation-delay: 0.52s, 1.12s; }
+.menu-card:nth-child(15) { animation-delay: 0.56s, 1.16s; }
+.menu-card:nth-child(16) { animation-delay: 0.6s, 1.2s; }
+
+.flashcard {
+  position: relative;
+  overflow: hidden;
+  transform-origin: center bottom;
+}
+
+.screen.active .flashcard {
+  animation: cardStageEnter 0.52s cubic-bezier(.18,.9,.2,1.18), cardGentleFloat 2.9s ease-in-out 0.55s infinite;
+}
+
+.flashcard::before {
+  content: "";
+  position: absolute;
+  inset: -45% -70%;
+  background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,0.58) 50%, transparent 62%);
+  transform: translateX(-86%) rotate(10deg);
+  animation: cardSweep 2.9s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.flashcard .symbol-big,
+.flashcard .word-emoji {
+  position: relative;
+  z-index: 1;
+  animation: symbolBreath 1.95s ease-in-out infinite;
+}
+
+.flashcard .word-text {
+  position: relative;
+  z-index: 1;
+}
+
+.nav-arrow {
+  animation: navArrowPulse 1.8s ease-in-out infinite;
+}
+
+.nav-arrow:first-child {
+  animation-delay: 0.15s;
+}
+
+.speaker-btn,
+.mole-mini-speaker,
+.listen-btn {
+  position: relative;
+  overflow: hidden;
+  animation: speakerPulse 1.05s ease-in-out infinite;
+}
+
+.speaker-btn::after,
+.mole-mini-speaker::after,
+.listen-btn::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border: 4px solid rgba(110,198,255,0.35);
+  border-radius: inherit;
+  animation: speakerWave 1.05s ease-out infinite;
+  pointer-events: none;
+}
+
+.screen.active .choices-grid .choice-card {
+  animation: universalChoiceEnter 0.34s cubic-bezier(.2,.9,.2,1.15) both;
+}
+
+.screen.active .choices-grid .choice-card:nth-child(2) { animation-delay: 0.04s; }
+.screen.active .choices-grid .choice-card:nth-child(3) { animation-delay: 0.08s; }
+.screen.active .choices-grid .choice-card:nth-child(4) { animation-delay: 0.12s; }
+.screen.active .choices-grid .choice-card:nth-child(5) { animation-delay: 0.16s; }
+.screen.active .choices-grid .choice-card:nth-child(6) { animation-delay: 0.2s; }
+
+.choice-card {
+  position: relative;
+  overflow: hidden;
+  transform-origin: center bottom;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+}
+
+.choice-card::after {
+  content: "";
+  position: absolute;
+  inset: -50% -80%;
+  background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,0.44) 50%, transparent 58%);
+  transform: translateX(-78%) rotate(8deg);
+  animation: choiceCardShine 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.choice-card.correct {
+  animation: answerCorrectPop 0.55s cubic-bezier(.2,1.35,.25,1) both !important;
+}
+
+.choice-card.wrong {
+  animation: answerWrongShake 0.42s ease-in-out both !important;
+}
+
+#screen-match .prompt-box {
+  animation: promptDropIn 0.46s cubic-bezier(.18,.9,.2,1.12);
+}
+
+#screen-match .speaker-btn {
+  animation: speakerPulse 1s ease-in-out infinite, matchSpeakerWiggle 2.4s ease-in-out infinite;
+}
+
+#screen-pinyin .pinyin-slot {
+  animation: pinyinSlotFloat 2.2s ease-in-out infinite;
+}
+
+#screen-pinyin .pinyin-slot:nth-child(3) {
+  animation-delay: 0.18s;
+}
+
+.plus-sign {
+  display: inline-block;
+  animation: plusSpinSpark 1.8s ease-in-out infinite;
+}
+
+#screen-pinyin .combine-btn,
+#screen-spell .combine-btn {
+  position: relative;
+  overflow: hidden;
+  animation: combineButtonGlow 1.7s ease-in-out infinite;
+}
+
+#screen-pinyin .result-box:not(:empty) {
+  animation: resultPopIn 0.46s cubic-bezier(.18,.9,.2,1.15);
+}
+
+#screen-pinyin .result-box .word-emoji,
+#screen-pinyin .result-box .word-text {
+  animation: resultCelebrate 0.82s ease-in-out;
+}
+
+#screen-quiz .quiz-header,
+.memory-header,
+.mole-header {
+  animation: hudSlideIn 0.48s cubic-bezier(.18,.9,.2,1.12);
+}
+
+#quizQuestionArea .prompt-box,
+#quizQuestionArea .quiz-result {
+  animation: quizQuestionEnter 0.42s cubic-bezier(.18,.9,.2,1.15);
+}
+
+#quizQuestionArea .quiz-result .big-score {
+  animation: trophyBounce 1.1s ease-in-out infinite;
+}
+
+.mole-target-box {
+  position: relative;
+  overflow: hidden;
+  animation: targetBoxPulse 1.35s ease-in-out infinite;
+}
+
+.mole-stats span {
+  display: inline-block;
+  animation: statBounce 2s ease-in-out infinite;
+}
+
+.mole-stats span:nth-child(2) {
+  animation-delay: 0.24s;
+}
+
+.mole-grid {
+  animation: gridRiseIn 0.5s cubic-bezier(.18,.9,.2,1.15);
+}
+
+.mole-hole {
+  animation: holeWiggle 2.4s ease-in-out infinite;
+}
+
+.mole-hole:nth-child(2n) { animation-delay: 0.16s; }
+.mole-hole:nth-child(3n) { animation-delay: 0.28s; }
+
+.hole-ground {
+  animation: groundPulse 1.8s ease-in-out infinite;
+}
+
+.mole-hole.up .mole-body {
+  animation: molePopDance 0.46s cubic-bezier(.18,.9,.2,1.18), moleBodyIdle 1.15s ease-in-out 0.46s infinite;
+}
+
+#screen-wordhead .prompt-box .flashcard,
+#screen-tone .prompt-box .flashcard,
+#screen-spell .prompt-box .flashcard {
+  animation: picturePromptEnter 0.5s cubic-bezier(.18,.9,.2,1.15), picturePromptFloat 2.35s ease-in-out 0.5s infinite;
+}
+
+#whChoices .choice-card,
+#toneChoices .choice-card,
+#spellChoices .choice-card {
+  animation: universalChoiceEnter 0.34s cubic-bezier(.2,.9,.2,1.15) both, choiceIdleWiggle 2.4s ease-in-out 0.5s infinite;
+}
+
+.memory-grid {
+  perspective: 900px;
+  animation: gridRiseIn 0.48s cubic-bezier(.18,.9,.2,1.15);
+}
+
+.memory-card {
+  transform-style: preserve-3d;
+  animation: memoryDeal 0.48s cubic-bezier(.18,.9,.2,1.15) both;
+}
+
+.memory-card:nth-child(2n) { animation-delay: 0.04s; }
+.memory-card:nth-child(3n) { animation-delay: 0.08s; }
+.memory-card:nth-child(4n) { animation-delay: 0.12s; }
+
+.memory-card.flipped {
+  animation: memoryFlipPop 0.35s ease-out;
+}
+
+.memory-card.matched {
+  animation: memoryMatchedGlow 0.8s ease-in-out infinite;
+}
+
+.memory-front {
+  overflow: hidden;
+}
+
+.memory-front::after {
+  content: "";
+  position: absolute;
+  inset: -55% -80%;
+  background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,0.42) 50%, transparent 58%);
+  transform: translateX(-80%) rotate(8deg);
+  animation: choiceCardShine 2.8s ease-in-out infinite;
+}
+
+#screen-tone .flashcard .word-emoji {
+  animation: toneEmojiPulse 1.1s ease-in-out infinite;
+}
+
+#toneChoices .choice-card {
+  border-color: rgba(255,183,3,0.24);
+}
+
+.balloon-container::before {
+  content: "☁️     ☁️      ☁️";
+  position: absolute;
+  left: 0;
+  top: 18px;
+  width: 200%;
+  color: rgba(255,255,255,0.82);
+  font-size: 28px;
+  letter-spacing: 34px;
+  pointer-events: none;
+  animation: balloonCloudDrift 12s linear infinite;
+}
+
+.balloon {
+  animation-name: floatUp, sway, balloonShimmer;
+  animation-duration: 4.5s, 2s, 1.45s;
+  animation-timing-function: linear, ease-in-out, ease-in-out;
+  animation-fill-mode: forwards, none, none;
+  animation-iteration-count: 1, infinite, infinite;
+}
+
+.balloon-string {
+  animation: stringSwing 0.9s ease-in-out infinite;
+}
+
+.balloon-pop {
+  animation: balloonBurst 0.28s ease-out forwards !important;
+}
+
+.claw-machine::before {
+  content: "✨  ✨  ✨";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 48px;
+  color: rgba(255,255,255,0.75);
+  font-size: 24px;
+  letter-spacing: 28px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 16;
+  animation: clawSparkleSweep 2.2s ease-in-out infinite;
+}
+
+.striped-roof {
+  animation: roofStripeMove 1.1s linear infinite;
+}
+
+.roof-display-window {
+  animation: roofDisplayBlink 1s ease-in-out infinite;
+}
+
+.claw-glass {
+  animation: glassSweep 2.7s ease-in-out infinite;
+}
+
+.claw-chute {
+  animation: chuteGlow 1.6s ease-in-out infinite;
+}
+
+.claw-grabber {
+  animation: clawGrabberIdle 1.8s ease-in-out infinite;
+}
+
+.claw-arm.closed .claw-grabber {
+  animation: clawGrabberClamp 0.38s ease-in-out;
+}
+
+.capsule:not(.empty) {
+  animation: capsuleBob 2.1s ease-in-out infinite;
+}
+
+.capsule:nth-child(2n) { animation-delay: 0.18s; }
+.capsule:nth-child(3n) { animation-delay: 0.32s; }
+
+.ctrl-drop-btn {
+  animation: dropButtonBeat 1.25s ease-in-out infinite;
+}
+
+.ctrl-arrow-btn {
+  animation: controlButtonPulse 1.8s ease-in-out infinite;
+}
+
+.spell-syllable-slot {
+  position: relative;
+  animation: factorySlotGlow 1.6s ease-in-out infinite;
+}
+
+.spell-syllable-slot::after {
+  content: "⚙️";
+  position: absolute;
+  right: -18px;
+  top: -18px;
+  font-size: 24px;
+  animation: gearSpin 1.4s linear infinite;
+}
+
+#screen-spell .choice-card.correct {
+  animation: factoryCorrectDrop 0.55s cubic-bezier(.18,.9,.2,1.15) both !important;
+}
+
+.mole-gameover .gameover-box {
+  animation: gameoverZoom 0.5s cubic-bezier(.18,.9,.2,1.15);
+}
+
+@keyframes screenTitlePop {
+  0% { opacity: 0; transform: translateY(-20px) scale(0.88); }
+  70% { opacity: 1; transform: translateY(5px) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes screenTitleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes homeButtonFloat {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-4px) rotate(1deg); }
+}
+
+@keyframes homeButtonRing {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.12) rotate(-8deg); }
+}
+
+@keyframes homeTitleBounce {
+  0% { opacity: 0; transform: scale(0.85) translateY(-24px); }
+  70% { opacity: 1; transform: scale(1.06) translateY(5px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes homeTitleGlow {
+  0%, 100% { text-shadow: 2px 2px 0 #fff, 0 0 0 rgba(255,93,143,0); }
+  50% { text-shadow: 2px 2px 0 #fff, 0 0 18px rgba(255,93,143,0.45); }
+}
+
+@keyframes menuCardEnter {
+  0% { opacity: 0; transform: translateY(28px) scale(0.86) rotate(-3deg); }
+  72% { opacity: 1; transform: translateY(-5px) scale(1.05) rotate(1deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+
+@keyframes menuCardBob {
+  0%, 100% { transform: translateY(0) rotate(-0.3deg); }
+  50% { transform: translateY(-4px) rotate(0.3deg); }
+}
+
+@keyframes menuCardShine {
+  0%, 42% { transform: translateX(-85%) rotate(8deg); opacity: 0; }
+  56% { opacity: 0.92; }
+  76%, 100% { transform: translateX(85%) rotate(8deg); opacity: 0; }
+}
+
+@keyframes menuIconDance {
+  0%, 100% { transform: translateY(0) rotate(-3deg) scale(1); }
+  50% { transform: translateY(-5px) rotate(4deg) scale(1.08); }
+}
+
+@keyframes cardStageEnter {
+  0% { opacity: 0; transform: translateY(34px) rotate(-3deg) scale(0.9); }
+  70% { opacity: 1; transform: translateY(-7px) rotate(1deg) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+
+@keyframes cardGentleFloat {
+  0%, 100% { transform: translateY(0) rotate(-0.35deg); }
+  50% { transform: translateY(-7px) rotate(0.35deg); }
+}
+
+@keyframes cardSweep {
+  0%, 45% { transform: translateX(-86%) rotate(10deg); opacity: 0; }
+  58% { opacity: 0.95; }
+  78%, 100% { transform: translateX(86%) rotate(10deg); opacity: 0; }
+}
+
+@keyframes symbolBreath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05) translateY(-3px); }
+}
+
+@keyframes navArrowPulse {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.04); }
+}
+
+@keyframes speakerPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 8px 0 rgba(0,0,0,0.1); }
+  50% { transform: scale(1.05); box-shadow: 0 12px 0 rgba(0,0,0,0.08), 0 0 22px rgba(110,198,255,0.44); }
+}
+
+@keyframes speakerWave {
+  0% { opacity: 0.75; transform: scale(0.7); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+
+@keyframes universalChoiceEnter {
+  0% { opacity: 0; transform: translateY(18px) scale(0.86) rotate(-2deg); }
+  72% { opacity: 1; transform: translateY(-4px) scale(1.05) rotate(1deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+
+@keyframes choiceCardShine {
+  0%, 50% { transform: translateX(-78%) rotate(8deg); opacity: 0; }
+  64% { opacity: 0.82; }
+  84%, 100% { transform: translateX(78%) rotate(8deg); opacity: 0; }
+}
+
+@keyframes answerCorrectPop {
+  0% { transform: scale(1); }
+  42% { transform: scale(1.16) translateY(-10px) rotate(-2deg); }
+  70% { transform: scale(0.96) translateY(3px) rotate(1deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes answerWrongShake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-8px) rotate(-3deg); }
+  40% { transform: translateX(8px) rotate(3deg); }
+  60% { transform: translateX(-5px) rotate(-1.5deg); }
+  80% { transform: translateX(5px) rotate(1.5deg); }
+}
+
+@keyframes promptDropIn {
+  0% { opacity: 0; transform: translateY(-20px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes matchSpeakerWiggle {
+  0%, 100% { rotate: -2deg; }
+  50% { rotate: 2deg; }
+}
+
+@keyframes pinyinSlotFloat {
+  0%, 100% { transform: translateY(0) rotate(-0.4deg); box-shadow: 0 8px 0 rgba(0,0,0,0.1); }
+  50% { transform: translateY(-6px) rotate(0.4deg); box-shadow: 0 12px 0 rgba(0,0,0,0.08), 0 0 20px rgba(255,183,3,0.28); }
+}
+
+@keyframes plusSpinSpark {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(12deg) scale(1.12); }
+}
+
+@keyframes combineButtonGlow {
+  0%, 100% { filter: brightness(1); transform: translateY(0); }
+  50% { filter: brightness(1.12); transform: translateY(-3px); }
+}
+
+@keyframes resultPopIn {
+  0% { opacity: 0; transform: scale(0.82) translateY(16px); }
+  70% { opacity: 1; transform: scale(1.06) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes resultCelebrate {
+  0%, 100% { transform: scale(1) rotate(0); }
+  45% { transform: scale(1.12) rotate(-3deg); }
+}
+
+@keyframes hudSlideIn {
+  0% { opacity: 0; transform: translateY(-14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes quizQuestionEnter {
+  0% { opacity: 0; transform: translateY(20px) scale(0.92); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes trophyBounce {
+  0%, 100% { transform: translateY(0) rotate(-2deg) scale(1); }
+  50% { transform: translateY(-8px) rotate(2deg) scale(1.08); }
+}
+
+@keyframes targetBoxPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 6px 0 rgba(0,0,0,0.1); }
+  50% { transform: scale(1.03); box-shadow: 0 10px 0 rgba(0,0,0,0.08), 0 0 18px rgba(255,93,143,0.28); }
+}
+
+@keyframes statBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes gridRiseIn {
+  0% { opacity: 0; transform: translateY(28px) scale(0.94); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes holeWiggle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes groundPulse {
+  0%, 100% { transform: scaleX(1); filter: brightness(1); }
+  50% { transform: scaleX(1.06); filter: brightness(1.08); }
+}
+
+@keyframes molePopDance {
+  0% { transform: translateY(120%) scale(0.8); }
+  70% { transform: translateY(-8%) scale(1.08); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes moleBodyIdle {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-3px) rotate(1deg); }
+}
+
+@keyframes picturePromptEnter {
+  0% { opacity: 0; transform: translateY(22px) scale(0.9); }
+  70% { opacity: 1; transform: translateY(-5px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes picturePromptFloat {
+  0%, 100% { transform: translateY(0) rotate(-0.3deg); }
+  50% { transform: translateY(-5px) rotate(0.3deg); }
+}
+
+@keyframes choiceIdleWiggle {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-2px) rotate(0.5deg); }
+}
+
+@keyframes memoryDeal {
+  0% { opacity: 0; transform: rotateY(-55deg) translateY(20px) scale(0.86); }
+  100% { opacity: 1; transform: rotateY(0) translateY(0) scale(1); }
+}
+
+@keyframes memoryFlipPop {
+  0% { transform: scale(1); }
+  55% { transform: scale(1.1) rotate(2deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes memoryMatchedGlow {
+  0%, 100% { filter: brightness(1); box-shadow: 0 5px 0 rgba(0,0,0,0.12); }
+  50% { filter: brightness(1.12); box-shadow: 0 7px 0 rgba(34,197,94,0.22), 0 0 18px rgba(34,197,94,0.32); }
+}
+
+@keyframes toneEmojiPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(34,211,238,0)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 14px rgba(34,211,238,0.55)); }
+}
+
+@keyframes balloonCloudDrift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes balloonShimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.16); }
+}
+
+@keyframes stringSwing {
+  0%, 100% { transform: translateX(-50%) rotate(-4deg); }
+  50% { transform: translateX(-50%) rotate(4deg); }
+}
+
+@keyframes balloonBurst {
+  0% { transform: scale(1); opacity: 1; }
+  35% { transform: scale(1.28); opacity: 0.85; }
+  100% { transform: scale(0.1); opacity: 0; }
+}
+
+@keyframes clawSparkleSweep {
+  0%, 100% { opacity: 0; transform: translateX(-22px); }
+  50% { opacity: 1; transform: translateX(22px); }
+}
+
+@keyframes roofStripeMove {
+  from { background-position: 0 0; }
+  to { background-position: 42px 0; }
+}
+
+@keyframes roofDisplayBlink {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+@keyframes glassSweep {
+  0%, 45% { opacity: 0.55; transform: translateX(-20%); }
+  65% { opacity: 0.92; }
+  100% { opacity: 0.55; transform: translateX(20%); }
+}
+
+@keyframes chuteGlow {
+  0%, 100% { box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 -2px 8px rgba(0,0,0,0.2); }
+  50% { box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 -2px 18px rgba(255,209,102,0.65); }
+}
+
+@keyframes clawGrabberIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+
+@keyframes clawGrabberClamp {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(8px) scale(1.08); }
+}
+
+@keyframes capsuleBob {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-5px) rotate(1deg); }
+}
+
+@keyframes dropButtonBeat {
+  0%, 100% { transform: scale(1); box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.6); }
+  50% { transform: scale(1.06); box-shadow: 0 8px 14px rgba(0,0,0,0.2), 0 0 18px rgba(255,209,102,0.72), inset 0 2px 4px rgba(255,255,255,0.6); }
+}
+
+@keyframes controlButtonPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes factorySlotGlow {
+  0%, 100% { box-shadow: 0 8px 0 rgba(0,0,0,0.1), 0 0 0 rgba(255,183,3,0); }
+  50% { box-shadow: 0 10px 0 rgba(0,0,0,0.08), 0 0 22px rgba(255,183,3,0.42); }
+}
+
+@keyframes gearSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes factoryCorrectDrop {
+  0% { transform: scale(1) translateY(0); }
+  45% { transform: scale(1.12) translateY(-12px) rotate(-3deg); }
+  100% { transform: scale(0.92) translateY(18px) rotate(3deg); opacity: 0.7; }
+}
+
+@keyframes gameoverZoom {
+  0% { opacity: 0; transform: scale(0.82) translateY(28px); }
+  70% { opacity: 1; transform: scale(1.06) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
