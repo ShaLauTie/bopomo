@@ -1141,6 +1141,7 @@ function nextTrainRound() {
   document.getElementById("trainInitialCar").innerHTML = "";
   document.getElementById("trainFinalCar").innerHTML = "";
   document.getElementById("trainToneCar").textContent = "";
+  resetTrainAnimationState();
 
   updateTrainHint();
   renderTrainChoices();
@@ -1196,6 +1197,7 @@ function handleTrainChoice(value, btn) {
 
   if (value !== expected) {
     btn.classList.add("wrong");
+    animateTrainWrong();
     showFeedback(false);
     setTimeout(() => btn.classList.remove("wrong"), 1100);
     return;
@@ -1203,18 +1205,21 @@ function handleTrainChoice(value, btn) {
 
   btn.classList.add("correct");
   fillTrainCar(value);
+  animateTrainCar(trainStep);
   trainStep++;
+  updateTrainCarStates();
 
   if (trainStep >= 3) {
     trainLocked = true;
     trainScore++;
     trainQuestionNum++;
     document.getElementById("trainStars").textContent = `⭐ ${trainScore}`;
+    animateTrainDepart();
     showFeedback(true);
     speak(trainCombo.word);
     setTimeout(() => {
       if (trainRunning) nextTrainRound();
-    }, 1200);
+    }, 1450);
     return;
   }
 
@@ -1233,6 +1238,59 @@ function fillTrainCar(value) {
   } else {
     document.getElementById("trainToneCar").textContent = toneLabel(value);
   }
+}
+
+function resetTrainAnimationState() {
+  const board = document.querySelector("#screen-train .train-board");
+  const track = document.querySelector("#screen-train .train-track");
+  const picture = document.querySelector("#screen-train .train-picture");
+  if (board) {
+    board.classList.remove("train-round-enter");
+    void board.offsetWidth;
+    board.classList.add("train-round-enter");
+  }
+  if (track) track.classList.remove("departing");
+  if (picture) {
+    picture.classList.remove("train-picture-pulse");
+    void picture.offsetWidth;
+    picture.classList.add("train-picture-pulse");
+  }
+  document.querySelectorAll("#screen-train .train-car").forEach(car => {
+    car.classList.remove("active", "filled", "pop");
+  });
+  updateTrainCarStates();
+}
+
+function updateTrainCarStates() {
+  document.querySelectorAll("#screen-train .train-car").forEach((car, index) => {
+    car.classList.toggle("filled", index < trainStep);
+    car.classList.toggle("active", index === trainStep && trainStep < 3);
+  });
+}
+
+function animateTrainCar(index) {
+  const car = document.querySelectorAll("#screen-train .train-car")[index];
+  if (!car) return;
+  car.classList.remove("pop");
+  void car.offsetWidth;
+  car.classList.add("pop");
+}
+
+function animateTrainDepart() {
+  const track = document.querySelector("#screen-train .train-track");
+  if (!track) return;
+  track.classList.remove("departing");
+  void track.offsetWidth;
+  track.classList.add("departing");
+}
+
+function animateTrainWrong() {
+  const track = document.querySelector("#screen-train .train-track");
+  if (!track) return;
+  track.classList.remove("shake");
+  void track.offsetWidth;
+  track.classList.add("shake");
+  setTimeout(() => track.classList.remove("shake"), 500);
 }
 
 function replayTrainSound() {
@@ -1285,6 +1343,7 @@ function nextMonsterRound() {
   document.getElementById("monsterFace").textContent = "👾";
   document.getElementById("monsterEmoji").textContent = monsterCombo.emoji;
   document.getElementById("monsterWord").textContent = monsterCombo.word;
+  resetMonsterAnimationState();
 
   const correctSpelling = comboSpelling(monsterCombo);
   const values = buildChoiceValues(correctSpelling, PINYIN_COMBOS.map(comboSpelling), 4);
@@ -1312,6 +1371,7 @@ function handleMonsterChoice(value, btn) {
   if (!correct) {
     btn.classList.add("wrong");
     document.getElementById("monsterFace").textContent = "😖";
+    animateMonsterWrong();
     showFeedback(false);
     setTimeout(() => {
       btn.classList.remove("wrong");
@@ -1323,6 +1383,7 @@ function handleMonsterChoice(value, btn) {
   monsterLocked = true;
   btn.classList.add("correct");
   document.getElementById("monsterFace").textContent = "😋";
+  animateMonsterEat();
   monsterScore++;
   monsterQuestionNum++;
   document.getElementById("monsterStars").textContent = `⭐ ${monsterScore}`;
@@ -1346,6 +1407,52 @@ function endMonsterGame() {
 function stopMonsterGame() {
   monsterRunning = false;
   monsterLocked = false;
+}
+
+function resetMonsterAnimationState() {
+  const card = document.querySelector("#screen-monster .monster-card");
+  const mouth = document.querySelector("#screen-monster .monster-mouth");
+  const food = document.querySelector("#screen-monster .monster-food-picture");
+  if (card) {
+    card.classList.remove("monster-enter", "monster-wrong", "monster-eat");
+    void card.offsetWidth;
+    card.classList.add("monster-enter");
+  }
+  if (mouth) mouth.classList.remove("chewing", "ready");
+  if (food) food.classList.remove("food-fly");
+  setTimeout(() => {
+    if (monsterRunning && mouth) mouth.classList.add("ready");
+  }, 120);
+}
+
+function animateMonsterWrong() {
+  const card = document.querySelector("#screen-monster .monster-card");
+  if (!card) return;
+  card.classList.remove("monster-wrong");
+  void card.offsetWidth;
+  card.classList.add("monster-wrong");
+  setTimeout(() => card.classList.remove("monster-wrong"), 520);
+}
+
+function animateMonsterEat() {
+  const card = document.querySelector("#screen-monster .monster-card");
+  const mouth = document.querySelector("#screen-monster .monster-mouth");
+  const food = document.querySelector("#screen-monster .monster-food-picture");
+  if (card) {
+    card.classList.remove("monster-eat");
+    void card.offsetWidth;
+    card.classList.add("monster-eat");
+  }
+  if (food) {
+    food.classList.remove("food-fly");
+    void food.offsetWidth;
+    food.classList.add("food-fly");
+  }
+  if (mouth) {
+    mouth.classList.remove("ready", "chewing");
+    void mouth.offsetWidth;
+    mouth.classList.add("chewing");
+  }
 }
 
 // ========== 注音拼圖島 ==========
