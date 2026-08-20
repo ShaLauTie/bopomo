@@ -443,7 +443,7 @@ function prevPinyin() {
 }
 
 // 將拼音字串轉為直排 HTML 元件的輔助函式 (支援聲調置右)
-function renderPinyinHtml(bopomofoStr, baseSize = 120) {
+function renderPinyinHtml(bopomofoStr, baseSize = 120, extraClass = '') {
   const TONE = /[ˊˇˋ˙]/;
   const toneChar = (bopomofoStr.match(TONE) || [''])[0];
   const bodyChars = bopomofoStr.replace(TONE, '');
@@ -458,14 +458,26 @@ function renderPinyinHtml(bopomofoStr, baseSize = 120) {
     symbolsHtml += `<div>${char}</div>`;
   }
   
+  const className = ['bopomofo-vertical', extraClass].filter(Boolean).join(' ');
+
   return `
-    <div class="bopomofo-vertical" style="font-size: ${fontSize}px;">
+    <div class="${className}" style="font-size: ${fontSize}px;">
       <div class="bopomofo-stack">
         ${symbolsHtml}
       </div>
       ${toneChar ? `<div class="bopomofo-tone">${toneChar}</div>` : ''}
     </div>
   `;
+}
+
+function renderSpellSyllable(initial = '', final = '') {
+  const slot = document.getElementById('spellSyllableSlot');
+  if (!slot) return;
+
+  const syllable = `${initial || ''}${final || ''}`;
+  slot.innerHTML = syllable
+    ? renderPinyinHtml(syllable, 62, 'spell-bopomofo spell-answer-bopomofo')
+    : '';
 }
 
 // ========== 小測驗 ==========
@@ -1824,9 +1836,8 @@ function nextSpellRound() {
   document.getElementById('spellEmoji').textContent = spellCombo.emoji;
   document.getElementById('spellWord').textContent  = spellCombo.word;
 
-  // 拼字槽：兩格都清空，等孩子選
-  document.getElementById('spellSlotInitial').innerHTML = '';
-  document.getElementById('spellSlotFinal').innerHTML   = '';
+  // 拼字槽：同一個音節直排，等孩子依序選聲母與韻符
+  renderSpellSyllable();
 
   renderSpellChoices('initial');
   speak(spellCombo.word);
@@ -1858,7 +1869,7 @@ function renderSpellChoices(step) {
     const btn = document.createElement('button');
     btn.className = 'choice-card';
     btn.style.padding = '5px';
-    btn.innerHTML = renderPinyinHtml(value, 55);
+    btn.innerHTML = renderPinyinHtml(value, 55, 'spell-bopomofo');
     btn.onclick = () => handleSpellChoice(value, step, btn);
     grid.appendChild(btn);
   });
@@ -1883,7 +1894,7 @@ function handleSpellChoice(value, step, btn) {
 
   if (step === 'initial') {
     // 第一步答對：填入聲母，進到第二步
-    document.getElementById('spellSlotInitial').innerHTML = renderPinyinHtml(spellCombo.initial, 56);
+    renderSpellSyllable(spellCombo.initial);
     speak(spellCombo.initial);
     spellStep = 'final';
     setTimeout(() => {
@@ -1892,7 +1903,7 @@ function handleSpellChoice(value, step, btn) {
   } else {
     // 第二步答對：整題完成
     spellLocked = true;
-    document.getElementById('spellSlotFinal').innerHTML = renderPinyinHtml(spellCombo.final, 56);
+    renderSpellSyllable(spellCombo.initial, spellCombo.final);
     document.getElementById('spellChoices').innerHTML = '';
 
     spellScore++;
