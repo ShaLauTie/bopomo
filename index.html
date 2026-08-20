@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=26">
+<link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
 
@@ -39,6 +39,10 @@
     <button class="menu-card card-6" onclick="showScreen('wordhead')">
       <span class="icon">🔤</span>
       <span>看圖找字頭</span>
+    </button>
+    <button class="menu-card card-13" onclick="showScreen('picture')" style="background: linear-gradient(135deg, #5eead4, #60a5fa);">
+      <span class="icon">🖼️</span>
+      <span>看圖選注音</span>
     </button>
     <button class="menu-card card-7" onclick="showScreen('memory')">
       <span class="icon">🃏</span>
@@ -258,6 +262,32 @@
   </div>
 </div>
 
+<!-- 看圖選注音 -->
+<div class="screen" id="screen-picture">
+  <h2>看圖選注音 🖼️</h2>
+  <div class="picture-header">
+    <span id="pictureProgress">第 1 / 10 題</span>
+    <span class="stars" id="pictureStars">⭐ 0</span>
+  </div>
+
+  <div class="picture-card" onclick="replayPictureSound()">
+    <div class="picture-emoji" id="pictureEmoji"></div>
+    <div class="picture-word" id="pictureWord"></div>
+    <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayPictureSound()">🔊</button>
+  </div>
+
+  <div class="choices-grid picture-choices" id="pictureChoices"></div>
+
+  <div class="mole-gameover" id="pictureGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">🎉</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">圖片遊戲完成！</div>
+      <div class="big-score">⭐ <span id="pictureFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startPictureGame()">再玩一次！</button>
+    </div>
+  </div>
+</div>
+
 <!-- 拼字工廠 -->
 <div class="screen" id="screen-spell">
   <h2>拼字工廠 🏭</h2>
@@ -286,7 +316,7 @@
   </div>
 </div>
 
-<script src="data.js?v=26"></script>
-<script src="app.js?v=26"></script>
+<script src="data.js?v=27"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>

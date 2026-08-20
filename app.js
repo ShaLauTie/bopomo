@@ -249,6 +249,7 @@ function showScreen(name) {
   if (name === "quiz") startQuiz();
   if (name === "mole") startMoleGame();
   if (name === "wordhead") startWordHeadRound();
+  if (name === "picture") startPictureGame();
   if (name === "memory") startMemoryGame();
   if (name === "tone") startToneRound();
   if (name === "balloon") startBalloonGame();
@@ -261,6 +262,7 @@ function goHome() {
   stopBalloonGame();
   stopClawGame();
   stopSpellGame();
+  stopPictureGame();
   showScreen("home");
 }
 
@@ -928,6 +930,104 @@ function handleWhChoice(choice, btn) {
     showFeedback(false);
     setTimeout(() => btn.classList.remove('wrong'), 1200);
   }
+}
+
+// ========== 看圖選注音 ==========
+
+const PICTURE_LENGTH = 10;
+let pictureScore = 0;
+let pictureQuestionNum = 0;
+let pictureCombo = null;
+let pictureLocked = false;
+let pictureRunning = false;
+
+function comboSpelling(combo) {
+  return `${combo.initial}${combo.final}`;
+}
+
+function startPictureGame() {
+  pictureScore = 0;
+  pictureQuestionNum = 0;
+  pictureRunning = true;
+  pictureLocked = false;
+  document.getElementById('pictureGameover').style.display = 'none';
+  nextPictureRound();
+}
+
+function nextPictureRound() {
+  if (pictureQuestionNum >= PICTURE_LENGTH) {
+    endPictureGame();
+    return;
+  }
+
+  pictureLocked = false;
+  pictureCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+
+  document.getElementById('pictureProgress').textContent = `第 ${pictureQuestionNum + 1} / ${PICTURE_LENGTH} 題`;
+  document.getElementById('pictureStars').textContent = `⭐ ${pictureScore}`;
+  document.getElementById('pictureEmoji').textContent = pictureCombo.emoji;
+  document.getElementById('pictureWord').textContent = pictureCombo.word;
+
+  const correctSpelling = comboSpelling(pictureCombo);
+  const others = shuffle(PINYIN_COMBOS
+    .map(comboSpelling)
+    .filter(value => value !== correctSpelling)
+  ).slice(0, 3);
+  const choices = shuffle([correctSpelling, ...others]);
+
+  const grid = document.getElementById('pictureChoices');
+  grid.innerHTML = '';
+  choices.forEach(value => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-card picture-choice-card';
+    btn.innerHTML = renderPinyinHtml(value, 72, 'spell-bopomofo picture-bopomofo');
+    btn.onclick = () => handlePictureChoice(value, btn);
+    grid.appendChild(btn);
+  });
+
+  speak(pictureCombo.word);
+}
+
+function replayPictureSound() {
+  if (pictureCombo) speak(pictureCombo.word);
+}
+
+function handlePictureChoice(value, btn) {
+  if (pictureLocked || !pictureRunning) return;
+  const correct = value === comboSpelling(pictureCombo);
+
+  if (!correct) {
+    btn.classList.add('wrong');
+    showFeedback(false);
+    setTimeout(() => btn.classList.remove('wrong'), 1200);
+    return;
+  }
+
+  pictureLocked = true;
+  btn.classList.add('correct');
+  pictureScore++;
+  pictureQuestionNum++;
+  document.getElementById('pictureStars').textContent = `⭐ ${pictureScore}`;
+  showFeedback(true);
+  speak(pictureCombo.word);
+
+  setTimeout(() => {
+    if (pictureRunning) nextPictureRound();
+  }, 1200);
+}
+
+function endPictureGame() {
+  pictureRunning = false;
+  document.getElementById('pictureFinalScore').textContent = pictureScore;
+  document.getElementById('pictureGameover').style.display = 'flex';
+  const msg = pictureScore >= PICTURE_LENGTH ? '太棒了！圖片注音都選對了！' :
+              pictureScore >= 6 ? '很棒！再練一下會更熟！' : '再試一次，慢慢看圖片和注音！';
+  speak(msg);
+}
+
+function stopPictureGame() {
+  pictureRunning = false;
+  pictureLocked = false;
 }
 
 // ========== 記憑配對 ==========

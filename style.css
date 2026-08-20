@@ -751,6 +751,109 @@ h1, h2 {
   margin-bottom: 24px;
 }
 
+/* ---------- 看圖選注音 ---------- */
+
+#screen-picture {
+  justify-content: center;
+  gap: 14px;
+}
+
+.picture-header {
+  width: min(520px, 92vw);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #5b4636;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.picture-card {
+  position: relative;
+  width: min(360px, 82vw);
+  min-height: 250px;
+  background: white;
+  border: 6px solid #7dd3fc;
+  border-radius: 28px;
+  box-shadow: 0 10px 0 rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.picture-emoji {
+  font-size: 96px;
+  line-height: 1;
+}
+
+.picture-word {
+  font-size: 38px;
+  font-weight: 900;
+  color: #5b4636;
+}
+
+.picture-speaker {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: #dff6ff;
+  font-size: 24px;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+  cursor: pointer;
+}
+
+.picture-choices {
+  max-width: 620px;
+  gap: 16px;
+}
+
+.picture-choice-card {
+  min-width: 128px;
+  min-height: 150px;
+  padding: 8px;
+}
+
+#screen-picture .picture-bopomofo {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-items: center;
+  column-gap: 0.05em;
+  line-height: 0.86;
+  color: #2563eb;
+}
+
+#screen-picture .picture-bopomofo .bopomofo-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.02em;
+}
+
+#screen-picture .picture-bopomofo .bopomofo-stack > div {
+  display: block;
+  height: 0.84em;
+  line-height: 0.84;
+  margin: 0;
+  text-align: center;
+}
+
+#screen-picture .picture-bopomofo .bopomofo-tone {
+  align-self: center;
+  font-size: 0.48em;
+  line-height: 1;
+  margin: 0 0 0 0.04em;
+  transform: translateY(-0.08em);
+}
+
 .result-box {
   display: flex;
   flex-direction: column;
@@ -900,6 +1003,10 @@ h1, h2 {
   .choice-card { font-size: 72px; min-width: 100px; min-height: 100px; }
   .pinyin-slot { width: 100px; height: 100px; font-size: 56px; }
   #screen-home h1 { font-size: 38px; }
+  .picture-card { width: min(300px, 86vw); min-height: 215px; }
+  .picture-emoji { font-size: 78px; }
+  .picture-word { font-size: 32px; }
+  .picture-choice-card { min-width: 112px; min-height: 132px; }
 }
 
 /* ── 橫式（手機翻轉）── */
@@ -988,6 +1095,30 @@ h1, h2 {
   .spell-syllable-slot { width: 88px; min-height: 116px; border-radius: 16px; }
   .spell-syllable-slot:empty::before { font-size: 40px; }
   #screen-spell .spell-answer-bopomofo { font-size: 44px !important; }
+
+  /* 看圖選注音：橫式緊縮 */
+  #screen-picture { justify-content: center; gap: 4px; }
+  #screen-picture h2 { display: none; }
+  .picture-header { font-size: 17px; margin-top: 0; }
+  .picture-card {
+    width: min(230px, 38vw);
+    min-height: 132px;
+    border-radius: 18px;
+    border-width: 4px;
+    gap: 2px;
+  }
+  .picture-emoji { font-size: 52px; }
+  .picture-word { font-size: 22px; }
+  .picture-speaker {
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+    right: 8px;
+    top: 8px;
+  }
+  .picture-choices { gap: 10px; }
+  .picture-choice-card { min-width: 82px; min-height: 92px; border-radius: 16px; }
+  #screen-picture .picture-bopomofo { font-size: 40px !important; }
 
   /* 小測驗 */
   .quiz-header { margin-bottom: 6px; font-size: 18px; }
