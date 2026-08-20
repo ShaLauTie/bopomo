@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=30">
+<link rel="stylesheet" href="style.css?v=31">
 </head>
 <body>
 
@@ -326,21 +326,38 @@
 
   <div class="monster-stage">
     <div class="monster-card" onclick="replayMonsterSound()">
-      <div class="monster-face" id="monsterFace">👾</div>
-      <div class="monster-food-picture">
-        <div class="picture-emoji" id="monsterEmoji"></div>
-        <div class="picture-word" id="monsterWord"></div>
+      <div class="monster-speech" id="monsterSpeech">我只吃正確注音！</div>
+      <div class="monster-card-body">
+        <div class="monster-creature" id="monsterCreature">
+          <div class="monster-name">錯音獸</div>
+          <div class="monster-horns">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="monster-face" id="monsterFace">👾</div>
+          <div class="monster-belly">
+            <div class="monster-belly-fill" id="monsterBellyFill"></div>
+            <span id="monsterBellyText">0 / 10</span>
+          </div>
+        </div>
+        <div class="monster-food-picture">
+          <div class="picture-emoji" id="monsterEmoji"></div>
+          <div class="picture-word" id="monsterWord"></div>
+        </div>
       </div>
       <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayMonsterSound()">🔊</button>
     </div>
-    <div class="monster-mouth">餵正確注音</div>
+    <div class="monster-status-panel">
+      <div class="monster-mouth" id="monsterMouth">大嘴門</div>
+      <div class="monster-rule" id="monsterRule">聽圖片的字音，餵牠同一個注音</div>
+    </div>
   </div>
   <div class="choices-grid monster-choices" id="monsterChoices"></div>
 
   <div class="mole-gameover" id="monsterGameover" style="display:none">
     <div class="gameover-box">
       <div style="font-size:3.5rem">👾</div>
-      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">怪獸吃飽了！</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">錯音獸吃飽了！</div>
       <div class="big-score">⭐ <span id="monsterFinalScore">0</span></div>
       <button class="big-btn combine-btn" onclick="startMonsterGame()">再玩一次！</button>
     </div>
@@ -428,7 +445,7 @@
   </div>
 </div>
 
-<script src="data.js?v=30"></script>
-<script src="app.js?v=30"></script>
+<script src="data.js?v=31"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>

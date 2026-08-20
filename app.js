@@ -1347,10 +1347,12 @@ let monsterQuestionNum = 0;
 let monsterCombo = null;
 let monsterRunning = false;
 let monsterLocked = false;
+let monsterWrongCount = 0;
 
 function startMonsterGame() {
   monsterScore = 0;
   monsterQuestionNum = 0;
+  monsterWrongCount = 0;
   monsterRunning = true;
   monsterLocked = false;
   document.getElementById("monsterGameover").style.display = "none";
@@ -1371,6 +1373,8 @@ function nextMonsterRound() {
   document.getElementById("monsterFace").textContent = "👾";
   document.getElementById("monsterEmoji").textContent = monsterCombo.emoji;
   document.getElementById("monsterWord").textContent = monsterCombo.word;
+  updateMonsterBelly();
+  updateMonsterPersona(`嗷！我要吃「${monsterCombo.word}」的注音！`, "hungry");
   resetMonsterAnimationState();
 
   const correctSpelling = comboSpelling(monsterCombo);
@@ -1397,13 +1401,18 @@ function handleMonsterChoice(value, btn) {
   const correct = value === comboSpelling(monsterCombo);
 
   if (!correct) {
+    monsterWrongCount++;
     btn.classList.add("wrong");
     document.getElementById("monsterFace").textContent = "😖";
+    updateMonsterPersona("呸！錯音讓我打嗝！", "angry");
     animateMonsterWrong();
     showFeedback(false);
     setTimeout(() => {
       btn.classList.remove("wrong");
-      if (monsterRunning) document.getElementById("monsterFace").textContent = "👾";
+      if (monsterRunning) {
+        document.getElementById("monsterFace").textContent = "👾";
+        updateMonsterPersona(`再餵一次「${monsterCombo.word}」的正確注音！`, "hungry");
+      }
     }, 1100);
     return;
   }
@@ -1411,10 +1420,12 @@ function handleMonsterChoice(value, btn) {
   monsterLocked = true;
   btn.classList.add("correct");
   document.getElementById("monsterFace").textContent = "😋";
-  animateMonsterEat();
   monsterScore++;
   monsterQuestionNum++;
   document.getElementById("monsterStars").textContent = `⭐ ${monsterScore}`;
+  updateMonsterBelly();
+  updateMonsterPersona(`嗷嗚！${comboSpelling(monsterCombo)} 好吃！`, "happy");
+  animateMonsterEat(btn);
   showFeedback(true);
   speak(monsterCombo.word);
 
@@ -1427,8 +1438,8 @@ function endMonsterGame() {
   monsterRunning = false;
   document.getElementById("monsterFinalScore").textContent = monsterScore;
   document.getElementById("monsterGameover").style.display = "flex";
-  const msg = monsterScore >= MONSTER_LENGTH ? "怪獸吃到全部正確注音了！" :
-              monsterScore >= 6 ? "很棒，怪獸吃得很開心！" : "再試一次，先看圖再找完整注音！";
+  const msg = monsterScore >= MONSTER_LENGTH ? "錯音獸吃到全部正確注音了！" :
+              monsterScore >= 6 ? "很棒，錯音獸吃得很開心！" : "再試一次，先看圖再餵錯音獸！";
   speak(msg);
 }
 
@@ -1437,17 +1448,43 @@ function stopMonsterGame() {
   monsterLocked = false;
 }
 
+function updateMonsterBelly() {
+  const fill = document.getElementById("monsterBellyFill");
+  const text = document.getElementById("monsterBellyText");
+  const percent = Math.min(100, Math.round((monsterScore / MONSTER_LENGTH) * 100));
+  if (fill) fill.style.width = `${percent}%`;
+  if (text) text.textContent = `${monsterScore} / ${MONSTER_LENGTH}`;
+}
+
+function updateMonsterPersona(message, mood) {
+  const speech = document.getElementById("monsterSpeech");
+  const creature = document.getElementById("monsterCreature");
+  const rule = document.getElementById("monsterRule");
+  if (speech) speech.textContent = message;
+  if (rule) {
+    rule.textContent = monsterWrongCount >= 2
+      ? "牠被錯音惹毛了，餵正確音讓牠冷靜"
+      : "錯音獸只吃和圖片同音的注音";
+  }
+  if (creature) {
+    creature.classList.remove("hungry", "happy", "angry");
+    creature.classList.add(mood || "hungry");
+  }
+}
+
 function resetMonsterAnimationState() {
   const card = document.querySelector("#screen-monster .monster-card");
   const mouth = document.querySelector("#screen-monster .monster-mouth");
   const food = document.querySelector("#screen-monster .monster-food-picture");
+  const creature = document.getElementById("monsterCreature");
   if (card) {
     card.classList.remove("monster-enter", "monster-wrong", "monster-eat");
     void card.offsetWidth;
     card.classList.add("monster-enter");
   }
-  if (mouth) mouth.classList.remove("chewing", "ready");
+  if (mouth) mouth.classList.remove("chewing", "ready", "rejecting");
   if (food) food.classList.remove("food-fly");
+  if (creature) creature.classList.remove("monster-fed", "monster-reject");
   setTimeout(() => {
     if (monsterRunning && mouth) mouth.classList.add("ready");
   }, 120);
@@ -1455,17 +1492,34 @@ function resetMonsterAnimationState() {
 
 function animateMonsterWrong() {
   const card = document.querySelector("#screen-monster .monster-card");
-  if (!card) return;
-  card.classList.remove("monster-wrong");
-  void card.offsetWidth;
-  card.classList.add("monster-wrong");
-  setTimeout(() => card.classList.remove("monster-wrong"), 520);
+  const mouth = document.getElementById("monsterMouth");
+  const creature = document.getElementById("monsterCreature");
+  if (card) {
+    card.classList.remove("monster-wrong");
+    void card.offsetWidth;
+    card.classList.add("monster-wrong");
+    setTimeout(() => card.classList.remove("monster-wrong"), 520);
+  }
+  if (mouth) {
+    mouth.classList.remove("rejecting");
+    void mouth.offsetWidth;
+    mouth.classList.add("rejecting");
+    setTimeout(() => mouth.classList.remove("rejecting"), 650);
+  }
+  if (creature) {
+    creature.classList.remove("monster-reject");
+    void creature.offsetWidth;
+    creature.classList.add("monster-reject");
+    setTimeout(() => creature.classList.remove("monster-reject"), 650);
+  }
 }
 
-function animateMonsterEat() {
+function animateMonsterEat(btn) {
   const card = document.querySelector("#screen-monster .monster-card");
   const mouth = document.querySelector("#screen-monster .monster-mouth");
   const food = document.querySelector("#screen-monster .monster-food-picture");
+  const creature = document.getElementById("monsterCreature");
+  animateMonsterFlyingSnack(btn);
   if (card) {
     card.classList.remove("monster-eat");
     void card.offsetWidth;
@@ -1481,6 +1535,29 @@ function animateMonsterEat() {
     void mouth.offsetWidth;
     mouth.classList.add("chewing");
   }
+  if (creature) {
+    creature.classList.remove("monster-fed");
+    void creature.offsetWidth;
+    creature.classList.add("monster-fed");
+  }
+}
+
+function animateMonsterFlyingSnack(btn) {
+  const mouth = document.getElementById("monsterMouth");
+  if (!btn || !mouth) return;
+
+  const from = btn.getBoundingClientRect();
+  const to = mouth.getBoundingClientRect();
+  const clone = btn.cloneNode(true);
+  clone.className = "monster-flying-snack";
+  clone.style.left = `${from.left}px`;
+  clone.style.top = `${from.top}px`;
+  clone.style.width = `${from.width}px`;
+  clone.style.height = `${from.height}px`;
+  clone.style.setProperty("--fly-x", `${to.left + to.width / 2 - (from.left + from.width / 2)}px`);
+  clone.style.setProperty("--fly-y", `${to.top + to.height / 2 - (from.top + from.height / 2)}px`);
+  document.body.appendChild(clone);
+  setTimeout(() => clone.remove(), 760);
 }
 
 // ========== 注音拼圖島 ==========

@@ -1349,18 +1349,21 @@ h1, h2 {
 
 .monster-card {
   position: relative;
-  width: min(390px, 82vw);
-  min-height: 230px;
-  background: white;
+  width: min(430px, 82vw);
+  min-height: 292px;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(250,204,21,0.28) 0 12px, transparent 13px),
+    radial-gradient(circle at 82% 22%, rgba(244,114,182,0.22) 0 16px, transparent 17px),
+    linear-gradient(180deg, #fff 0%, #faf5ff 100%);
   border: 6px solid #c084fc;
   border-radius: 28px;
   box-shadow: 0 10px 0 rgba(0,0,0,0.12);
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-items: center;
-  gap: 12px;
-  padding: 20px;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 18px 18px;
   cursor: pointer;
   transform-origin: center bottom;
   animation: monsterIdle 2.4s ease-in-out infinite;
@@ -1409,12 +1412,189 @@ h1, h2 {
   animation: monsterEatBurst 0.74s ease-out both;
 }
 
+.monster-speech {
+  position: relative;
+  z-index: 1;
+  max-width: 92%;
+  min-height: 42px;
+  background: #fff7ed;
+  border: 4px solid #fb923c;
+  border-radius: 18px;
+  color: #7c2d12;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.25;
+  padding: 8px 12px;
+  text-align: center;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.1);
+  animation: monsterSpeechBob 1.7s ease-in-out infinite;
+}
+
+.monster-speech::after {
+  content: "";
+  position: absolute;
+  left: 44px;
+  bottom: -14px;
+  border-width: 14px 10px 0;
+  border-style: solid;
+  border-color: #fb923c transparent transparent;
+}
+
+.monster-card-body {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 164px 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: 14px;
+}
+
+.monster-creature {
+  position: relative;
+  width: 154px;
+  min-height: 188px;
+  border: 6px solid #7c3aed;
+  border-radius: 42% 42% 34% 34%;
+  background:
+    radial-gradient(circle at 28% 28%, #fff 0 10px, transparent 11px),
+    radial-gradient(circle at 72% 28%, #fff 0 10px, transparent 11px),
+    radial-gradient(circle at 30% 64%, rgba(255,255,255,0.28) 0 9px, transparent 10px),
+    linear-gradient(160deg, #a78bfa 0%, #f472b6 100%);
+  box-shadow: inset 0 -12px 0 rgba(0,0,0,0.08), 0 8px 0 rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 26px 10px 12px;
+  transform-origin: center bottom;
+}
+
+.monster-creature::before,
+.monster-creature::after {
+  content: "";
+  position: absolute;
+  top: 52px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #111827;
+  box-shadow: 0 0 0 5px rgba(255,255,255,0.82);
+  animation: monsterEyeWiggle 1.55s ease-in-out infinite;
+}
+
+.monster-creature::before {
+  left: 37px;
+}
+
+.monster-creature::after {
+  right: 37px;
+  animation-delay: 0.08s;
+}
+
+.monster-creature.happy {
+  border-color: #22c55e;
+  animation: monsterCreatureHappy 0.72s ease-out;
+}
+
+.monster-creature.angry {
+  border-color: #ef4444;
+  background:
+    radial-gradient(circle at 28% 28%, #fff 0 10px, transparent 11px),
+    radial-gradient(circle at 72% 28%, #fff 0 10px, transparent 11px),
+    linear-gradient(160deg, #fb7185 0%, #f97316 100%);
+}
+
+.monster-creature.monster-fed {
+  animation: monsterBellyBounce 0.74s cubic-bezier(.18,.9,.2,1.15);
+}
+
+.monster-creature.monster-reject {
+  animation: monsterRejectSpit 0.58s ease-in-out;
+}
+
+.monster-name {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #7c3aed;
+  color: white;
+  border: 3px solid white;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.14);
+  white-space: nowrap;
+}
+
+.monster-horns {
+  position: absolute;
+  top: -17px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.monster-horns span {
+  width: 28px;
+  height: 34px;
+  background: #facc15;
+  border: 4px solid #7c2d12;
+  border-radius: 50% 50% 12px 12px;
+  transform: rotate(-18deg);
+}
+
+.monster-horns span:last-child {
+  transform: rotate(18deg);
+}
+
 .monster-face {
-  font-size: 86px;
+  position: relative;
+  z-index: 1;
+  font-size: 54px;
   line-height: 1;
   filter: drop-shadow(0 5px 0 rgba(0,0,0,0.12));
   transform-origin: center bottom;
   animation: monsterFaceBlink 1.85s ease-in-out infinite;
+}
+
+.monster-belly {
+  position: relative;
+  z-index: 1;
+  width: 118px;
+  height: 34px;
+  margin-top: 8px;
+  overflow: hidden;
+  border: 4px solid rgba(255,255,255,0.92);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.45);
+  box-shadow: inset 0 3px 0 rgba(0,0,0,0.08);
+}
+
+.monster-belly-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(90deg, #22c55e, #bef264);
+  border-radius: inherit;
+  transition: width 0.45s cubic-bezier(.2,.95,.2,1);
+}
+
+.monster-belly span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3f2a19;
+  font-size: 14px;
+  font-weight: 900;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.55);
 }
 
 .monster-food-picture {
@@ -1426,11 +1606,28 @@ h1, h2 {
   transform-origin: center;
 }
 
+#screen-monster .picture-emoji {
+  font-size: 76px;
+}
+
+#screen-monster .picture-word {
+  font-size: 32px;
+}
+
 .monster-food-picture.food-fly {
   animation: monsterFoodFly 0.72s cubic-bezier(.24,.88,.22,1) both;
 }
 
+.monster-status-panel {
+  width: min(178px, 34vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
 .monster-mouth {
+  position: relative;
   min-width: 148px;
   background: #1f2937;
   color: white;
@@ -1443,6 +1640,94 @@ h1, h2 {
   text-align: center;
   transform-origin: center;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.monster-mouth::before {
+  content: "";
+  position: absolute;
+  inset: 9px 20px auto;
+  height: 7px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(90deg, #fff 0 9px, #fca5a5 9px 15px);
+  opacity: 0.95;
+}
+
+.monster-mouth::after {
+  content: "吞";
+  position: absolute;
+  right: -12px;
+  top: -14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 3px solid white;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.14);
+  animation: monsterEatBadge 1.2s ease-in-out infinite;
+}
+
+.monster-mouth.rejecting {
+  animation: monsterMouthReject 0.62s ease-in-out;
+}
+
+.monster-rule {
+  width: 100%;
+  color: #5b4636;
+  background: #ffffffd9;
+  border: 4px dashed #c084fc;
+  border-radius: 18px;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.25;
+  padding: 10px;
+  text-align: center;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.1);
+}
+
+.monster-flying-snack {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 6px solid #22c55e;
+  border-radius: 20px;
+  box-shadow: 0 12px 20px rgba(0,0,0,0.18);
+  animation: monsterSnackFly 0.72s cubic-bezier(.2,.95,.2,1) both;
+}
+
+.monster-flying-snack .game-bopomofo {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-items: center;
+  column-gap: 0.05em;
+  line-height: 0.86;
+  color: #2563eb;
+}
+
+.monster-flying-snack .bopomofo-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.monster-flying-snack .bopomofo-stack > div {
+  height: 0.84em;
+  line-height: 0.84;
+}
+
+.monster-flying-snack .bopomofo-tone {
+  font-size: 0.48em;
+  margin-left: 0.04em;
 }
 
 .monster-mouth.ready {
@@ -1480,6 +1765,11 @@ h1, h2 {
   100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
 }
 
+@keyframes monsterSpeechBob {
+  0%, 100% { transform: translateY(0) rotate(-0.4deg); }
+  50% { transform: translateY(-4px) rotate(0.4deg); }
+}
+
 @keyframes monsterBubbleRise {
   0% { transform: translateY(34px); opacity: 0; }
   20% { opacity: 0.75; }
@@ -1490,6 +1780,33 @@ h1, h2 {
   0%, 72%, 100% { transform: scaleY(1) rotate(0); }
   78% { transform: scaleY(0.82) rotate(-2deg); }
   84% { transform: scaleY(1.08) rotate(2deg); }
+}
+
+@keyframes monsterEyeWiggle {
+  0%, 100% { transform: translateX(0) scale(1); }
+  45% { transform: translateX(3px) scale(1.05); }
+  70% { transform: translateX(-2px) scale(0.96); }
+}
+
+@keyframes monsterCreatureHappy {
+  0% { transform: scale(1) rotate(0); }
+  35% { transform: scale(1.08) rotate(-3deg); }
+  70% { transform: scale(0.98) rotate(2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes monsterBellyBounce {
+  0% { transform: translateY(0) scale(1); }
+  28% { transform: translateY(-10px) scale(1.08); }
+  55% { transform: translateY(4px) scale(0.98); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes monsterRejectSpit {
+  0%, 100% { transform: translateX(0) rotate(0); filter: saturate(1); }
+  20% { transform: translateX(-7px) rotate(-4deg); filter: saturate(1.35); }
+  40% { transform: translateX(7px) rotate(4deg); filter: saturate(1.35); }
+  60% { transform: translateX(-4px) rotate(-2deg); }
 }
 
 @keyframes monsterWrong {
@@ -1532,6 +1849,11 @@ h1, h2 {
   }
 }
 
+@keyframes monsterEatBadge {
+  0%, 100% { transform: scale(0.9) rotate(-8deg); }
+  50% { transform: scale(1.08) rotate(8deg); }
+}
+
 @keyframes monsterChew {
   0%, 100% { transform: scale(1); }
   18% { transform: scaleX(1.16) scaleY(0.84); }
@@ -1540,10 +1862,32 @@ h1, h2 {
   72% { transform: scaleX(0.96) scaleY(1.08); }
 }
 
+@keyframes monsterMouthReject {
+  0%, 100% { transform: translateX(0) scale(1); background: #1f2937; }
+  22% { transform: translateX(-8px) scaleX(0.9); background: #7f1d1d; }
+  44% { transform: translateX(8px) scaleX(1.08); background: #991b1b; }
+  66% { transform: translateX(-4px) scaleX(0.96); background: #7f1d1d; }
+}
+
 @keyframes monsterMouthGlow {
   0% { box-shadow: 0 8px 0 rgba(0,0,0,0.14), 0 0 0 rgba(34,197,94,0); }
   40% { box-shadow: 0 8px 0 rgba(0,0,0,0.14), 0 0 30px rgba(34,197,94,0.88); }
   100% { box-shadow: 0 8px 0 rgba(0,0,0,0.14), 0 0 0 rgba(34,197,94,0); }
+}
+
+@keyframes monsterSnackFly {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0);
+  }
+  68% {
+    opacity: 1;
+    transform: translate(calc(var(--fly-x) * 0.82), calc(var(--fly-y) * 0.82 - 26px)) scale(0.62) rotate(12deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--fly-x), var(--fly-y)) scale(0.22) rotate(24deg);
+  }
 }
 
 @keyframes monsterChoiceBounce {
@@ -2017,10 +2361,26 @@ h1, h2 {
   .island-piece-card { min-width: 100px; min-height: 114px; }
   .tone-choice-mark { font-size: 23px; }
   .monster-stage { flex-direction: column; gap: 8px; }
-  .monster-card { width: min(310px, 86vw); min-height: 170px; padding: 14px; }
-  .monster-face { font-size: 64px; }
+  .monster-card { width: min(330px, 88vw); min-height: 248px; padding: 12px; }
+  .monster-speech { min-height: 34px; font-size: 14px; padding: 6px 10px; }
+  .monster-card-body { grid-template-columns: 132px 1fr; gap: 8px; }
+  .monster-creature { width: 124px; min-height: 150px; border-width: 5px; padding: 22px 8px 10px; }
+  .monster-creature::before,
+  .monster-creature::after { top: 44px; width: 12px; height: 12px; box-shadow: 0 0 0 4px rgba(255,255,255,0.82); }
+  .monster-creature::before { left: 30px; }
+  .monster-creature::after { right: 30px; }
+  .monster-name { font-size: 12px; top: -15px; padding: 3px 10px; }
+  .monster-horns { top: -15px; left: 20px; right: 20px; }
+  .monster-horns span { width: 22px; height: 28px; border-width: 3px; }
+  .monster-face { font-size: 43px; }
+  .monster-belly { width: 96px; height: 29px; border-width: 3px; }
+  .monster-belly span { font-size: 12px; }
+  #screen-monster .picture-emoji { font-size: 58px; }
+  #screen-monster .picture-word { font-size: 25px; }
   .monster-food-picture.food-fly { animation-name: monsterFoodFlyMobile; }
+  .monster-status-panel { width: min(260px, 84vw); }
   .monster-mouth { min-width: 130px; font-size: 17px; padding: 12px 16px; }
+  .monster-rule { font-size: 14px; padding: 8px; }
   .island-card { width: min(290px, 86vw); min-height: 145px; }
   .island-tower { min-height: 146px; padding: 12px; }
   .island-slot { width: 64px; height: 42px; font-size: 30px; }
@@ -2203,19 +2563,92 @@ h1, h2 {
   .tone-choice-mark { font-size: 17px; }
   .monster-stage { gap: 10px; }
   .monster-card {
-    width: min(260px, 38vw);
-    min-height: 118px;
+    width: min(320px, 48vw);
+    min-height: 154px;
     border-width: 4px;
     border-radius: 18px;
-    grid-template-columns: auto 1fr;
-    padding: 10px;
+    padding: 7px 9px;
   }
-  .monster-face { font-size: 48px; }
+  .monster-speech {
+    min-height: 24px;
+    border-width: 3px;
+    border-radius: 12px;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .monster-speech::after {
+    left: 28px;
+    bottom: -10px;
+    border-width: 10px 7px 0;
+  }
+  .monster-card-body {
+    grid-template-columns: 98px 1fr;
+    gap: 8px;
+  }
+  .monster-creature {
+    width: 88px;
+    min-height: 110px;
+    border-width: 4px;
+    padding: 18px 5px 7px;
+  }
+  .monster-creature::before,
+  .monster-creature::after {
+    top: 34px;
+    width: 9px;
+    height: 9px;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.82);
+  }
+  .monster-creature::before { left: 23px; }
+  .monster-creature::after { right: 23px; }
+  .monster-name {
+    top: -13px;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-width: 2px;
+  }
+  .monster-horns { top: -13px; left: 15px; right: 15px; }
+  .monster-horns span {
+    width: 17px;
+    height: 22px;
+    border-width: 3px;
+  }
+  .monster-face { font-size: 31px; }
+  .monster-belly {
+    width: 70px;
+    height: 22px;
+    border-width: 3px;
+    margin-top: 4px;
+  }
+  .monster-belly span { font-size: 10px; }
+  #screen-monster .picture-emoji { font-size: 43px; }
+  #screen-monster .picture-word { font-size: 19px; }
+  .monster-status-panel {
+    width: 112px;
+    gap: 6px;
+  }
   .monster-mouth {
     min-width: 104px;
     border-width: 4px;
     font-size: 15px;
     padding: 10px 12px;
+  }
+  .monster-mouth::before {
+    inset: 6px 16px auto;
+    height: 5px;
+  }
+  .monster-mouth::after {
+    right: -9px;
+    top: -11px;
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+  }
+  .monster-rule {
+    border-width: 3px;
+    border-radius: 12px;
+    font-size: 11px;
+    line-height: 1.2;
+    padding: 5px;
   }
   .island-card {
     width: min(210px, 34vw);
