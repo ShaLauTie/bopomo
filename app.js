@@ -2140,8 +2140,8 @@ function showNextMazeCard() {
   mazePieceIndex = 0;
   mazeLocked = false;
 
-  document.getElementById("mazeEmoji").textContent = mazeCombo.emoji;
-  document.getElementById("mazeWord").textContent = mazeCombo.word;
+  document.getElementById("mazeEmoji").textContent = "";
+  document.getElementById("mazeWord").textContent = "";
   placeMazePieces();
   updateMazeHud();
   updateMazeOrder();
@@ -2252,10 +2252,8 @@ function updateMazeOrder() {
   const order = document.getElementById("mazeOrder");
   const pieces = mazeCombo ? mazePieces : [];
   const cards = pieces.map((piece, index) => {
-    const className = index < mazePieceIndex ? "done" : index === mazePieceIndex ? "current" : "waiting";
-    const content = index < mazePieceIndex
-      ? "✓"
-      : renderGameChoiceHtml(piece, 34, "game-bopomofo maze-order-bopomofo");
+    const className = index < mazePieceIndex ? "done" : index === mazePieceIndex ? "current listening" : "waiting";
+    const content = index < mazePieceIndex ? "✓" : index === mazePieceIndex ? "?" : "•";
     return `<span class="${className}">${content}</span>`;
   });
   if (!mazeCombo && mazeRound >= MAZE_LENGTH) {
@@ -2263,7 +2261,7 @@ function updateMazeOrder() {
   }
   order.innerHTML = cards.join("");
   document.getElementById("mazeHint").textContent = mazeCombo
-    ? "照順序撿散開的注音"
+    ? `聽題目，撿第 ${Math.min(mazePieceIndex + 1, mazePieces.length)} 個注音`
     : "走到右上角出口";
 }
 
@@ -2392,7 +2390,7 @@ function moveMazePlayer(dr, dc) {
   }
 
   if (cell.type === "target") {
-    document.getElementById("mazeHint").textContent = "先找上面亮起的注音";
+    document.getElementById("mazeHint").textContent = "順序不對，先聽題目";
     animateMazeWrong();
   } else if (cell.type === "decoy") {
     document.getElementById("mazeHint").textContent = "這不是題目的注音";
