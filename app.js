@@ -1309,10 +1309,20 @@ function renderTrainChoices() {
   values.forEach(value => {
     const btn = document.createElement("button");
     btn.className = "choice-card train-choice-card";
-    btn.innerHTML = renderGameChoiceHtml(value, trainStep === 1 ? 58 : 70, "game-bopomofo train-bopomofo");
+    btn.innerHTML = trainStep === 2
+      ? renderTrainToneHtml(value)
+      : renderGameChoiceHtml(value, trainStep === 1 ? 58 : 70, "game-bopomofo train-bopomofo");
     btn.onclick = () => handleTrainChoice(value, btn);
     grid.appendChild(btn);
   });
+}
+
+function trainToneMark(tone) {
+  return tone || "¯";
+}
+
+function renderTrainToneHtml(tone) {
+  return `<span class="train-tone-mark">${trainToneMark(tone)}</span>`;
 }
 
 function handleTrainChoice(value, btn) {
@@ -1360,7 +1370,7 @@ function fillTrainCar(value) {
   } else if (trainStep === 1) {
     document.getElementById("trainFinalCar").innerHTML = renderPinyinHtml(value, 50, "game-bopomofo train-car-bopomofo");
   } else {
-    document.getElementById("trainToneCar").textContent = toneLabel(value);
+    document.getElementById("trainToneCar").innerHTML = renderTrainToneHtml(value);
   }
 }
 
@@ -1373,7 +1383,14 @@ function resetTrainAnimationState() {
     void board.offsetWidth;
     board.classList.add("train-round-enter");
   }
-  if (track) track.classList.remove("departing");
+  if (track) {
+    track.classList.remove("departing", "arriving", "shake");
+    void track.offsetWidth;
+    track.classList.add("arriving");
+    setTimeout(() => {
+      if (track.classList.contains("arriving")) track.classList.remove("arriving");
+    }, 1100);
+  }
   if (picture) {
     picture.classList.remove("train-picture-pulse");
     void picture.offsetWidth;
@@ -1403,7 +1420,7 @@ function animateTrainCar(index) {
 function animateTrainDepart() {
   const track = document.querySelector("#screen-train .train-track");
   if (!track) return;
-  track.classList.remove("departing");
+  track.classList.remove("departing", "arriving");
   void track.offsetWidth;
   track.classList.add("departing");
 }
