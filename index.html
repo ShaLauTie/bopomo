@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=36">
+<link rel="stylesheet" href="style.css?v=37">
 </head>
 <body>
 
@@ -482,7 +482,9 @@
   </div>
 
   <div class="picture-card" onclick="replayPictureSound()">
-    <div class="picture-emoji" id="pictureEmoji"></div>
+    <div class="picture-media" id="pictureMedia">
+      <img class="picture-photo" id="pictureImage" alt="">
+    </div>
     <div class="picture-word" id="pictureWord"></div>
     <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayPictureSound()">🔊</button>
   </div>
@@ -527,7 +529,7 @@
   </div>
 </div>
 
-<script src="data.js?v=36"></script>
-<script src="app.js?v=36"></script>
+<script src="data.js?v=37"></script>
+<script src="app.js?v=37"></script>
 </body>
 </html>

@@ -1037,6 +1037,17 @@ function handleWhChoice(choice, btn) {
 // ========== 看圖選注音 ==========
 
 const PICTURE_LENGTH = 10;
+const PICTURE_IMAGES = {
+  "狗": "images/picture/dog.jpg",
+  "貓": "images/picture/cat.jpg",
+  "兔": "images/picture/rabbit.jpg",
+  "雞": "images/picture/chicken.jpg",
+  "奶": "images/picture/milk.jpg",
+  "花": "images/picture/flower.jpg",
+  "牛": "images/picture/cow.jpg",
+  "樹": "images/picture/tree.jpg"
+};
+const PICTURE_IMAGE_COMBOS = PINYIN_COMBOS.filter(combo => PICTURE_IMAGES[combo.word]);
 let pictureScore = 0;
 let pictureQuestionNum = 0;
 let pictureCombo = null;
@@ -1063,11 +1074,11 @@ function nextPictureRound() {
   }
 
   pictureLocked = false;
-  pictureCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  pictureCombo = PICTURE_IMAGE_COMBOS[randomInt(PICTURE_IMAGE_COMBOS.length)];
 
   document.getElementById('pictureProgress').textContent = `第 ${pictureQuestionNum + 1} / ${PICTURE_LENGTH} 題`;
   document.getElementById('pictureStars').textContent = `⭐ ${pictureScore}`;
-  document.getElementById('pictureEmoji').textContent = pictureCombo.emoji;
+  renderPicturePhoto(pictureCombo);
   document.getElementById('pictureWord').textContent = pictureCombo.word;
   resetPictureAnimationState();
 
@@ -1089,6 +1100,13 @@ function nextPictureRound() {
   });
 
   speak(pictureCombo.word);
+}
+
+function renderPicturePhoto(combo) {
+  const img = document.getElementById("pictureImage");
+  if (!img) return;
+  img.src = PICTURE_IMAGES[combo.word];
+  img.alt = combo.word;
 }
 
 function replayPictureSound() {
