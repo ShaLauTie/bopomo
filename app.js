@@ -1514,19 +1514,21 @@ function handleMonsterChoice(value, btn) {
   const correct = value === comboSpelling(monsterCombo);
 
   if (!correct) {
+    monsterLocked = true;
     monsterWrongCount++;
-    btn.classList.add("wrong");
+    btn.classList.add("wrong", "monster-choice-spitting");
     document.getElementById("monsterFace").textContent = "😖";
-    updateMonsterPersona("呸！錯音讓我打嗝！", "angry");
-    animateMonsterWrong();
+    updateMonsterPersona("呸！錯音吐掉！", "angry");
+    animateMonsterWrong(btn);
     showFeedback(false);
     setTimeout(() => {
-      btn.classList.remove("wrong");
+      btn.classList.remove("wrong", "monster-choice-spitting");
       if (monsterRunning) {
+        monsterLocked = false;
         document.getElementById("monsterFace").textContent = "👾";
         updateMonsterPersona(`再餵一次「${monsterCombo.word}」的正確注音！`, "hungry");
       }
-    }, 1100);
+    }, 1250);
     return;
   }
 
@@ -1598,32 +1600,34 @@ function resetMonsterAnimationState() {
   if (mouth) mouth.classList.remove("chewing", "ready", "rejecting");
   if (food) food.classList.remove("food-fly");
   if (creature) creature.classList.remove("monster-fed", "monster-reject");
+  document.querySelectorAll(".monster-flying-snack").forEach(el => el.remove());
   setTimeout(() => {
     if (monsterRunning && mouth) mouth.classList.add("ready");
   }, 120);
 }
 
-function animateMonsterWrong() {
+function animateMonsterWrong(btn) {
   const card = document.querySelector("#screen-monster .monster-card");
   const mouth = document.getElementById("monsterMouth");
   const creature = document.getElementById("monsterCreature");
+  animateMonsterSpitSnack(btn);
   if (card) {
     card.classList.remove("monster-wrong");
     void card.offsetWidth;
-    card.classList.add("monster-wrong");
-    setTimeout(() => card.classList.remove("monster-wrong"), 520);
+    card.classList.add("monster-wrong", "monster-spit");
+    setTimeout(() => card.classList.remove("monster-wrong", "monster-spit"), 980);
   }
   if (mouth) {
     mouth.classList.remove("rejecting");
     void mouth.offsetWidth;
     mouth.classList.add("rejecting");
-    setTimeout(() => mouth.classList.remove("rejecting"), 650);
+    setTimeout(() => mouth.classList.remove("rejecting"), 1050);
   }
   if (creature) {
     creature.classList.remove("monster-reject");
     void creature.offsetWidth;
     creature.classList.add("monster-reject");
-    setTimeout(() => creature.classList.remove("monster-reject"), 650);
+    setTimeout(() => creature.classList.remove("monster-reject"), 1050);
   }
 }
 
@@ -1658,6 +1662,7 @@ function animateMonsterEat(btn) {
 function animateMonsterFlyingSnack(btn) {
   const mouth = document.getElementById("monsterMouth");
   if (!btn || !mouth) return;
+  btn.classList.add("monster-choice-eaten");
 
   const from = btn.getBoundingClientRect();
   const to = mouth.getBoundingClientRect();
@@ -1671,6 +1676,27 @@ function animateMonsterFlyingSnack(btn) {
   clone.style.setProperty("--fly-y", `${to.top + to.height / 2 - (from.top + from.height / 2)}px`);
   document.body.appendChild(clone);
   setTimeout(() => clone.remove(), 760);
+}
+
+function animateMonsterSpitSnack(btn) {
+  const mouth = document.getElementById("monsterMouth");
+  if (!btn || !mouth) return;
+
+  const from = btn.getBoundingClientRect();
+  const to = mouth.getBoundingClientRect();
+  const clone = btn.cloneNode(true);
+  const spitX = (from.left < window.innerWidth / 2 ? -120 : 120);
+  clone.className = "monster-flying-snack rejecting";
+  clone.style.left = `${from.left}px`;
+  clone.style.top = `${from.top}px`;
+  clone.style.width = `${from.width}px`;
+  clone.style.height = `${from.height}px`;
+  clone.style.setProperty("--fly-x", `${to.left + to.width / 2 - (from.left + from.width / 2)}px`);
+  clone.style.setProperty("--fly-y", `${to.top + to.height / 2 - (from.top + from.height / 2)}px`);
+  clone.style.setProperty("--spit-x", `${to.left + to.width / 2 - (from.left + from.width / 2) + spitX}px`);
+  clone.style.setProperty("--spit-y", `${to.top + to.height / 2 - (from.top + from.height / 2) + 92}px`);
+  document.body.appendChild(clone);
+  setTimeout(() => clone.remove(), 1180);
 }
 
 // ========== 注音拼圖島 ==========
