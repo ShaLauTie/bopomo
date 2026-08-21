@@ -1053,6 +1053,7 @@ let pictureQuestionNum = 0;
 let pictureCombo = null;
 let pictureLocked = false;
 let pictureRunning = false;
+let pictureSfxContext = null;
 
 function comboSpelling(combo) {
   return `${combo.initial}${combo.final}`;
@@ -1113,6 +1114,49 @@ function replayPictureSound() {
   if (pictureCombo) speak(pictureCombo.word);
 }
 
+function playPictureDingDing() {
+  if (_currentAudio) {
+    _currentAudio.pause();
+    _currentAudio.onended = null;
+    _currentAudio = null;
+  }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  if (!pictureSfxContext) pictureSfxContext = new AudioCtx();
+  if (pictureSfxContext.state === "suspended") pictureSfxContext.resume();
+
+  const ctx = pictureSfxContext;
+  const notes = [
+    { start: 0, freq: 784, duration: 0.1 },
+    { start: 0.13, freq: 1046.5, duration: 0.12 }
+  ];
+  notes.forEach(note => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const start = ctx.currentTime + note.start;
+    const end = start + note.duration;
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(note.freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.22, start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, end);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(end + 0.02);
+  });
+}
+
+function showPictureQuickCorrect() {
+  const banner = document.getElementById("feedbackBanner");
+  banner.textContent = "叮叮！";
+  banner.className = "feedback-banner show good";
+  burstAtViewportCenter(true, 12);
+  setTimeout(() => banner.classList.remove("show"), 420);
+}
+
 function handlePictureChoice(value, btn) {
   if (pictureLocked || !pictureRunning) return;
   const correct = value === comboSpelling(pictureCombo);
@@ -1131,12 +1175,12 @@ function handlePictureChoice(value, btn) {
   pictureScore++;
   pictureQuestionNum++;
   document.getElementById('pictureStars').textContent = `⭐ ${pictureScore}`;
-  showFeedback(true);
-  speak(pictureCombo.word);
+  showPictureQuickCorrect();
+  playPictureDingDing();
 
   setTimeout(() => {
     if (pictureRunning) nextPictureRound();
-  }, 1200);
+  }, 520);
 }
 
 function endPictureGame() {
