@@ -1188,19 +1188,15 @@ function comboParts(combo) {
 }
 
 function toneLabel(tone) {
-  if (tone === "ˊ") return "ˊ 二聲";
-  if (tone === "ˇ") return "ˇ 三聲";
-  if (tone === "ˋ") return "ˋ 四聲";
-  if (tone === "˙") return "˙ 輕聲";
-  return "一聲";
+  if (tone === "ˊ") return "ˊ";
+  if (tone === "ˇ") return "ˇ";
+  if (tone === "ˋ") return "ˋ";
+  if (tone === "˙") return "˙";
+  return "¯";
 }
 
 function toneSpeakText(tone) {
-  if (tone === "ˊ") return "二聲";
-  if (tone === "ˇ") return "三聲";
-  if (tone === "ˋ") return "四聲";
-  if (tone === "˙") return "輕聲";
-  return "一聲";
+  return toneLabel(tone);
 }
 
 function isTonePiece(value) {
@@ -2428,7 +2424,7 @@ function startToneRound() {
 
   const grid = document.getElementById('toneChoices');
   grid.innerHTML = '';
-  // 固定順序：一聲→二聲→三聲→四聲
+  // 固定順序：¯ → ˊ → ˇ → ˋ
   toneSet.tones.forEach(tone => {
     const btn = document.createElement('button');
     btn.className = 'choice-card';
