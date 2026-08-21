@@ -2811,6 +2811,11 @@ h1, h2 {
   font-weight: 900;
 }
 
+.maze-order span.waiting .game-bopomofo,
+.maze-order span.waiting .tone-choice-mark {
+  opacity: 0.45;
+}
+
 .maze-hint {
   min-height: 30px;
   color: #0f766e;
@@ -2894,9 +2899,14 @@ h1, h2 {
 }
 
 .maze-cell.decoy {
-  background: #fff7ed;
-  border: 3px solid #fed7aa;
-  opacity: 0.8;
+  background: #f1f5f9;
+  border: 3px dashed #94a3b8;
+  opacity: 0.9;
+}
+
+.maze-cell.decoy .game-bopomofo,
+.maze-cell.decoy .tone-choice-mark {
+  opacity: 0.62;
 }
 
 .maze-cell.player {
@@ -2915,6 +2925,14 @@ h1, h2 {
 .maze-exit-flag {
   font-size: 30px;
   line-height: 1;
+}
+
+.maze-obstacle {
+  color: rgba(255,255,255,0.86);
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.22);
 }
 
 .maze-controls {

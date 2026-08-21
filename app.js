@@ -2080,25 +2080,22 @@ function stopRhythmGame() {
 // ========== 注音迷宮 ==========
 
 const MAZE_SIZE = 6;
+const MAZE_LENGTH = 6;
+const MAZE_DECOY_COUNT = 5;
 const MAZE_START = { row: 5, col: 0 };
 const MAZE_EXIT = { row: 0, col: 5 };
-const MAZE_PATH = [
-  [5,0], [5,1], [5,2], [5,3], [5,4], [5,5],
-  [4,5], [4,4], [4,3], [4,2], [4,1], [4,0],
-  [3,0], [3,1], [3,2], [3,3], [3,4], [3,5],
-  [2,5], [2,4], [2,3], [2,2], [2,1], [2,0],
-  [1,0], [1,1], [1,2], [1,3], [1,4], [1,5],
-  [0,5]
+const MAZE_OBSTACLES = [
+  [5,3], [4,1], [4,5], [3,3], [2,0], [1,2], [0,4]
 ];
-const MAZE_TARGET_PATH_INDEXES = [4, 9, 14, 19, 24, 29];
-const MAZE_LENGTH = MAZE_TARGET_PATH_INDEXES.length;
-const MAZE_PATH_KEYS = new Set(MAZE_PATH.map(([row, col]) => `${row},${col}`));
+const MAZE_OBSTACLE_KEYS = new Set(MAZE_OBSTACLES.map(([row, col]) => `${row},${col}`));
 
 let mazeScore = 0;
 let mazeRound = 0;
 let mazeLives = 4;
 let mazeCombo = null;
 let mazeDeck = [];
+let mazePieces = [];
+let mazePieceIndex = 0;
 let mazePlayer = { row: MAZE_START.row, col: MAZE_START.col };
 let mazeCells = [];
 let mazeVisited = new Set();
@@ -2129,17 +2126,23 @@ function showNextMazeCard() {
   if (!mazeRunning) return;
   clearTimeout(mazeAdvanceTimer);
   mazeAdvanceTimer = null;
-  if (mazeRound >= MAZE_LENGTH || mazeLives <= 0) {
+  if (mazeLives <= 0) {
+    endMazeGame();
+    return;
+  }
+  if (mazeRound >= MAZE_LENGTH) {
     openMazeExit();
     return;
   }
 
   mazeCombo = mazeDeck[mazeRound];
+  mazePieces = fullSpellingPieces(comboSpelling(mazeCombo));
+  mazePieceIndex = 0;
   mazeLocked = false;
 
   document.getElementById("mazeEmoji").textContent = mazeCombo.emoji;
   document.getElementById("mazeWord").textContent = mazeCombo.word;
-  placeMazeCard();
+  placeMazePieces();
   updateMazeHud();
   updateMazeOrder();
   renderMazeGrid();
@@ -2147,7 +2150,7 @@ function showNextMazeCard() {
 }
 
 function updateMazeHud() {
-  document.getElementById("mazeProgress").textContent = `卡片 ${Math.min(mazeRound + 1, MAZE_LENGTH)} / ${MAZE_LENGTH}`;
+  document.getElementById("mazeProgress").textContent = `題目 ${Math.min(mazeRound + 1, MAZE_LENGTH)} / ${MAZE_LENGTH}`;
   document.getElementById("mazeStars").textContent = `⭐ ${mazeScore}`;
   document.getElementById("mazeLives").textContent = "❤".repeat(Math.max(0, mazeLives));
 }
@@ -2166,9 +2169,9 @@ function buildMazeBoard() {
   const cells = emptyMazeCells();
   for (let row = 0; row < MAZE_SIZE; row++) {
     for (let col = 0; col < MAZE_SIZE; col++) {
-      cells[row][col] = MAZE_PATH_KEYS.has(`${row},${col}`)
-        ? { type: "path" }
-        : { type: "wall" };
+      cells[row][col] = MAZE_OBSTACLE_KEYS.has(mazeCellKey(row, col))
+        ? { type: "wall" }
+        : { type: "path" };
     }
   }
   cells[MAZE_START.row][MAZE_START.col] = { type: "start" };
@@ -2176,29 +2179,65 @@ function buildMazeBoard() {
   return cells;
 }
 
-function clearMazeCards() {
+function clearMazePieces() {
   for (let row = 0; row < MAZE_SIZE; row++) {
     for (let col = 0; col < MAZE_SIZE; col++) {
-      if (mazeCells[row][col].type === "target") mazeCells[row][col] = { type: "path" };
+      if (mazeCells[row][col].type === "target" || mazeCells[row][col].type === "decoy") {
+        mazeCells[row][col] = { type: "path" };
+      }
     }
   }
 }
 
-function placeMazeCard() {
-  clearMazeCards();
-  const pathIndex = MAZE_TARGET_PATH_INDEXES[mazeRound];
-  const [row, col] = MAZE_PATH[pathIndex];
-  mazeCells[row][col] = {
-    type: "target",
-    combo: mazeCombo,
-    spelling: comboSpelling(mazeCombo)
-  };
+function availableMazeSpots() {
+  const reserved = new Set([
+    mazeCellKey(MAZE_START.row, MAZE_START.col),
+    mazeCellKey(MAZE_EXIT.row, MAZE_EXIT.col),
+    mazeCellKey(mazePlayer.row, mazePlayer.col)
+  ]);
+  const spots = [];
+  for (let row = 0; row < MAZE_SIZE; row++) {
+    for (let col = 0; col < MAZE_SIZE; col++) {
+      const key = mazeCellKey(row, col);
+      if (reserved.has(key)) continue;
+      if (mazeCells[row][col].type === "path" || mazeCells[row][col].type === "start") {
+        spots.push({ row, col });
+      }
+    }
+  }
+  return shuffle(spots);
+}
+
+function mazeDecoyPool() {
+  const values = [
+    ...BOPOMOFO_SYMBOLS.map(item => item.symbol),
+    ...PINYIN_COMBOS.flatMap(combo => fullSpellingPieces(comboSpelling(combo))),
+    ...GAME_TONE_OPTIONS
+  ];
+  return uniqueValues(values).filter(value => !mazePieces.includes(value));
+}
+
+function placeMazePieces() {
+  clearMazePieces();
+  const spots = availableMazeSpots();
+  mazePieces.forEach((piece, index) => {
+    const spot = spots.shift();
+    if (!spot) return;
+    mazeCells[spot.row][spot.col] = { type: "target", piece, index, collected: false };
+  });
+
+  const decoys = shuffle(mazeDecoyPool()).slice(0, Math.min(MAZE_DECOY_COUNT, spots.length));
+  decoys.forEach(piece => {
+    const spot = spots.shift();
+    if (!spot) return;
+    mazeCells[spot.row][spot.col] = { type: "decoy", piece };
+  });
 }
 
 function openMazeExit() {
   mazeCombo = null;
   mazeLocked = false;
-  clearMazeCards();
+  clearMazePieces();
   mazeCells[MAZE_EXIT.row][MAZE_EXIT.col] = { type: "exit", open: true };
   document.getElementById("mazeEmoji").textContent = "🏁";
   document.getElementById("mazeWord").textContent = "出口";
@@ -2211,13 +2250,12 @@ function openMazeExit() {
 
 function updateMazeOrder() {
   const order = document.getElementById("mazeOrder");
-  const cards = mazeDeck.map((combo, index) => {
-    const className = index < mazeRound ? "done" : index === mazeRound && mazeCombo ? "current" : "waiting";
-    const content = index < mazeRound
+  const pieces = mazeCombo ? mazePieces : [];
+  const cards = pieces.map((piece, index) => {
+    const className = index < mazePieceIndex ? "done" : index === mazePieceIndex ? "current" : "waiting";
+    const content = index < mazePieceIndex
       ? "✓"
-      : index === mazeRound && mazeCombo
-        ? renderGameChoiceHtml(comboSpelling(combo), 34, "game-bopomofo maze-order-bopomofo")
-        : "•";
+      : renderGameChoiceHtml(piece, 34, "game-bopomofo maze-order-bopomofo");
     return `<span class="${className}">${content}</span>`;
   });
   if (!mazeCombo && mazeRound >= MAZE_LENGTH) {
@@ -2225,7 +2263,7 @@ function updateMazeOrder() {
   }
   order.innerHTML = cards.join("");
   document.getElementById("mazeHint").textContent = mazeCombo
-    ? "沿著迷宮走到這張卡片"
+    ? "照順序撿散開的注音"
     : "走到右上角出口";
 }
 
@@ -2245,9 +2283,13 @@ function renderMazeGrid() {
         el.classList.add("player");
         el.innerHTML = `<span class="maze-player">◆</span>`;
       } else if (cell.type === "target") {
-        el.innerHTML = renderGameChoiceHtml(cell.spelling, 32, "game-bopomofo maze-piece-bopomofo");
+        el.innerHTML = renderGameChoiceHtml(cell.piece, 34, "game-bopomofo maze-piece-bopomofo");
+      } else if (cell.type === "decoy") {
+        el.innerHTML = renderGameChoiceHtml(cell.piece, 30, "game-bopomofo maze-piece-bopomofo");
       } else if (cell.type === "exit") {
         el.innerHTML = `<span class="maze-exit-flag">${cell.open ? "🏁" : "🔒"}</span>`;
+      } else if (cell.type === "wall") {
+        el.innerHTML = `<span class="maze-obstacle">✕</span>`;
       }
       el.addEventListener("click", () => handleMazeCellTap(row, col));
       grid.appendChild(el);
@@ -2320,21 +2362,41 @@ function moveMazePlayer(dr, dc) {
   mazePlayer = { row: nextRow, col: nextCol };
   mazeVisited.add(mazeCellKey(nextRow, nextCol));
 
-  if (cell.type === "target") {
-    mazeScore++;
-    mazeRound++;
-    mazeLocked = true;
-    clearMazeCards();
-    updateMazeHud();
+  if (cell.type === "target" && cell.index === mazePieceIndex) {
+    cell.collected = true;
+    mazeCells[nextRow][nextCol] = { type: "path" };
+    mazePieceIndex++;
+    speakGamePiece(cell.piece);
     updateMazeOrder();
+    burstAtViewportCenter(true, 8);
+
+    if (mazePieceIndex >= mazePieces.length) {
+      mazeScore++;
+      mazeRound++;
+      mazeLocked = true;
+      clearMazePieces();
+      updateMazeHud();
+      updateMazeOrder();
+      renderMazeGrid();
+      showFeedback(true);
+      mazeAdvanceTimer = setTimeout(() => {
+        if (!mazeRunning) return;
+        showNextMazeCard();
+      }, 900);
+      return;
+    }
+
+    updateMazeHud();
     renderMazeGrid();
-    burstAtViewportCenter(true, 10);
-    showFeedback(true);
-    mazeAdvanceTimer = setTimeout(() => {
-      if (!mazeRunning) return;
-      showNextMazeCard();
-    }, 850);
     return;
+  }
+
+  if (cell.type === "target") {
+    document.getElementById("mazeHint").textContent = "先找上面亮起的注音";
+    animateMazeWrong();
+  } else if (cell.type === "decoy") {
+    document.getElementById("mazeHint").textContent = "這不是題目的注音";
+    animateMazeWrong();
   }
 
   if (cell.type === "exit" && cell.open) {
@@ -2371,8 +2433,8 @@ function endMazeGame() {
   mazeLocked = true;
   document.getElementById("mazeFinalScore").textContent = mazeScore;
   document.getElementById("mazeGameover").style.display = "flex";
-  const msg = mazeScore >= MAZE_LENGTH ? "走完整個迷宮！注音卡片都拿到了！" :
-              mazeScore >= 3 ? "很不錯，繼續沿著路線拿卡片！" : "再闖一次，先看卡片再移動！";
+  const msg = mazeScore >= MAZE_LENGTH ? "走完整個迷宮！散開的注音都撿對了！" :
+              mazeScore >= 3 ? "很不錯，繼續照順序撿注音！" : "再闖一次，先看上面的注音順序！";
   speak(msg);
 }
 
