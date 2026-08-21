@@ -241,7 +241,9 @@ function showScreen(name) {
   setFcLocked(false); // 解鎖閃卡箭頭
 
   document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
-  document.getElementById("screen-" + name).classList.add("active");
+  const activeScreen = document.getElementById("screen-" + name);
+  activeScreen.classList.add("active");
+  animateScreenEntrance(activeScreen, name);
 
   if (name === "flashcards") renderFlashcard();
   if (name === "match") startMatchRound();
@@ -253,6 +255,8 @@ function showScreen(name) {
   if (name === "train") startTrainGame();
   if (name === "monster") startMonsterGame();
   if (name === "island") startIslandGame();
+  if (name === "rhythm") startRhythmGame();
+  if (name === "maze") startMazeGame();
   if (name === "memory") startMemoryGame();
   if (name === "tone") startToneRound();
   if (name === "balloon") startBalloonGame();
@@ -269,6 +273,8 @@ function goHome() {
   stopTrainGame();
   stopMonsterGame();
   stopIslandGame();
+  stopRhythmGame();
+  stopMazeGame();
   showScreen("home");
 }
 
@@ -291,10 +297,87 @@ function showFeedback(good) {
   const banner = document.getElementById("feedbackBanner");
   banner.textContent = good ? "答對了！🎉" : "再試一次 😊";
   banner.className = "feedback-banner show " + (good ? "good" : "bad");
+  burstAtViewportCenter(good);
   speak(good ? "答對了，好棒！" : "再試一次");
   setTimeout(() => {
     banner.classList.remove("show");
   }, 900);
+}
+
+function replayAnimation(el, className, duration = 700) {
+  if (!el) return;
+  el.classList.remove(className);
+  void el.offsetWidth;
+  el.classList.add(className);
+  setTimeout(() => el.classList.remove(className), duration);
+}
+
+function burstAtViewportCenter(good, count = 18) {
+  burstParticles(window.innerWidth / 2, window.innerHeight * 0.38, good, count);
+}
+
+function burstAtElement(el, good, count = 14) {
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  burstParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, good, count);
+}
+
+function burstParticles(x, y, good, count = 14) {
+  const goodItems = ["⭐", "✨", "🎉", "🌟", "💛"];
+  const badItems = ["💥", "❌", "💫", "😵", "⚡"];
+  const items = good ? goodItems : badItems;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement("div");
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.45;
+    const dist = 46 + Math.random() * 86;
+    p.className = "screen-particle " + (good ? "good" : "bad");
+    p.textContent = items[randomInt(items.length)];
+    p.style.left = `${x}px`;
+    p.style.top = `${y}px`;
+    p.style.setProperty("--px", `${Math.cos(angle) * dist}px`);
+    p.style.setProperty("--py", `${Math.sin(angle) * dist - 34}px`);
+    p.style.setProperty("--spin", `${Math.round(Math.random() * 240 - 120)}deg`);
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 920);
+  }
+}
+
+function animateScreenEntrance(screen, name) {
+  if (!screen) return;
+  replayAnimation(screen, "screen-stage-pop", 760);
+  const glyphsByScreen = {
+    home: ["ㄅ", "ㄆ", "ㄇ", "✨", "🎈"],
+    flashcards: ["ㄅ", "ㄆ", "ㄇ", "🌟"],
+    match: ["🔊", "ㄚ", "ㄧ", "✨"],
+    pinyin: ["ㄅ", "ㄚ", "➕", "✨"],
+    quiz: ["🏆", "⭐", "ㄇ", "✨"],
+    mole: ["🔨", "⭐", "ㄉ", "💥"],
+    wordhead: ["🔤", "🍎", "ㄅ", "✨"],
+    memory: ["🃏", "⭐", "?", "✨"],
+    tone: ["ˊ", "ˇ", "ˋ", "🎵"],
+    balloon: ["🎈", "🎯", "⭐", "✨"],
+    claw: ["🕹️", "🎁", "⭐", "✨"],
+    spell: ["🏭", "⚙️", "ㄅ", "✨"],
+    picture: ["🖼️", "⭐", "ㄚ", "✨"],
+    train: ["🚂", "💨", "⭐", "✨"],
+    monster: ["👾", "🍽️", "⭐", "✨"],
+    island: ["🏝️", "🧩", "⭐", "✨"],
+    rhythm: ["🥁", "♪", "ㄅ", "⭐"],
+    maze: ["🧭", "◆", "ㄆ", "⭐"]
+  };
+  const glyphs = glyphsByScreen[name] || ["✨", "⭐"];
+  for (let i = 0; i < 10; i++) {
+    const f = document.createElement("div");
+    f.className = "screen-firefly";
+    f.textContent = glyphs[randomInt(glyphs.length)];
+    f.style.left = `${8 + Math.random() * 84}%`;
+    f.style.top = `${12 + Math.random() * 72}%`;
+    f.style.setProperty("--float-x", `${Math.round(Math.random() * 80 - 40)}px`);
+    f.style.setProperty("--float-y", `${Math.round(-30 - Math.random() * 90)}px`);
+    f.style.animationDelay = `${Math.random() * 0.5}s`;
+    screen.appendChild(f);
+    setTimeout(() => f.remove(), 4300);
+  }
 }
 
 // ========== 認識注音符號牌 ==========
@@ -315,11 +398,13 @@ function setFcLocked(locked) {
 
 function renderFlashcard() {
   const item = BOPOMOFO_SYMBOLS[fcIndex];
+  const card = document.getElementById("flashcard");
   document.getElementById("fcSymbol").textContent = item.symbol;
   document.getElementById("fcEmoji").textContent = item.emoji;
   document.getElementById("fcWord").textContent = item.word;
   document.getElementById("fcProgress").textContent =
     (fcIndex + 1) + " / " + BOPOMOFO_SYMBOLS.length;
+  replayAnimation(card, "flashcard-swap", 760);
   // 鎖住箭頭，唔完才解鎖
   setFcLocked(true);
   speakCurrentFlashcard();
@@ -377,6 +462,7 @@ function startMatchRound() {
   });
 
   replayMatchSound();
+  replayAnimation(document.getElementById("matchSpeaker"), "speaker-mega-pulse", 900);
 }
 
 function replayMatchSound() {
@@ -390,10 +476,12 @@ function handleMatchChoice(choice, btn) {
   if (correct) {
     matchLocked = true;
     btn.classList.add("correct");
+    burstAtElement(btn, true, 18);
     showFeedback(true);
     setTimeout(startMatchRound, 1100);
   } else {
     btn.classList.add("wrong");
+    burstAtElement(btn, false, 12);
     // 說「這個是ㄉ，不是ㄅ」，念完才讓 banner 消失
     const banner = document.getElementById("feedbackBanner");
     banner.textContent = "再試一次 😊";
@@ -425,6 +513,7 @@ function renderPinyin() {
   document.getElementById("pinyinProgress").textContent =
     (pinyinIndex + 1) + " / " + PINYIN_COMBOS.length;
   document.getElementById("pinyinResult").innerHTML = "";
+  replayAnimation(document.querySelector("#screen-pinyin .pinyin-row"), "pinyin-row-swap", 760);
 }
 
 function speakPart(which) {
@@ -438,6 +527,8 @@ function combinePinyin() {
   document.getElementById("pinyinResult").innerHTML =
     '<div class="word-emoji">' + combo.emoji + '</div>' +
     '<div class="word-text">' + combo.word + '</div>';
+  burstAtElement(document.getElementById("pinyinResult"), true, 18);
+  replayAnimation(document.querySelector("#screen-pinyin .combine-btn"), "button-launch", 620);
 }
 
 function nextPinyin() {
@@ -634,6 +725,7 @@ function handleQuizAnswer(correct, btn) {
 
   if (correct) {
     btn.classList.add("correct");
+    burstAtElement(btn, true, 18);
     quizScore++;
     showFeedback(true);
     updateQuizHeader();
@@ -643,6 +735,7 @@ function handleQuizAnswer(correct, btn) {
     }, 1100);
   } else {
     btn.classList.add("wrong");
+    burstAtElement(btn, false, 12);
     showFeedback(false);
     // 答錯：停留同一題，讓孩子再試一次
     setTimeout(() => {
@@ -901,6 +994,7 @@ function startWordHeadRound() {
 
   document.getElementById('whEmoji').textContent = chosen.emoji;
   document.getElementById('whWord').textContent  = chosen.word;
+  replayAnimation(document.querySelector("#screen-wordhead .flashcard"), "flashcard-swap", 760);
 
   const others = shuffle(BOPOMOFO_SYMBOLS.filter(s => s.symbol !== whTarget.symbol)).slice(0, 3);
   const choices = shuffle([whTarget, ...others]);
@@ -929,10 +1023,12 @@ function handleWhChoice(choice, btn) {
   if (correct) {
     whLocked = true;
     btn.classList.add('correct');
+    burstAtElement(btn, true, 18);
     showFeedback(true);
     setTimeout(startWordHeadRound, 1100);
   } else {
     btn.classList.add('wrong');
+    burstAtElement(btn, false, 12);
     showFeedback(false);
     setTimeout(() => btn.classList.remove('wrong'), 1200);
   }
@@ -1765,6 +1861,435 @@ function animateIslandComplete() {
     tower.classList.add("island-tower-complete");
   }
 }
+
+// ========== 注音節奏台 ==========
+
+const RHYTHM_LENGTH = 12;
+const RHYTHM_BEAT_MS = 2300;
+const RHYTHM_HIT_MS = 1750;
+const RHYTHM_WINDOW_MS = 430;
+
+let rhythmScore = 0;
+let rhythmBeatNum = 0;
+let rhythmLives = 3;
+let rhythmStreak = 0;
+let rhythmCombo = null;
+let rhythmChoices = [];
+let rhythmCorrectIndex = -1;
+let rhythmBeatStart = 0;
+let rhythmRunning = false;
+let rhythmLocked = false;
+let rhythmMissTimer = null;
+let rhythmNextTimer = null;
+
+function startRhythmGame() {
+  stopRhythmGame();
+  rhythmScore = 0;
+  rhythmBeatNum = 0;
+  rhythmLives = 3;
+  rhythmStreak = 0;
+  rhythmRunning = true;
+  rhythmLocked = false;
+  document.getElementById("rhythmGameover").style.display = "none";
+  nextRhythmBeat();
+}
+
+function nextRhythmBeat() {
+  if (!rhythmRunning) return;
+  clearTimeout(rhythmMissTimer);
+  clearTimeout(rhythmNextTimer);
+
+  if (rhythmBeatNum >= RHYTHM_LENGTH || rhythmLives <= 0) {
+    endRhythmGame();
+    return;
+  }
+
+  rhythmLocked = false;
+  rhythmCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  const correctSpelling = comboSpelling(rhythmCombo);
+  rhythmChoices = buildChoiceValues(correctSpelling, PINYIN_COMBOS.map(comboSpelling), 4);
+  rhythmCorrectIndex = rhythmChoices.indexOf(correctSpelling);
+
+  document.getElementById("rhythmEmoji").textContent = rhythmCombo.emoji;
+  document.getElementById("rhythmWord").textContent = rhythmCombo.word;
+  document.getElementById("rhythmStatus").textContent = "拍點落到黃色線時，按正確注音";
+  updateRhythmHud();
+  renderRhythmLanes();
+
+  rhythmBeatStart = performance.now();
+  speak(rhythmCombo.word);
+  rhythmMissTimer = setTimeout(() => missRhythmBeat(), RHYTHM_BEAT_MS + 260);
+}
+
+function updateRhythmHud() {
+  document.getElementById("rhythmProgress").textContent = `第 ${Math.min(rhythmBeatNum + 1, RHYTHM_LENGTH)} / ${RHYTHM_LENGTH} 拍`;
+  document.getElementById("rhythmCombo").textContent = `連擊 ${rhythmStreak}`;
+  document.getElementById("rhythmLives").textContent = "❤".repeat(Math.max(0, rhythmLives));
+  document.getElementById("rhythmStars").textContent = `⭐ ${rhythmScore}`;
+}
+
+function renderRhythmLanes() {
+  const lanes = document.getElementById("rhythmLanes");
+  lanes.innerHTML = "";
+
+  rhythmChoices.forEach((value, index) => {
+    const lane = document.createElement("button");
+    lane.className = "rhythm-lane";
+    lane.innerHTML = `
+      <div class="rhythm-note"></div>
+      <div class="rhythm-hit-line"></div>
+      <div class="rhythm-lane-label">${renderGameChoiceHtml(value, 56, "game-bopomofo rhythm-bopomofo")}</div>
+    `;
+    lane.onclick = () => handleRhythmTap(index, lane);
+    lanes.appendChild(lane);
+  });
+}
+
+function handleRhythmTap(index, lane) {
+  if (!rhythmRunning || rhythmLocked || !rhythmCombo) return;
+
+  const timingDiff = Math.abs((performance.now() - rhythmBeatStart) - RHYTHM_HIT_MS);
+  const isCorrectLane = index === rhythmCorrectIndex;
+  const isOnBeat = timingDiff <= RHYTHM_WINDOW_MS;
+
+  if (!isCorrectLane || !isOnBeat) {
+    rhythmLocked = true;
+    clearTimeout(rhythmMissTimer);
+    rhythmLives--;
+    rhythmStreak = 0;
+    lane.classList.add("wrong");
+    document.getElementById("rhythmStatus").textContent = !isCorrectLane ? "注音不對" : "節拍太早或太晚";
+    showFeedback(false);
+    updateRhythmHud();
+    rhythmNextTimer = setTimeout(() => {
+      rhythmBeatNum++;
+      nextRhythmBeat();
+    }, 900);
+    return;
+  }
+
+  rhythmLocked = true;
+  clearTimeout(rhythmMissTimer);
+  const perfect = timingDiff <= 150;
+  const points = perfect ? 2 : 1;
+  rhythmScore += points;
+  rhythmStreak++;
+  rhythmBeatNum++;
+  lane.classList.add("correct");
+  document.getElementById("rhythmStatus").textContent = perfect ? "完美拍點！" : "打到了！";
+  updateRhythmHud();
+  burstAtElement(lane, true, perfect ? 18 : 12);
+  speak(rhythmCombo.word);
+  rhythmNextTimer = setTimeout(nextRhythmBeat, 780);
+}
+
+function missRhythmBeat() {
+  if (!rhythmRunning || rhythmLocked) return;
+  rhythmLocked = true;
+  rhythmLives--;
+  rhythmStreak = 0;
+  document.getElementById("rhythmStatus").textContent = "漏拍了";
+  document.querySelectorAll("#rhythmLanes .rhythm-lane").forEach(lane => lane.classList.add("missed"));
+  updateRhythmHud();
+  showFeedback(false);
+  rhythmNextTimer = setTimeout(() => {
+    rhythmBeatNum++;
+    nextRhythmBeat();
+  }, 900);
+}
+
+function replayRhythmSound() {
+  if (rhythmCombo) speak(rhythmCombo.word);
+}
+
+function endRhythmGame() {
+  rhythmRunning = false;
+  clearTimeout(rhythmMissTimer);
+  clearTimeout(rhythmNextTimer);
+  document.getElementById("rhythmFinalScore").textContent = rhythmScore;
+  document.getElementById("rhythmGameover").style.display = "flex";
+  const msg = rhythmScore >= RHYTHM_LENGTH * 1.5 ? "節奏和注音都很穩！" :
+              rhythmScore >= RHYTHM_LENGTH ? "很棒，節拍抓得越來越準！" : "再試一次，先聽詞語再抓拍點！";
+  speak(msg);
+}
+
+function stopRhythmGame() {
+  rhythmRunning = false;
+  rhythmLocked = false;
+  clearTimeout(rhythmMissTimer);
+  clearTimeout(rhythmNextTimer);
+}
+
+// ========== 注音迷宮 ==========
+
+const MAZE_SIZE = 6;
+const MAZE_LENGTH = 6;
+const MAZE_START = { row: 5, col: 0 };
+const MAZE_DECOY_COUNT = 7;
+const MAZE_WALL_COUNT = 5;
+
+let mazeScore = 0;
+let mazeRound = 0;
+let mazeLives = 4;
+let mazeCombo = null;
+let mazePieces = [];
+let mazePieceIndex = 0;
+let mazePlayer = { row: MAZE_START.row, col: MAZE_START.col };
+let mazeCells = [];
+let mazeRunning = false;
+let mazeLocked = false;
+
+function startMazeGame() {
+  stopMazeGame();
+  mazeScore = 0;
+  mazeRound = 0;
+  mazeLives = 4;
+  mazeRunning = true;
+  mazeLocked = false;
+  document.getElementById("mazeGameover").style.display = "none";
+  nextMazeRound();
+}
+
+function nextMazeRound() {
+  if (!mazeRunning) return;
+  if (mazeRound >= MAZE_LENGTH || mazeLives <= 0) {
+    endMazeGame();
+    return;
+  }
+
+  mazeCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  mazePieces = fullSpellingPieces(comboSpelling(mazeCombo));
+  mazePieceIndex = 0;
+  mazePlayer = { row: MAZE_START.row, col: MAZE_START.col };
+  mazeLocked = false;
+
+  document.getElementById("mazeEmoji").textContent = mazeCombo.emoji;
+  document.getElementById("mazeWord").textContent = mazeCombo.word;
+  updateMazeHud();
+  buildMazeBoard();
+  updateMazeOrder();
+  renderMazeGrid();
+  speak(mazeCombo.word);
+}
+
+function updateMazeHud() {
+  document.getElementById("mazeProgress").textContent = `第 ${Math.min(mazeRound + 1, MAZE_LENGTH)} / ${MAZE_LENGTH} 關`;
+  document.getElementById("mazeStars").textContent = `⭐ ${mazeScore}`;
+  document.getElementById("mazeLives").textContent = "❤".repeat(Math.max(0, mazeLives));
+}
+
+function emptyMazeCells() {
+  return Array.from({ length: MAZE_SIZE }, () =>
+    Array.from({ length: MAZE_SIZE }, () => ({ type: "empty" }))
+  );
+}
+
+function buildMazeBoard() {
+  let attempts = 0;
+  do {
+    attempts++;
+    mazeCells = emptyMazeCells();
+    placeMazeWalls();
+    placeMazeTargets();
+    placeMazeDecoys();
+  } while (!mazeBoardIsReachable() && attempts < 40);
+}
+
+function randomMazeSpot(allowStart = false) {
+  let row, col;
+  do {
+    row = randomInt(MAZE_SIZE);
+    col = randomInt(MAZE_SIZE);
+  } while (
+    (!allowStart && row === MAZE_START.row && col === MAZE_START.col) ||
+    mazeCells[row][col].type !== "empty"
+  );
+  return { row, col };
+}
+
+function placeMazeWalls() {
+  for (let i = 0; i < MAZE_WALL_COUNT; i++) {
+    const spot = randomMazeSpot(false);
+    mazeCells[spot.row][spot.col] = { type: "wall" };
+  }
+}
+
+function placeMazeTargets() {
+  mazePieces.forEach((piece, index) => {
+    const spot = randomMazeSpot(false);
+    mazeCells[spot.row][spot.col] = { type: "target", piece, index, collected: false };
+  });
+}
+
+function placeMazeDecoys() {
+  const pool = uniqueValues([
+    ...BOPOMOFO_SYMBOLS.map(item => item.symbol),
+    ...GAME_TONE_OPTIONS
+  ]).filter(piece => piece !== "");
+
+  for (let i = 0; i < MAZE_DECOY_COUNT; i++) {
+    const spot = randomMazeSpot(false);
+    const piece = shuffle(pool.filter(value => value !== mazePieces[mazePieceIndex]))[0];
+    mazeCells[spot.row][spot.col] = { type: "decoy", piece };
+  }
+}
+
+function mazeBoardIsReachable() {
+  const seen = new Set([`${MAZE_START.row},${MAZE_START.col}`]);
+  const queue = [{ row: MAZE_START.row, col: MAZE_START.col }];
+  const open = (row, col) =>
+    row >= 0 && row < MAZE_SIZE && col >= 0 && col < MAZE_SIZE && mazeCells[row][col].type !== "wall";
+
+  while (queue.length) {
+    const pos = queue.shift();
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr, dc]) => {
+      const row = pos.row + dr;
+      const col = pos.col + dc;
+      const key = `${row},${col}`;
+      if (!open(row, col) || seen.has(key)) return;
+      seen.add(key);
+      queue.push({ row, col });
+    });
+  }
+
+  return mazePieces.every((_, index) => {
+    for (let row = 0; row < MAZE_SIZE; row++) {
+      for (let col = 0; col < MAZE_SIZE; col++) {
+        const cell = mazeCells[row][col];
+        if (cell.type === "target" && cell.index === index) {
+          return seen.has(`${row},${col}`);
+        }
+      }
+    }
+    return false;
+  });
+}
+
+function updateMazeOrder() {
+  const order = document.getElementById("mazeOrder");
+  order.innerHTML = mazePieces.map((piece, index) => {
+    const className = index < mazePieceIndex ? "done" : index === mazePieceIndex ? "current" : "";
+    return `<span class="${className}">${renderGameChoiceHtml(piece, 34, "game-bopomofo maze-order-bopomofo")}</span>`;
+  }).join("");
+
+  const nextPiece = mazePieces[mazePieceIndex];
+  document.getElementById("mazeHint").textContent = nextPiece
+    ? `下一個：${isTonePiece(nextPiece) ? toneLabel(nextPiece) : nextPiece}`
+    : "完成這一關";
+}
+
+function renderMazeGrid() {
+  const grid = document.getElementById("mazeGrid");
+  grid.innerHTML = "";
+
+  for (let row = 0; row < MAZE_SIZE; row++) {
+    for (let col = 0; col < MAZE_SIZE; col++) {
+      const cell = mazeCells[row][col];
+      const el = document.createElement("div");
+      el.className = `maze-cell ${cell.type}`;
+      if (mazePlayer.row === row && mazePlayer.col === col) {
+        el.classList.add("player");
+        el.innerHTML = `<span class="maze-player">◆</span>`;
+      } else if (cell.type === "target" && !cell.collected) {
+        el.innerHTML = renderGameChoiceHtml(cell.piece, 34, "game-bopomofo maze-piece-bopomofo");
+      } else if (cell.type === "decoy") {
+        el.innerHTML = renderGameChoiceHtml(cell.piece, 32, "game-bopomofo maze-piece-bopomofo");
+      }
+      grid.appendChild(el);
+    }
+  }
+}
+
+function moveMazePlayer(dr, dc) {
+  if (!mazeRunning || mazeLocked) return;
+
+  const nextRow = mazePlayer.row + dr;
+  const nextCol = mazePlayer.col + dc;
+  if (nextRow < 0 || nextRow >= MAZE_SIZE || nextCol < 0 || nextCol >= MAZE_SIZE) {
+    animateMazeWrong();
+    return;
+  }
+
+  const cell = mazeCells[nextRow][nextCol];
+  if (cell.type === "wall") {
+    animateMazeWrong();
+    return;
+  }
+
+  mazePlayer = { row: nextRow, col: nextCol };
+
+  if (cell.type === "target" && !cell.collected && cell.index === mazePieceIndex) {
+    cell.collected = true;
+    mazePieceIndex++;
+    speakGamePiece(cell.piece);
+    updateMazeOrder();
+    burstAtViewportCenter(true, 10);
+
+    if (mazePieceIndex >= mazePieces.length) {
+      mazeLocked = true;
+      mazeScore++;
+      mazeRound++;
+      updateMazeHud();
+      document.getElementById("mazeHint").textContent = "過關！";
+      showFeedback(true);
+      speak(mazeCombo.word);
+      renderMazeGrid();
+      setTimeout(nextMazeRound, 1150);
+      return;
+    }
+  } else if (cell.type === "target" || cell.type === "decoy") {
+    mazeLives--;
+    document.getElementById("mazeHint").textContent = "順序不對，退回上一格";
+    mazePlayer = { row: mazePlayer.row - dr, col: mazePlayer.col - dc };
+    updateMazeHud();
+    animateMazeWrong();
+    showFeedback(false);
+    if (mazeLives <= 0) {
+      renderMazeGrid();
+      setTimeout(endMazeGame, 800);
+      return;
+    }
+  }
+
+  renderMazeGrid();
+}
+
+function animateMazeWrong() {
+  const grid = document.getElementById("mazeGrid");
+  if (!grid) return;
+  grid.classList.remove("maze-shake");
+  void grid.offsetWidth;
+  grid.classList.add("maze-shake");
+  setTimeout(() => grid.classList.remove("maze-shake"), 480);
+}
+
+function replayMazeSound() {
+  if (mazeCombo) speak(mazeCombo.word);
+}
+
+function endMazeGame() {
+  mazeRunning = false;
+  mazeLocked = true;
+  document.getElementById("mazeFinalScore").textContent = mazeScore;
+  document.getElementById("mazeGameover").style.display = "flex";
+  const msg = mazeScore >= MAZE_LENGTH ? "迷宮全部通關！注音順序很清楚！" :
+              mazeScore >= 3 ? "很不錯，路線和注音順序都抓到了！" : "再闖一次，先看上方順序再移動！";
+  speak(msg);
+}
+
+function stopMazeGame() {
+  mazeRunning = false;
+  mazeLocked = false;
+}
+
+document.addEventListener("keydown", (event) => {
+  const activeMaze = document.getElementById("screen-maze");
+  if (!activeMaze || !activeMaze.classList.contains("active")) return;
+  if (event.key === "ArrowUp") moveMazePlayer(-1, 0);
+  if (event.key === "ArrowDown") moveMazePlayer(1, 0);
+  if (event.key === "ArrowLeft") moveMazePlayer(0, -1);
+  if (event.key === "ArrowRight") moveMazePlayer(0, 1);
+});
 
 // ========== 記憑配對 ==========
 

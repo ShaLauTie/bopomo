@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
 
@@ -56,6 +56,14 @@
       <span class="icon">🏝️</span>
       <span>注音拼圖島</span>
     </button>
+    <button class="menu-card card-17" onclick="showScreen('rhythm')" style="background: linear-gradient(135deg, #ef4444, #f59e0b);">
+      <span class="icon">🥁</span>
+      <span>注音節奏台</span>
+    </button>
+    <button class="menu-card card-18" onclick="showScreen('maze')" style="background: linear-gradient(135deg, #14b8a6, #64748b);">
+      <span class="icon">🧭</span>
+      <span>注音迷宮</span>
+    </button>
     <button class="menu-card card-7" onclick="showScreen('memory')">
       <span class="icon">🃏</span>
       <span>記憶配對</span>
@@ -80,6 +88,75 @@
       <span class="icon">🎡</span>
       <span>夜市ㄅㄆㄇ</span>
     </button>
+  </div>
+</div>
+
+<!-- 注音節奏台 -->
+<div class="screen" id="screen-rhythm">
+  <h2>注音節奏台 🥁</h2>
+  <div class="picture-header rhythm-header">
+    <span id="rhythmProgress">第 1 / 12 拍</span>
+    <span id="rhythmCombo">連擊 0</span>
+    <span id="rhythmLives">❤❤❤</span>
+    <span class="stars" id="rhythmStars">⭐ 0</span>
+  </div>
+
+  <div class="rhythm-stage">
+    <div class="rhythm-target" onclick="replayRhythmSound()">
+      <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayRhythmSound()">🔊</button>
+      <div class="rhythm-word-row">
+        <span class="rhythm-emoji" id="rhythmEmoji"></span>
+        <span class="rhythm-word" id="rhythmWord"></span>
+      </div>
+      <div class="rhythm-status" id="rhythmStatus">聽詞語，看準節拍再按正確注音</div>
+    </div>
+    <div class="rhythm-lanes" id="rhythmLanes"></div>
+  </div>
+
+  <div class="mole-gameover" id="rhythmGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">🥁</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">節奏結束</div>
+      <div class="big-score">⭐ <span id="rhythmFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startRhythmGame()">再打一輪</button>
+    </div>
+  </div>
+</div>
+
+<!-- 注音迷宮 -->
+<div class="screen" id="screen-maze">
+  <h2>注音迷宮 🧭</h2>
+  <div class="picture-header maze-header">
+    <span id="mazeProgress">第 1 / 6 關</span>
+    <span id="mazeLives">❤❤❤❤</span>
+    <span class="stars" id="mazeStars">⭐ 0</span>
+  </div>
+
+  <div class="maze-stage">
+    <div class="maze-info-card" onclick="replayMazeSound()">
+      <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayMazeSound()">🔊</button>
+      <div class="maze-emoji" id="mazeEmoji"></div>
+      <div class="maze-word" id="mazeWord"></div>
+      <div class="maze-order" id="mazeOrder"></div>
+      <div class="maze-hint" id="mazeHint">依順序走到下一個注音</div>
+    </div>
+    <div class="maze-grid" id="mazeGrid"></div>
+  </div>
+
+  <div class="maze-controls">
+    <button class="maze-move-btn maze-up" onclick="moveMazePlayer(-1, 0)">▲</button>
+    <button class="maze-move-btn maze-left" onclick="moveMazePlayer(0, -1)">◀</button>
+    <button class="maze-move-btn maze-right" onclick="moveMazePlayer(0, 1)">▶</button>
+    <button class="maze-move-btn maze-down" onclick="moveMazePlayer(1, 0)">▼</button>
+  </div>
+
+  <div class="mole-gameover" id="mazeGameover" style="display:none">
+    <div class="gameover-box">
+      <div style="font-size:3.5rem">🧭</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">迷宮完成</div>
+      <div class="big-score">⭐ <span id="mazeFinalScore">0</span></div>
+      <button class="big-btn combine-btn" onclick="startMazeGame()">再闖一次</button>
+    </div>
   </div>
 </div>
 
@@ -372,12 +449,17 @@
     <span class="stars" id="islandStars">⭐ 0</span>
   </div>
 
-  <div class="island-card" onclick="replayIslandSound()">
-    <div class="picture-emoji" id="islandEmoji"></div>
-    <div class="picture-word" id="islandWord"></div>
-    <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayIslandSound()">🔊</button>
+  <div class="island-stage">
+    <div class="island-card" onclick="replayIslandSound()">
+      <div class="picture-emoji" id="islandEmoji"></div>
+      <div class="picture-word" id="islandWord"></div>
+      <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayIslandSound()">🔊</button>
+    </div>
+    <div class="island-tower-wrap">
+      <div class="island-tower-label">拼圖目標</div>
+      <div class="island-tower" id="islandTower"></div>
+    </div>
   </div>
-  <div class="island-tower" id="islandTower"></div>
   <div class="spell-step-hint" id="islandHint">依照順序拼出注音</div>
   <div class="choices-grid island-pieces" id="islandPieces"></div>
 
@@ -445,7 +527,7 @@
   </div>
 </div>
 
-<script src="data.js?v=32"></script>
-<script src="app.js?v=32"></script>
+<script src="data.js?v=33"></script>
+<script src="app.js?v=33"></script>
 </body>
 </html>
