@@ -298,7 +298,8 @@ function showFeedback(good) {
   banner.textContent = good ? "答對了！🎉" : "再試一次 😊";
   banner.className = "feedback-banner show " + (good ? "good" : "bad");
   burstAtViewportCenter(good);
-  speak(good ? "答對了，好棒！" : "再試一次");
+  if (good) playCorrectDingDing();
+  else speak("再試一次");
   setTimeout(() => {
     banner.classList.remove("show");
   }, 900);
@@ -1053,7 +1054,7 @@ let pictureQuestionNum = 0;
 let pictureCombo = null;
 let pictureLocked = false;
 let pictureRunning = false;
-let pictureSfxContext = null;
+let correctSfxContext = null;
 
 function comboSpelling(combo) {
   return `${combo.initial}${combo.final}`;
@@ -1114,7 +1115,7 @@ function replayPictureSound() {
   if (pictureCombo) speak(pictureCombo.word);
 }
 
-function playPictureDingDing() {
+function playCorrectDingDing() {
   if (_currentAudio) {
     _currentAudio.pause();
     _currentAudio.onended = null;
@@ -1124,10 +1125,10 @@ function playPictureDingDing() {
 
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) return;
-  if (!pictureSfxContext) pictureSfxContext = new AudioCtx();
-  if (pictureSfxContext.state === "suspended") pictureSfxContext.resume();
+  if (!correctSfxContext) correctSfxContext = new AudioCtx();
+  if (correctSfxContext.state === "suspended") correctSfxContext.resume();
 
-  const ctx = pictureSfxContext;
+  const ctx = correctSfxContext;
   const notes = [
     { start: 0, freq: 784, duration: 0.1 },
     { start: 0.13, freq: 1046.5, duration: 0.12 }
@@ -1151,7 +1152,7 @@ function playPictureDingDing() {
 
 function showPictureQuickCorrect() {
   const banner = document.getElementById("feedbackBanner");
-  banner.textContent = "叮叮！";
+  banner.textContent = "燈燈！";
   banner.className = "feedback-banner show good";
   burstAtViewportCenter(true, 12);
   setTimeout(() => banner.classList.remove("show"), 420);
@@ -1176,7 +1177,7 @@ function handlePictureChoice(value, btn) {
   pictureQuestionNum++;
   document.getElementById('pictureStars').textContent = `⭐ ${pictureScore}`;
   showPictureQuickCorrect();
-  playPictureDingDing();
+  playCorrectDingDing();
 
   setTimeout(() => {
     if (pictureRunning) nextPictureRound();
@@ -1408,7 +1409,6 @@ function handleTrainChoice(value, btn) {
     document.getElementById("trainStars").textContent = `⭐ ${trainScore}`;
     animateTrainDepart();
     showFeedback(true);
-    speak(trainCombo.word);
     setTimeout(() => {
       if (trainRunning) nextTrainRound();
     }, 1450);
@@ -1600,7 +1600,6 @@ function handleMonsterChoice(value, btn) {
   updateMonsterPersona(`嗷嗚！${comboSpelling(monsterCombo)} 好吃！`, "happy");
   animateMonsterEat(btn);
   showFeedback(true);
-  speak(monsterCombo.word);
 
   setTimeout(() => {
     if (monsterRunning) nextMonsterRound();
@@ -1879,7 +1878,6 @@ function handleIslandPiece(value, btn) {
     document.getElementById("islandStars").textContent = `⭐ ${islandScore}`;
     animateIslandComplete();
     showFeedback(true);
-    speak(islandCombo.word);
     setTimeout(() => {
       if (islandRunning) nextIslandRound();
     }, 1200);
@@ -2077,7 +2075,7 @@ function handleRhythmTap(index, lane) {
   document.getElementById("rhythmStatus").textContent = "選對了！";
   updateRhythmHud();
   burstAtElement(lane, true, 14);
-  playPictureDingDing();
+  playCorrectDingDing();
   rhythmNextTimer = setTimeout(nextRhythmBeat, 680);
 }
 
@@ -2647,6 +2645,8 @@ function handleToneChoice(tone, btn) {
     btn.classList.add('correct');
     banner.textContent = "答對了！🎉";
     banner.className = "feedback-banner show good";
+    burstAtViewportCenter(true, 12);
+    playCorrectDingDing();
     setTimeout(() => banner.classList.remove("show"), 900);
     setTimeout(startToneRound, 1100);
   } else {
@@ -3473,8 +3473,6 @@ function handleSpellChoice(value, step, btn) {
     spellScore++;
     spellQuestionNum++;
 
-    // 拼起來唸出完整詞
-    speak(spellCombo.word);
     showFeedback(true);
 
     setTimeout(() => {
