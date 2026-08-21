@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=37">
+<link rel="stylesheet" href="style.css?v=38">
 </head>
 <body>
 
@@ -127,7 +127,7 @@
 <div class="screen" id="screen-maze">
   <h2>注音迷宮 🧭</h2>
   <div class="picture-header maze-header">
-    <span id="mazeProgress">第 1 / 6 關</span>
+    <span id="mazeProgress">卡片 1 / 6</span>
     <span id="mazeLives">❤❤❤❤</span>
     <span class="stars" id="mazeStars">⭐ 0</span>
   </div>
@@ -138,16 +138,16 @@
       <div class="maze-emoji" id="mazeEmoji"></div>
       <div class="maze-word" id="mazeWord"></div>
       <div class="maze-order" id="mazeOrder"></div>
-      <div class="maze-hint" id="mazeHint">依順序走到下一個注音</div>
+      <div class="maze-hint" id="mazeHint">點相鄰格子、按方向鍵，或滑動前進</div>
     </div>
     <div class="maze-grid" id="mazeGrid"></div>
   </div>
 
   <div class="maze-controls">
-    <button class="maze-move-btn maze-up" onclick="moveMazePlayer(-1, 0)">▲</button>
-    <button class="maze-move-btn maze-left" onclick="moveMazePlayer(0, -1)">◀</button>
-    <button class="maze-move-btn maze-right" onclick="moveMazePlayer(0, 1)">▶</button>
-    <button class="maze-move-btn maze-down" onclick="moveMazePlayer(1, 0)">▼</button>
+    <button class="maze-move-btn maze-up" type="button" aria-label="往上" onclick="moveMazePlayer(-1, 0)">▲</button>
+    <button class="maze-move-btn maze-left" type="button" aria-label="往左" onclick="moveMazePlayer(0, -1)">◀</button>
+    <button class="maze-move-btn maze-right" type="button" aria-label="往右" onclick="moveMazePlayer(0, 1)">▶</button>
+    <button class="maze-move-btn maze-down" type="button" aria-label="往下" onclick="moveMazePlayer(1, 0)">▼</button>
   </div>
 
   <div class="mole-gameover" id="mazeGameover" style="display:none">
@@ -529,7 +529,7 @@
   </div>
 </div>
 
-<script src="data.js?v=37"></script>
-<script src="app.js?v=37"></script>
+<script src="data.js?v=38"></script>
+<script src="app.js?v=38"></script>
 </body>
 </html>

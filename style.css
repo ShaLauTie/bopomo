@@ -2800,6 +2800,15 @@ h1, h2 {
   background: #dcfce7;
   border-color: #22c55e;
   opacity: 0.72;
+  color: #15803d;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.maze-order span.waiting {
+  color: #94a3b8;
+  font-size: 26px;
+  font-weight: 900;
 }
 
 .maze-hint {
@@ -2814,13 +2823,14 @@ h1, h2 {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 7px;
-  width: min(520px, 86vw);
+  width: min(520px, 100%);
   aspect-ratio: 1;
   padding: 10px;
   background: #0f766e;
   border: 6px solid #0f766e;
   border-radius: 20px;
   box-shadow: 0 10px 0 rgba(0,0,0,0.16);
+  touch-action: none;
 }
 
 .maze-cell {
@@ -2834,17 +2844,53 @@ h1, h2 {
   justify-content: center;
   overflow: hidden;
   box-shadow: inset 0 -4px 0 rgba(0,0,0,0.08);
+  cursor: pointer;
+}
+
+.maze-cell.path,
+.maze-cell.start {
+  background:
+    radial-gradient(circle at 20% 24%, rgba(255,255,255,0.62) 0 5px, transparent 6px),
+    #f8fafc;
+}
+
+.maze-cell.visited:not(.player):not(.target):not(.exit) {
+  background:
+    radial-gradient(circle at 20% 24%, rgba(255,255,255,0.68) 0 5px, transparent 6px),
+    #d9f99d;
+}
+
+.maze-cell.start::after {
+  content: "起";
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .maze-cell.wall {
   background:
     repeating-linear-gradient(135deg, #475569 0 10px, #334155 10px 20px);
   box-shadow: inset 0 0 0 3px rgba(255,255,255,0.12);
+  cursor: default;
 }
 
 .maze-cell.target {
-  background: #ecfeff;
-  border: 3px solid #67e8f9;
+  background: #fff7ed;
+  border: 4px solid #fb923c;
+  box-shadow: 0 0 20px rgba(251,146,60,0.44), inset 0 -4px 0 rgba(0,0,0,0.08);
+  animation: mazeTargetPulse 1.05s ease-in-out infinite;
+}
+
+.maze-cell.exit {
+  background: #e0f2fe;
+  border: 4px solid #38bdf8;
+}
+
+.maze-cell.exit:not(.player) {
+  animation: mazeExitGlow 1.4s ease-in-out infinite;
 }
 
 .maze-cell.decoy {
@@ -2866,28 +2912,35 @@ h1, h2 {
   animation: mazePlayerBounce 0.58s ease-in-out infinite;
 }
 
+.maze-exit-flag {
+  font-size: 30px;
+  line-height: 1;
+}
+
 .maze-controls {
   display: grid;
-  grid-template-columns: repeat(3, 64px);
+  grid-template-columns: repeat(3, clamp(64px, 9vw, 86px));
   grid-template-areas:
     ". up ."
     "left . right"
     ". down .";
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  touch-action: manipulation;
 }
 
 .maze-move-btn {
-  width: 64px;
-  height: 58px;
+  width: clamp(64px, 9vw, 86px);
+  height: clamp(58px, 8vw, 78px);
   border: none;
   border-radius: 16px;
   background: #fff;
   color: #0f766e;
-  font-size: 30px;
+  font-size: clamp(30px, 4vw, 42px);
   font-weight: 900;
   box-shadow: 0 6px 0 rgba(0,0,0,0.12);
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .maze-move-btn:active {
@@ -2924,6 +2977,16 @@ h1, h2 {
 @keyframes mazeCurrentPulse {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(20,184,166,0); }
   50% { transform: scale(1.06); box-shadow: 0 0 16px rgba(20,184,166,0.36); }
+}
+
+@keyframes mazeTargetPulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.05); filter: brightness(1.08); }
+}
+
+@keyframes mazeExitGlow {
+  0%, 100% { box-shadow: inset 0 -4px 0 rgba(0,0,0,0.08), 0 0 0 rgba(56,189,248,0); }
+  50% { box-shadow: inset 0 -4px 0 rgba(0,0,0,0.08), 0 0 18px rgba(56,189,248,0.62); }
 }
 
 @keyframes mazePlayerBounce {
@@ -3995,7 +4058,7 @@ h1, h2 {
   align-self: center;
   font-size: 0.55em;
   margin-left: 4px;
-  margin-bottom: 0.3em; /* 稍微往上移，配合幾聲的符號位置 */
+  margin-bottom: 0.3em; /* 稍微往上移，配合聲調符號位置 */
   line-height: 1;
 }
 

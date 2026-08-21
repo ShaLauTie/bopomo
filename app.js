@@ -2080,59 +2080,80 @@ function stopRhythmGame() {
 // ========== 注音迷宮 ==========
 
 const MAZE_SIZE = 6;
-const MAZE_LENGTH = 6;
 const MAZE_START = { row: 5, col: 0 };
-const MAZE_DECOY_COUNT = 7;
-const MAZE_WALL_COUNT = 5;
+const MAZE_EXIT = { row: 0, col: 5 };
+const MAZE_PATH = [
+  [5,0], [5,1], [5,2], [5,3], [5,4], [5,5],
+  [4,5], [4,4], [4,3], [4,2], [4,1], [4,0],
+  [3,0], [3,1], [3,2], [3,3], [3,4], [3,5],
+  [2,5], [2,4], [2,3], [2,2], [2,1], [2,0],
+  [1,0], [1,1], [1,2], [1,3], [1,4], [1,5],
+  [0,5]
+];
+const MAZE_TARGET_PATH_INDEXES = [4, 9, 14, 19, 24, 29];
+const MAZE_LENGTH = MAZE_TARGET_PATH_INDEXES.length;
+const MAZE_PATH_KEYS = new Set(MAZE_PATH.map(([row, col]) => `${row},${col}`));
 
 let mazeScore = 0;
 let mazeRound = 0;
 let mazeLives = 4;
 let mazeCombo = null;
-let mazePieces = [];
-let mazePieceIndex = 0;
+let mazeDeck = [];
 let mazePlayer = { row: MAZE_START.row, col: MAZE_START.col };
 let mazeCells = [];
+let mazeVisited = new Set();
 let mazeRunning = false;
 let mazeLocked = false;
+let mazeTouchStart = null;
+let mazeTouchReady = false;
+let mazeSuppressTapUntil = 0;
+let mazeAdvanceTimer = null;
 
 function startMazeGame() {
   stopMazeGame();
   mazeScore = 0;
   mazeRound = 0;
   mazeLives = 4;
+  mazeDeck = shuffle(PINYIN_COMBOS).slice(0, MAZE_LENGTH);
+  mazePlayer = { row: MAZE_START.row, col: MAZE_START.col };
+  mazeVisited = new Set([mazeCellKey(MAZE_START.row, MAZE_START.col)]);
+  mazeCells = buildMazeBoard();
   mazeRunning = true;
   mazeLocked = false;
+  setupMazeTouchControls();
   document.getElementById("mazeGameover").style.display = "none";
-  nextMazeRound();
+  showNextMazeCard();
 }
 
-function nextMazeRound() {
+function showNextMazeCard() {
   if (!mazeRunning) return;
+  clearTimeout(mazeAdvanceTimer);
+  mazeAdvanceTimer = null;
   if (mazeRound >= MAZE_LENGTH || mazeLives <= 0) {
-    endMazeGame();
+    openMazeExit();
     return;
   }
 
-  mazeCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
-  mazePieces = fullSpellingPieces(comboSpelling(mazeCombo));
-  mazePieceIndex = 0;
-  mazePlayer = { row: MAZE_START.row, col: MAZE_START.col };
+  mazeCombo = mazeDeck[mazeRound];
   mazeLocked = false;
 
   document.getElementById("mazeEmoji").textContent = mazeCombo.emoji;
   document.getElementById("mazeWord").textContent = mazeCombo.word;
+  placeMazeCard();
   updateMazeHud();
-  buildMazeBoard();
   updateMazeOrder();
   renderMazeGrid();
   speak(mazeCombo.word);
 }
 
 function updateMazeHud() {
-  document.getElementById("mazeProgress").textContent = `第 ${Math.min(mazeRound + 1, MAZE_LENGTH)} / ${MAZE_LENGTH} 關`;
+  document.getElementById("mazeProgress").textContent = `卡片 ${Math.min(mazeRound + 1, MAZE_LENGTH)} / ${MAZE_LENGTH}`;
   document.getElementById("mazeStars").textContent = `⭐ ${mazeScore}`;
   document.getElementById("mazeLives").textContent = "❤".repeat(Math.max(0, mazeLives));
+}
+
+function mazeCellKey(row, col) {
+  return `${row},${col}`;
 }
 
 function emptyMazeCells() {
@@ -2142,97 +2163,70 @@ function emptyMazeCells() {
 }
 
 function buildMazeBoard() {
-  let attempts = 0;
-  do {
-    attempts++;
-    mazeCells = emptyMazeCells();
-    placeMazeWalls();
-    placeMazeTargets();
-    placeMazeDecoys();
-  } while (!mazeBoardIsReachable() && attempts < 40);
-}
-
-function randomMazeSpot(allowStart = false) {
-  let row, col;
-  do {
-    row = randomInt(MAZE_SIZE);
-    col = randomInt(MAZE_SIZE);
-  } while (
-    (!allowStart && row === MAZE_START.row && col === MAZE_START.col) ||
-    mazeCells[row][col].type !== "empty"
-  );
-  return { row, col };
-}
-
-function placeMazeWalls() {
-  for (let i = 0; i < MAZE_WALL_COUNT; i++) {
-    const spot = randomMazeSpot(false);
-    mazeCells[spot.row][spot.col] = { type: "wall" };
-  }
-}
-
-function placeMazeTargets() {
-  mazePieces.forEach((piece, index) => {
-    const spot = randomMazeSpot(false);
-    mazeCells[spot.row][spot.col] = { type: "target", piece, index, collected: false };
-  });
-}
-
-function placeMazeDecoys() {
-  const pool = uniqueValues([
-    ...BOPOMOFO_SYMBOLS.map(item => item.symbol),
-    ...GAME_TONE_OPTIONS
-  ]).filter(piece => piece !== "");
-
-  for (let i = 0; i < MAZE_DECOY_COUNT; i++) {
-    const spot = randomMazeSpot(false);
-    const piece = shuffle(pool.filter(value => value !== mazePieces[mazePieceIndex]))[0];
-    mazeCells[spot.row][spot.col] = { type: "decoy", piece };
-  }
-}
-
-function mazeBoardIsReachable() {
-  const seen = new Set([`${MAZE_START.row},${MAZE_START.col}`]);
-  const queue = [{ row: MAZE_START.row, col: MAZE_START.col }];
-  const open = (row, col) =>
-    row >= 0 && row < MAZE_SIZE && col >= 0 && col < MAZE_SIZE && mazeCells[row][col].type !== "wall";
-
-  while (queue.length) {
-    const pos = queue.shift();
-    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr, dc]) => {
-      const row = pos.row + dr;
-      const col = pos.col + dc;
-      const key = `${row},${col}`;
-      if (!open(row, col) || seen.has(key)) return;
-      seen.add(key);
-      queue.push({ row, col });
-    });
-  }
-
-  return mazePieces.every((_, index) => {
-    for (let row = 0; row < MAZE_SIZE; row++) {
-      for (let col = 0; col < MAZE_SIZE; col++) {
-        const cell = mazeCells[row][col];
-        if (cell.type === "target" && cell.index === index) {
-          return seen.has(`${row},${col}`);
-        }
-      }
+  const cells = emptyMazeCells();
+  for (let row = 0; row < MAZE_SIZE; row++) {
+    for (let col = 0; col < MAZE_SIZE; col++) {
+      cells[row][col] = MAZE_PATH_KEYS.has(`${row},${col}`)
+        ? { type: "path" }
+        : { type: "wall" };
     }
-    return false;
-  });
+  }
+  cells[MAZE_START.row][MAZE_START.col] = { type: "start" };
+  cells[MAZE_EXIT.row][MAZE_EXIT.col] = { type: "exit", open: false };
+  return cells;
+}
+
+function clearMazeCards() {
+  for (let row = 0; row < MAZE_SIZE; row++) {
+    for (let col = 0; col < MAZE_SIZE; col++) {
+      if (mazeCells[row][col].type === "target") mazeCells[row][col] = { type: "path" };
+    }
+  }
+}
+
+function placeMazeCard() {
+  clearMazeCards();
+  const pathIndex = MAZE_TARGET_PATH_INDEXES[mazeRound];
+  const [row, col] = MAZE_PATH[pathIndex];
+  mazeCells[row][col] = {
+    type: "target",
+    combo: mazeCombo,
+    spelling: comboSpelling(mazeCombo)
+  };
+}
+
+function openMazeExit() {
+  mazeCombo = null;
+  mazeLocked = false;
+  clearMazeCards();
+  mazeCells[MAZE_EXIT.row][MAZE_EXIT.col] = { type: "exit", open: true };
+  document.getElementById("mazeEmoji").textContent = "🏁";
+  document.getElementById("mazeWord").textContent = "出口";
+  updateMazeHud();
+  updateMazeOrder();
+  renderMazeGrid();
+  document.getElementById("mazeHint").textContent = "走到右上角出口";
+  speak("走到出口");
 }
 
 function updateMazeOrder() {
   const order = document.getElementById("mazeOrder");
-  order.innerHTML = mazePieces.map((piece, index) => {
-    const className = index < mazePieceIndex ? "done" : index === mazePieceIndex ? "current" : "";
-    return `<span class="${className}">${renderGameChoiceHtml(piece, 34, "game-bopomofo maze-order-bopomofo")}</span>`;
-  }).join("");
-
-  const nextPiece = mazePieces[mazePieceIndex];
-  document.getElementById("mazeHint").textContent = nextPiece
-    ? `下一個：${isTonePiece(nextPiece) ? toneLabel(nextPiece) : nextPiece}`
-    : "完成這一關";
+  const cards = mazeDeck.map((combo, index) => {
+    const className = index < mazeRound ? "done" : index === mazeRound && mazeCombo ? "current" : "waiting";
+    const content = index < mazeRound
+      ? "✓"
+      : index === mazeRound && mazeCombo
+        ? renderGameChoiceHtml(comboSpelling(combo), 34, "game-bopomofo maze-order-bopomofo")
+        : "•";
+    return `<span class="${className}">${content}</span>`;
+  });
+  if (!mazeCombo && mazeRound >= MAZE_LENGTH) {
+    cards.push(`<span class="current">🏁</span>`);
+  }
+  order.innerHTML = cards.join("");
+  document.getElementById("mazeHint").textContent = mazeCombo
+    ? "沿著迷宮走到這張卡片"
+    : "走到右上角出口";
 }
 
 function renderMazeGrid() {
@@ -2244,17 +2238,67 @@ function renderMazeGrid() {
       const cell = mazeCells[row][col];
       const el = document.createElement("div");
       el.className = `maze-cell ${cell.type}`;
+      el.dataset.row = row;
+      el.dataset.col = col;
+      if (mazeVisited.has(mazeCellKey(row, col))) el.classList.add("visited");
       if (mazePlayer.row === row && mazePlayer.col === col) {
         el.classList.add("player");
         el.innerHTML = `<span class="maze-player">◆</span>`;
-      } else if (cell.type === "target" && !cell.collected) {
-        el.innerHTML = renderGameChoiceHtml(cell.piece, 34, "game-bopomofo maze-piece-bopomofo");
-      } else if (cell.type === "decoy") {
-        el.innerHTML = renderGameChoiceHtml(cell.piece, 32, "game-bopomofo maze-piece-bopomofo");
+      } else if (cell.type === "target") {
+        el.innerHTML = renderGameChoiceHtml(cell.spelling, 32, "game-bopomofo maze-piece-bopomofo");
+      } else if (cell.type === "exit") {
+        el.innerHTML = `<span class="maze-exit-flag">${cell.open ? "🏁" : "🔒"}</span>`;
       }
+      el.addEventListener("click", () => handleMazeCellTap(row, col));
       grid.appendChild(el);
     }
   }
+}
+
+function handleMazeCellTap(row, col) {
+  if (!mazeRunning || mazeLocked) return;
+  if (performance.now() < mazeSuppressTapUntil) return;
+  const dr = row - mazePlayer.row;
+  const dc = col - mazePlayer.col;
+  if (Math.abs(dr) + Math.abs(dc) !== 1) {
+    animateMazeWrong();
+    return;
+  }
+  moveMazePlayer(dr, dc);
+}
+
+function setupMazeTouchControls() {
+  if (mazeTouchReady) return;
+  const grid = document.getElementById("mazeGrid");
+  if (!grid) return;
+  mazeTouchReady = true;
+
+  grid.addEventListener("pointerdown", (event) => {
+    if (!mazeRunning) return;
+    event.preventDefault();
+    mazeTouchStart = { x: event.clientX, y: event.clientY };
+    grid.setPointerCapture?.(event.pointerId);
+  });
+
+  grid.addEventListener("pointerup", (event) => {
+    if (!mazeRunning || !mazeTouchStart) return;
+    event.preventDefault();
+    const dx = event.clientX - mazeTouchStart.x;
+    const dy = event.clientY - mazeTouchStart.y;
+    mazeTouchStart = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      moveMazePlayer(0, dx > 0 ? 1 : -1);
+    } else {
+      moveMazePlayer(dy > 0 ? 1 : -1, 0);
+    }
+    mazeSuppressTapUntil = performance.now() + 250;
+  });
+
+  grid.addEventListener("pointercancel", () => {
+    mazeTouchStart = null;
+  });
 }
 
 function moveMazePlayer(dr, dc) {
@@ -2274,38 +2318,36 @@ function moveMazePlayer(dr, dc) {
   }
 
   mazePlayer = { row: nextRow, col: nextCol };
+  mazeVisited.add(mazeCellKey(nextRow, nextCol));
 
-  if (cell.type === "target" && !cell.collected && cell.index === mazePieceIndex) {
-    cell.collected = true;
-    mazePieceIndex++;
-    speakGamePiece(cell.piece);
-    updateMazeOrder();
-    burstAtViewportCenter(true, 10);
-
-    if (mazePieceIndex >= mazePieces.length) {
-      mazeLocked = true;
-      mazeScore++;
-      mazeRound++;
-      updateMazeHud();
-      document.getElementById("mazeHint").textContent = "過關！";
-      showFeedback(true);
-      speak(mazeCombo.word);
-      renderMazeGrid();
-      setTimeout(nextMazeRound, 1150);
-      return;
-    }
-  } else if (cell.type === "target" || cell.type === "decoy") {
-    mazeLives--;
-    document.getElementById("mazeHint").textContent = "順序不對，退回上一格";
-    mazePlayer = { row: mazePlayer.row - dr, col: mazePlayer.col - dc };
+  if (cell.type === "target") {
+    mazeScore++;
+    mazeRound++;
+    mazeLocked = true;
+    clearMazeCards();
     updateMazeHud();
+    updateMazeOrder();
+    renderMazeGrid();
+    burstAtViewportCenter(true, 10);
+    showFeedback(true);
+    mazeAdvanceTimer = setTimeout(() => {
+      if (!mazeRunning) return;
+      showNextMazeCard();
+    }, 850);
+    return;
+  }
+
+  if (cell.type === "exit" && cell.open) {
+    updateMazeHud();
+    renderMazeGrid();
+    endMazeGame();
+    return;
+  }
+
+  if (cell.type === "exit" && !cell.open) {
+    document.getElementById("mazeHint").textContent = "先拿完卡片";
+    mazePlayer = { row: mazePlayer.row - dr, col: mazePlayer.col - dc };
     animateMazeWrong();
-    showFeedback(false);
-    if (mazeLives <= 0) {
-      renderMazeGrid();
-      setTimeout(endMazeGame, 800);
-      return;
-    }
   }
 
   renderMazeGrid();
@@ -2329,14 +2371,17 @@ function endMazeGame() {
   mazeLocked = true;
   document.getElementById("mazeFinalScore").textContent = mazeScore;
   document.getElementById("mazeGameover").style.display = "flex";
-  const msg = mazeScore >= MAZE_LENGTH ? "迷宮全部通關！注音順序很清楚！" :
-              mazeScore >= 3 ? "很不錯，路線和注音順序都抓到了！" : "再闖一次，先看上方順序再移動！";
+  const msg = mazeScore >= MAZE_LENGTH ? "走完整個迷宮！注音卡片都拿到了！" :
+              mazeScore >= 3 ? "很不錯，繼續沿著路線拿卡片！" : "再闖一次，先看卡片再移動！";
   speak(msg);
 }
 
 function stopMazeGame() {
   mazeRunning = false;
   mazeLocked = false;
+  clearTimeout(mazeAdvanceTimer);
+  mazeAdvanceTimer = null;
+  mazeTouchStart = null;
 }
 
 document.addEventListener("keydown", (event) => {
