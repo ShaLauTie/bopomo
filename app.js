@@ -1964,20 +1964,23 @@ function animateIslandComplete() {
 // ========== 注音節奏台 ==========
 
 const RHYTHM_LENGTH = 8;
-const RHYTHM_BEAT_MS = 4200;
+const RHYTHM_COUNT_MS = 720;
+const RHYTHM_ANSWER_MS = 2600;
 
 let rhythmScore = 0;
 let rhythmBeatNum = 0;
-let rhythmLives = 3;
+let rhythmLives = 5;
 let rhythmStreak = 0;
 let rhythmCombo = null;
 let rhythmChoices = [];
 let rhythmCorrectIndex = -1;
-let rhythmBeatStart = 0;
+let rhythmCountStep = 0;
+let rhythmAnswerOpen = false;
 let rhythmRunning = false;
 let rhythmLocked = false;
 let rhythmMissTimer = null;
 let rhythmNextTimer = null;
+let rhythmCountTimer = null;
 
 function startRhythmGame() {
   stopRhythmGame();
@@ -1993,6 +1996,7 @@ function startRhythmGame() {
 
 function nextRhythmBeat() {
   if (!rhythmRunning) return;
+  clearTimeout(rhythmCountTimer);
   clearTimeout(rhythmMissTimer);
   clearTimeout(rhythmNextTimer);
 
@@ -2006,16 +2010,18 @@ function nextRhythmBeat() {
   const correctSpelling = comboSpelling(rhythmCombo);
   rhythmChoices = buildChoiceValues(correctSpelling, PINYIN_COMBOS.map(comboSpelling), 3);
   rhythmCorrectIndex = rhythmChoices.indexOf(correctSpelling);
+  rhythmCountStep = 0;
+  rhythmAnswerOpen = false;
 
   document.getElementById("rhythmEmoji").textContent = rhythmCombo.emoji;
   document.getElementById("rhythmWord").textContent = rhythmCombo.word;
-  document.getElementById("rhythmStatus").textContent = "聽詞語，在球落下前按正確注音";
+  document.getElementById("rhythmStatus").textContent = "聽詞語，前三拍跟著答";
   updateRhythmHud();
+  updateRhythmCount();
   renderRhythmLanes();
 
-  rhythmBeatStart = performance.now();
   speak(rhythmCombo.word);
-  rhythmMissTimer = setTimeout(() => missRhythmBeat(), RHYTHM_BEAT_MS + 260);
+  rhythmCountTimer = setTimeout(playRhythmCount, 520);
 }
 
 function updateRhythmHud() {
@@ -2031,9 +2037,9 @@ function renderRhythmLanes() {
 
   rhythmChoices.forEach((value, index) => {
     const lane = document.createElement("button");
-    lane.className = "rhythm-lane";
+    lane.className = "rhythm-lane waiting";
     lane.innerHTML = `
-      <div class="rhythm-note"></div>
+      <div class="rhythm-note">${index === rhythmCorrectIndex ? "4" : ""}</div>
       <div class="rhythm-hit-line"></div>
       <div class="rhythm-lane-label">${renderGameChoiceHtml(value, 56, "game-bopomofo rhythm-bopomofo")}</div>
     `;
@@ -2042,8 +2048,62 @@ function renderRhythmLanes() {
   });
 }
 
+function updateRhythmCount() {
+  const count = document.getElementById("rhythmCount");
+  if (!count) return;
+  [...count.children].forEach((item, index) => {
+    item.classList.toggle("active", index === rhythmCountStep - 1);
+    item.classList.toggle("answer", rhythmAnswerOpen && index === 3);
+  });
+}
+
+function playRhythmTapSound(accent = false) {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  if (!correctSfxContext) correctSfxContext = new AudioCtx();
+  if (correctSfxContext.state === "suspended") correctSfxContext.resume();
+  const ctx = correctSfxContext;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const start = ctx.currentTime;
+  const end = start + 0.08;
+  osc.type = "square";
+  osc.frequency.setValueAtTime(accent ? 392 : 220, start);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(accent ? 0.16 : 0.1, start + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, end);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(start);
+  osc.stop(end + 0.02);
+}
+
+function playRhythmCount() {
+  if (!rhythmRunning || rhythmLocked) return;
+  rhythmCountStep++;
+  rhythmAnswerOpen = rhythmCountStep >= 4;
+  updateRhythmCount();
+
+  if (rhythmCountStep < 4) {
+    document.getElementById("rhythmStatus").textContent = "答";
+    playRhythmTapSound(false);
+    rhythmCountTimer = setTimeout(playRhythmCount, RHYTHM_COUNT_MS);
+    return;
+  }
+
+  document.getElementById("rhythmStatus").textContent = "第四拍，選答案！";
+  playRhythmTapSound(true);
+  document.querySelectorAll("#rhythmLanes .rhythm-lane").forEach(lane => lane.classList.remove("waiting"));
+  rhythmMissTimer = setTimeout(() => missRhythmBeat(), RHYTHM_ANSWER_MS);
+}
+
 function handleRhythmTap(index, lane) {
   if (!rhythmRunning || rhythmLocked || !rhythmCombo) return;
+  if (!rhythmAnswerOpen) {
+    document.getElementById("rhythmStatus").textContent = "還沒到第四拍";
+    playRhythmTapSound(false);
+    return;
+  }
 
   const isCorrectLane = index === rhythmCorrectIndex;
 
@@ -2061,12 +2121,14 @@ function handleRhythmTap(index, lane) {
     }
     setTimeout(() => {
       lane.classList.remove("wrong");
-      if (rhythmRunning && !rhythmLocked) speak(rhythmCombo.word);
+      if (rhythmRunning && !rhythmLocked) document.getElementById("rhythmStatus").textContent = "第四拍，選答案！";
     }, 650);
     return;
   }
 
   rhythmLocked = true;
+  rhythmAnswerOpen = false;
+  clearTimeout(rhythmCountTimer);
   clearTimeout(rhythmMissTimer);
   rhythmScore++;
   rhythmStreak++;
@@ -2082,6 +2144,7 @@ function handleRhythmTap(index, lane) {
 function missRhythmBeat() {
   if (!rhythmRunning || rhythmLocked) return;
   rhythmLocked = true;
+  rhythmAnswerOpen = false;
   rhythmLives--;
   rhythmStreak = 0;
   document.getElementById("rhythmStatus").textContent = "漏拍了";
@@ -2112,6 +2175,8 @@ function endRhythmGame() {
 function stopRhythmGame() {
   rhythmRunning = false;
   rhythmLocked = false;
+  rhythmAnswerOpen = false;
+  clearTimeout(rhythmCountTimer);
   clearTimeout(rhythmMissTimer);
   clearTimeout(rhythmNextTimer);
 }

@@ -2656,6 +2656,43 @@ h1, h2 {
   text-align: center;
 }
 
+.rhythm-count {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 58px);
+  gap: 10px;
+}
+
+.rhythm-count span {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 4px solid #cbd5e1;
+  color: #64748b;
+  font-size: 24px;
+  font-weight: 900;
+  box-shadow: inset 0 -4px 0 rgba(0,0,0,0.08);
+}
+
+.rhythm-count span.active {
+  background: #fde68a;
+  border-color: #f59e0b;
+  color: #9a3412;
+  animation: rhythmCountPop 0.22s ease-out;
+}
+
+.rhythm-count span.answer {
+  background: #bbf7d0;
+  border-color: #22c55e;
+  color: #166534;
+  box-shadow: 0 0 18px rgba(34,197,94,0.42), inset 0 -4px 0 rgba(0,0,0,0.08);
+}
+
 .rhythm-lanes {
   position: relative;
   display: grid;
@@ -2680,6 +2717,14 @@ h1, h2 {
   cursor: pointer;
   overflow: hidden;
   box-shadow: inset 0 0 18px rgba(0,0,0,0.18);
+}
+
+.rhythm-lane.waiting {
+  opacity: 0.58;
+}
+
+.rhythm-lane.waiting .rhythm-lane-label {
+  filter: grayscale(0.25);
 }
 
 .rhythm-lane-label {
@@ -2719,6 +2764,12 @@ h1, h2 {
   transform: translateX(-50%);
   background: radial-gradient(circle at 35% 30%, #fff7ad, #f97316 58%, #b91c1c 100%);
   box-shadow: 0 0 24px rgba(249,115,22,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7c2d12;
+  font-size: 26px;
+  font-weight: 900;
   animation: rhythmDrop 4.2s linear forwards;
   z-index: 1;
 }
@@ -2986,6 +3037,12 @@ h1, h2 {
   50% { transform: scale(1.035); opacity: 0.82; }
 }
 
+@keyframes rhythmCountPop {
+  0% { transform: scale(0.82); }
+  70% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
 @keyframes rhythmWrong {
   0%, 100% { transform: translateX(0); }
   30% { transform: translateX(-7px); }
@@ -3083,6 +3140,8 @@ h1, h2 {
   .rhythm-emoji { font-size: 50px; }
   .rhythm-word { font-size: 26px; }
   .rhythm-status { font-size: 14px; padding: 5px 10px; }
+  .rhythm-count { grid-template-columns: repeat(4, 42px); gap: 6px; }
+  .rhythm-count span { width: 42px; height: 42px; font-size: 18px; border-width: 3px; }
   .rhythm-lanes {
     min-height: 300px;
     gap: 6px;
@@ -3448,6 +3507,8 @@ h1, h2 {
   .rhythm-emoji { font-size: 48px; }
   .rhythm-word { font-size: 24px; }
   .rhythm-status { font-size: 13px; padding: 5px 10px; }
+  .rhythm-count { grid-template-columns: repeat(4, 38px); gap: 5px; }
+  .rhythm-count span { width: 38px; height: 38px; font-size: 16px; border-width: 3px; }
   .rhythm-lanes {
     min-height: 210px;
     gap: 7px;
