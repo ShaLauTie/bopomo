@@ -2659,7 +2659,7 @@ h1, h2 {
 .rhythm-lanes {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(78px, 1fr));
+  grid-template-columns: repeat(3, minmax(88px, 1fr));
   gap: 10px;
   min-height: 360px;
   padding: 12px;
@@ -2719,7 +2719,7 @@ h1, h2 {
   transform: translateX(-50%);
   background: radial-gradient(circle at 35% 30%, #fff7ad, #f97316 58%, #b91c1c 100%);
   box-shadow: 0 0 24px rgba(249,115,22,0.7);
-  animation: rhythmDrop 2.3s linear forwards;
+  animation: rhythmDrop 4.2s linear forwards;
   z-index: 1;
 }
 

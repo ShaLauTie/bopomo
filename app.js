@@ -1965,10 +1965,8 @@ function animateIslandComplete() {
 
 // ========== 注音節奏台 ==========
 
-const RHYTHM_LENGTH = 12;
-const RHYTHM_BEAT_MS = 2300;
-const RHYTHM_HIT_MS = 1750;
-const RHYTHM_WINDOW_MS = 430;
+const RHYTHM_LENGTH = 8;
+const RHYTHM_BEAT_MS = 4200;
 
 let rhythmScore = 0;
 let rhythmBeatNum = 0;
@@ -1987,7 +1985,7 @@ function startRhythmGame() {
   stopRhythmGame();
   rhythmScore = 0;
   rhythmBeatNum = 0;
-  rhythmLives = 3;
+  rhythmLives = 5;
   rhythmStreak = 0;
   rhythmRunning = true;
   rhythmLocked = false;
@@ -2008,12 +2006,12 @@ function nextRhythmBeat() {
   rhythmLocked = false;
   rhythmCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
   const correctSpelling = comboSpelling(rhythmCombo);
-  rhythmChoices = buildChoiceValues(correctSpelling, PINYIN_COMBOS.map(comboSpelling), 4);
+  rhythmChoices = buildChoiceValues(correctSpelling, PINYIN_COMBOS.map(comboSpelling), 3);
   rhythmCorrectIndex = rhythmChoices.indexOf(correctSpelling);
 
   document.getElementById("rhythmEmoji").textContent = rhythmCombo.emoji;
   document.getElementById("rhythmWord").textContent = rhythmCombo.word;
-  document.getElementById("rhythmStatus").textContent = "拍點落到黃色線時，按正確注音";
+  document.getElementById("rhythmStatus").textContent = "聽詞語，在球落下前按正確注音";
   updateRhythmHud();
   renderRhythmLanes();
 
@@ -2023,7 +2021,7 @@ function nextRhythmBeat() {
 }
 
 function updateRhythmHud() {
-  document.getElementById("rhythmProgress").textContent = `第 ${Math.min(rhythmBeatNum + 1, RHYTHM_LENGTH)} / ${RHYTHM_LENGTH} 拍`;
+  document.getElementById("rhythmProgress").textContent = `第 ${Math.min(rhythmBeatNum + 1, RHYTHM_LENGTH)} / ${RHYTHM_LENGTH} 題`;
   document.getElementById("rhythmCombo").textContent = `連擊 ${rhythmStreak}`;
   document.getElementById("rhythmLives").textContent = "❤".repeat(Math.max(0, rhythmLives));
   document.getElementById("rhythmStars").textContent = `⭐ ${rhythmScore}`;
@@ -2049,39 +2047,38 @@ function renderRhythmLanes() {
 function handleRhythmTap(index, lane) {
   if (!rhythmRunning || rhythmLocked || !rhythmCombo) return;
 
-  const timingDiff = Math.abs((performance.now() - rhythmBeatStart) - RHYTHM_HIT_MS);
   const isCorrectLane = index === rhythmCorrectIndex;
-  const isOnBeat = timingDiff <= RHYTHM_WINDOW_MS;
 
-  if (!isCorrectLane || !isOnBeat) {
-    rhythmLocked = true;
-    clearTimeout(rhythmMissTimer);
+  if (!isCorrectLane) {
     rhythmLives--;
     rhythmStreak = 0;
     lane.classList.add("wrong");
-    document.getElementById("rhythmStatus").textContent = !isCorrectLane ? "注音不對" : "節拍太早或太晚";
+    document.getElementById("rhythmStatus").textContent = "注音不對，再聽一次";
     showFeedback(false);
     updateRhythmHud();
-    rhythmNextTimer = setTimeout(() => {
-      rhythmBeatNum++;
-      nextRhythmBeat();
-    }, 900);
+    if (rhythmLives <= 0) {
+      clearTimeout(rhythmMissTimer);
+      rhythmNextTimer = setTimeout(endRhythmGame, 700);
+      return;
+    }
+    setTimeout(() => {
+      lane.classList.remove("wrong");
+      if (rhythmRunning && !rhythmLocked) speak(rhythmCombo.word);
+    }, 650);
     return;
   }
 
   rhythmLocked = true;
   clearTimeout(rhythmMissTimer);
-  const perfect = timingDiff <= 150;
-  const points = perfect ? 2 : 1;
-  rhythmScore += points;
+  rhythmScore++;
   rhythmStreak++;
   rhythmBeatNum++;
   lane.classList.add("correct");
-  document.getElementById("rhythmStatus").textContent = perfect ? "完美拍點！" : "打到了！";
+  document.getElementById("rhythmStatus").textContent = "選對了！";
   updateRhythmHud();
-  burstAtElement(lane, true, perfect ? 18 : 12);
-  speak(rhythmCombo.word);
-  rhythmNextTimer = setTimeout(nextRhythmBeat, 780);
+  burstAtElement(lane, true, 14);
+  playPictureDingDing();
+  rhythmNextTimer = setTimeout(nextRhythmBeat, 680);
 }
 
 function missRhythmBeat() {
