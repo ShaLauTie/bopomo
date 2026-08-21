@@ -1964,7 +1964,7 @@ function animateIslandComplete() {
 // ========== 注音節奏台 ==========
 
 const RHYTHM_LENGTH = 8;
-const RHYTHM_COUNT_MS = 720;
+const RHYTHM_COUNT_MS = 820;
 const RHYTHM_ANSWER_MS = 2600;
 
 let rhythmScore = 0;
@@ -2020,8 +2020,10 @@ function nextRhythmBeat() {
   updateRhythmCount();
   renderRhythmLanes();
 
-  speak(rhythmCombo.word);
-  rhythmCountTimer = setTimeout(playRhythmCount, 520);
+  speak(rhythmCombo.word, () => {
+    if (!rhythmRunning || rhythmLocked) return;
+    rhythmCountTimer = setTimeout(playRhythmCount, 260);
+  });
 }
 
 function updateRhythmHud() {
@@ -2066,16 +2068,27 @@ function playRhythmTapSound(accent = false) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   const start = ctx.currentTime;
-  const end = start + 0.08;
+  const end = start + (accent ? 0.16 : 0.13);
   osc.type = "square";
-  osc.frequency.setValueAtTime(accent ? 392 : 220, start);
+  osc.frequency.setValueAtTime(accent ? 523.25 : 261.63, start);
   gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(accent ? 0.16 : 0.1, start + 0.01);
+  gain.gain.exponentialRampToValueAtTime(accent ? 0.24 : 0.18, start + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.0001, end);
   osc.connect(gain);
   gain.connect(ctx.destination);
   osc.start(start);
   osc.stop(end + 0.02);
+}
+
+function speakRhythmBeat(text) {
+  if (!("speechSynthesis" in window)) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "zh-TW";
+  if (_zhVoice) utter.voice = _zhVoice;
+  utter.rate = 1.25;
+  utter.pitch = text === "答" ? 1.0 : 1.12;
+  utter.volume = 1;
+  speechSynthesis.speak(utter);
 }
 
 function playRhythmCount() {
@@ -2087,12 +2100,14 @@ function playRhythmCount() {
   if (rhythmCountStep < 4) {
     document.getElementById("rhythmStatus").textContent = "答";
     playRhythmTapSound(false);
+    speakRhythmBeat("答");
     rhythmCountTimer = setTimeout(playRhythmCount, RHYTHM_COUNT_MS);
     return;
   }
 
   document.getElementById("rhythmStatus").textContent = "第四拍，選答案！";
   playRhythmTapSound(true);
+  speakRhythmBeat("選");
   document.querySelectorAll("#rhythmLanes .rhythm-lane").forEach(lane => lane.classList.remove("waiting"));
   rhythmMissTimer = setTimeout(() => missRhythmBeat(), RHYTHM_ANSWER_MS);
 }
