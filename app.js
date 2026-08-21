@@ -2106,8 +2106,8 @@ function endRhythmGame() {
   clearTimeout(rhythmNextTimer);
   document.getElementById("rhythmFinalScore").textContent = rhythmScore;
   document.getElementById("rhythmGameover").style.display = "flex";
-  const msg = rhythmScore >= RHYTHM_LENGTH * 1.5 ? "節奏和注音都很穩！" :
-              rhythmScore >= RHYTHM_LENGTH ? "很棒，節拍抓得越來越準！" : "再試一次，先聽詞語再抓拍點！";
+  const msg = rhythmScore >= RHYTHM_LENGTH ? "注音都選對了！節奏很穩！" :
+              rhythmScore >= 5 ? "很棒，聽音越來越準！" : "再試一次，先聽詞語再選注音！";
   speak(msg);
 }
 
