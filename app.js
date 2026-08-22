@@ -3181,7 +3181,14 @@ function initClawCapsules() {
   if (isPinyinRound) {
     symbols = shuffle(PINYIN_COMBOS).slice(0, 5);
   } else {
-    symbols = shuffle(BOPOMOFO_SYMBOLS).slice(0, 5);
+    symbols = shuffle(BOPOMOFO_SYMBOLS).slice(0, 5).map(s => {
+      const chosen = getWordForSymbol(s);
+      return {
+        ...s,
+        word: chosen.word,
+        emoji: chosen.emoji
+      };
+    });
   }
   
   symbols.forEach((symObj, i) => {
