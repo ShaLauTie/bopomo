@@ -5195,3 +5195,36 @@ h1, h2 {
 
 .prompt-box.quiz-combine { flex-direction: row; }
 .quiz-combine .quiz-slot { width: 130px; height: 130px; font-size: 80px; }
+
+/* ---------- 內容比螢幕高時不要被裁掉 ----------
+   flex 置中在內容超出時會把上半部推到畫面外、又滑不上去。
+   safe center：放得下就置中，放不下就從頂端開始排、可以往下滑。 */
+.screen[id^="screen-"] { justify-content: safe center !important; }
+
+/* 舊版瀏覽器不支援 safe 時，首頁用上下兩個彈性空白來置中（同樣不會裁切） */
+#screen-home { justify-content: flex-start; padding-top: 20px; }
+#screen-home::before,
+#screen-home::after { content: ""; margin: auto; }
+
+/* 平板橫放：一排 6 個，17 個遊戲 3 排就放得下 */
+@media (orientation: landscape) and (min-width: 900px) {
+  #screen-home h1 { font-size: 40px; margin-bottom: 30px; }
+  #screen-home .star-bank { margin: -18px 0 14px; }
+  #screen-home .menu-grid {
+    grid-template-columns: repeat(6, 1fr);
+    max-width: min(1100px, 96vw);
+    gap: 12px;
+  }
+  #screen-home .menu-card {
+    aspect-ratio: auto;
+    height: clamp(96px, calc((100vh - 230px) / 3), 170px);
+  }
+}
+
+/* 平板直放：一排 4 個，整頁放得下 */
+@media (orientation: portrait) and (min-width: 700px) {
+  #screen-home .menu-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: min(720px, 94vw);
+  }
+}
