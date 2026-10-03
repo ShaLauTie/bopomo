@@ -165,28 +165,20 @@ function speakFallback(text) {
 }
 
 // 輔助函式：將詞彙字與字之間加上空格，減緩語速並避免特定字元（如「烏龜」）在語音引擎中聽起來太快或碎裂
+let _vocabRegex = null;
 function spaceOutVocabulary(text) {
-  const vocabWords = [];
-  if (typeof BOPOMOFO_SYMBOLS !== 'undefined') {
-    BOPOMOFO_SYMBOLS.forEach(s => { if (s.word) vocabWords.push(s.word); });
+  if (!_vocabRegex) {
+    const vocabWords = [
+      ...BOPOMOFO_SYMBOLS.map(s => s.word),
+      ...WORD_BANK.map(w => w.word)
+    ];
+    // 去除重複，只留 2 字以上；長詞優先，避免短詞先被取代
+    const uniqueVocabs = [...new Set(vocabWords)].filter(w => w && w.length >= 2);
+    uniqueVocabs.sort((a, b) => b.length - a.length);
+    _vocabRegex = new RegExp(uniqueVocabs.join("|"), "g");
   }
-  if (typeof PINYIN_COMBOS !== 'undefined') {
-    PINYIN_COMBOS.forEach(c => { if (c.word) vocabWords.push(c.word); });
-  }
-  
-  // 去除重複，並過濾掉長度小於 2 的字詞
-  const uniqueVocabs = [...new Set(vocabWords)].filter(w => w.length >= 2);
-  
-  // 依長度從長到短排序，避免短詞先被取代
-  uniqueVocabs.sort((a, b) => b.length - a.length);
-  
-  let result = text;
-  uniqueVocabs.forEach(word => {
-    const spaced = word.split("").join(" ");
-    result = result.replace(new RegExp(word, 'g'), " " + spaced); // 前面多加一個空格讓語音有明顯頓點
-  });
-  
-  return result.trim();
+  // 前面多加一個空格讓語音有明顯頓點
+  return text.replace(_vocabRegex, word => " " + word.split("").join(" ")).trim();
 }
 
 /**
@@ -239,6 +231,8 @@ function showScreen(name) {
   if (_balloonAudio)  { _balloonAudio.pause(); }
   if ('speechSynthesis' in window) speechSynthesis.cancel();
   setFcLocked(false); // 解鎖閃卡箭頭
+  breakStreak();      // 換遊戲，連對重新計算
+  updateStarBank();
 
   document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
   const activeScreen = document.getElementById("screen-" + name);
@@ -293,16 +287,215 @@ function randomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
+// ========== 星星存錢筒 · 連對 · 貼紙簿 ==========
+
+const TOTAL_STARS_KEY = "bpmf_total_stars";
+const STARS_PER_STICKER = 10;
+const STICKERS = [
+  "🐣", "🐶", "🐱", "🐰", "🐼", "🦊", "🐯", "🦁", "🐸", "🐵",
+  "🐧", "🐢", "🐙", "🦄", "🐳", "🦋", "🐞", "🦖", "🐲", "🦩",
+  "🍓", "🍩", "🍦", "🧁", "🍭", "🎈", "🎁", "🚀", "🚂", "🚁",
+  "🏰", "🎠", "🎡", "🌈", "⭐", "🌙", "🪐", "👑", "💎", "🏆"
+];
+const PRAISES_TEXT = ["答對了！🎉", "好厲害！🌟", "太棒了！👏", "你好棒！💪", "完全正確！✨", "超級棒！🏅"];
+
+let _streak = 0;
+
+function loadTotalStars() {
+  try { return parseInt(localStorage.getItem(TOTAL_STARS_KEY) || "0", 10) || 0; }
+  catch (e) { return 0; }
+}
+
+function saveTotalStars(n) {
+  try { localStorage.setItem(TOTAL_STARS_KEY, String(n)); } catch (e) {}
+}
+
+let _totalStars = loadTotalStars();
+
+function unlockedStickerCount() {
+  return Math.min(STICKERS.length, Math.floor(_totalStars / STARS_PER_STICKER));
+}
+
+// 每答對一次呼叫：加一顆星、累計連對、必要時發新貼紙
+function rewardCorrect() {
+  const before = unlockedStickerCount();
+  _totalStars++;
+  saveTotalStars(_totalStars);
+  _streak++;
+  updateStarBank();
+  updateStreakBadge();
+  if (unlockedStickerCount() > before) {
+    setTimeout(() => showStickerUnlock(STICKERS[unlockedStickerCount() - 1]), 700);
+  }
+}
+
+// 答錯時呼叫：連對歸零
+function breakStreak() {
+  _streak = 0;
+  updateStreakBadge();
+}
+
+function updateStarBank() {
+  const el = document.getElementById("starBankCount");
+  if (el) el.textContent = _totalStars;
+  const st = document.getElementById("stickerBankCount");
+  if (st) st.textContent = `${unlockedStickerCount()} / ${STICKERS.length}`;
+  const bar = document.getElementById("stickerProgressFill");
+  if (bar) {
+    const done = unlockedStickerCount() >= STICKERS.length;
+    bar.style.width = done ? "100%" : `${(_totalStars % STARS_PER_STICKER) / STARS_PER_STICKER * 100}%`;
+  }
+}
+
+function updateStreakBadge() {
+  const badge = document.getElementById("streakBadge");
+  if (!badge) return;
+  if (_streak >= 3) {
+    badge.textContent = `🔥 連對 ${_streak}`;
+    badge.classList.add("show");
+    replayAnimation(badge, "streak-pop", 500);
+  } else {
+    badge.classList.remove("show");
+  }
+}
+
+function showStickerUnlock(sticker) {
+  const box = document.getElementById("stickerUnlock");
+  if (!box) return;
+  document.getElementById("stickerUnlockEmoji").textContent = sticker;
+  box.classList.add("show");
+  burstAtViewportCenter(true, 26);
+  speak("哇！你得到一張新貼紙！");
+}
+
+function closeStickerUnlock() {
+  document.getElementById("stickerUnlock").classList.remove("show");
+}
+
+function openStickerBook() {
+  const grid = document.getElementById("stickerGrid");
+  const count = unlockedStickerCount();
+  grid.innerHTML = STICKERS.map((s, i) =>
+    i < count
+      ? `<div class="sticker-slot got">${s}</div>`
+      : `<div class="sticker-slot locked">❓</div>`
+  ).join("");
+  const left = STARS_PER_STICKER - (_totalStars % STARS_PER_STICKER);
+  document.getElementById("stickerBookHint").textContent = count >= STICKERS.length
+    ? "全部貼紙都收集到了！你是注音大師！"
+    : `再拿 ${left} 顆星星，就能得到下一張貼紙！`;
+  document.getElementById("stickerBook").classList.add("show");
+}
+
+function closeStickerBook() {
+  document.getElementById("stickerBook").classList.remove("show");
+}
+
 function showFeedback(good) {
   const banner = document.getElementById("feedbackBanner");
-  banner.textContent = good ? "答對了！🎉" : "再試一次 😊";
+  banner.textContent = good ? PRAISES_TEXT[randomInt(PRAISES_TEXT.length)] : "再試一次 😊";
   banner.className = "feedback-banner show " + (good ? "good" : "bad");
   burstAtViewportCenter(good);
-  if (good) playCorrectDingDing();
-  else speak("再試一次");
+  if (good) {
+    playCorrectDingDing();
+    rewardCorrect();
+  } else {
+    breakStreak();
+    speak("再試一次");
+  }
   setTimeout(() => {
     banner.classList.remove("show");
   }, 900);
+}
+
+// ========== 選項工具：容易混淆的注音 ==========
+
+// 孩子最常搞混的音：干擾選項優先從同一組挑，練到真正的聽辨
+const CONFUSABLE_GROUPS = [
+  ["ㄅ", "ㄆ", "ㄉ"], ["ㄉ", "ㄊ"], ["ㄍ", "ㄎ", "ㄉ"], ["ㄋ", "ㄌ"], ["ㄈ", "ㄏ"],
+  ["ㄐ", "ㄑ", "ㄒ"], ["ㄓ", "ㄗ"], ["ㄔ", "ㄘ"], ["ㄕ", "ㄙ"], ["ㄖ", "ㄌ"],
+  ["ㄣ", "ㄥ"], ["ㄢ", "ㄤ"], ["ㄛ", "ㄜ", "ㄡ"], ["ㄞ", "ㄟ"], ["ㄧ", "ㄩ"], ["ㄨ", "ㄛ"]
+];
+
+function confusablesOf(symbol) {
+  const set = new Set();
+  CONFUSABLE_GROUPS.forEach(g => { if (g.includes(symbol)) g.forEach(s => set.add(s)); });
+  set.delete(symbol);
+  return [...set];
+}
+
+// 從 pool（符號字串陣列）挑 n 個干擾符號，至少一個是易混淆音（如果有）
+function pickDistractorSymbols(target, n, pool = BOPOMOFO_SYMBOLS.map(s => s.symbol)) {
+  const candidates = pool.filter(s => s !== target);
+  const tricky = shuffle(confusablesOf(target).filter(s => candidates.includes(s)));
+  const picked = tricky.slice(0, Math.min(tricky.length, Math.max(1, Math.floor(n / 2))));
+  shuffle(candidates).forEach(s => { if (picked.length < n && !picked.includes(s)) picked.push(s); });
+  return picked;
+}
+
+// 字頭有詞語可以出題的符號
+function symbolsWithWords() {
+  return BOPOMOFO_SYMBOLS.filter(s => (WORDS_BY_HEAD[s.symbol] || []).length > 0);
+}
+
+function symbolsWithListenWords() {
+  return BOPOMOFO_SYMBOLS.filter(s => (LISTEN_BY_HEAD[s.symbol] || []).length > 0);
+}
+
+function randomListenWordForHead(symbol) {
+  const list = LISTEN_BY_HEAD[symbol] || [];
+  return list.length ? list[randomInt(list.length)] : null;
+}
+
+function randomWordForHead(symbol) {
+  const list = WORDS_BY_HEAD[symbol] || [];
+  return list.length ? list[randomInt(list.length)] : null;
+}
+
+// 挑 n 個拼法、圖案都和 target 不同的音節（避免兩個選項都對）
+function pickOtherCombos(target, n, pool = PINYIN_COMBOS) {
+  const usedSpelling = new Set([comboSpelling(target)]);
+  const usedEmoji = new Set([target.emoji]);
+  const out = [];
+  shuffle(pool).forEach(c => {
+    if (out.length >= n) return;
+    const sp = comboSpelling(c);
+    if (usedSpelling.has(sp) || usedEmoji.has(c.emoji)) return;
+    usedSpelling.add(sp);
+    usedEmoji.add(c.emoji);
+    out.push(c);
+  });
+  return out;
+}
+
+// 「差一點點」的錯誤拼法：同音不同調、易混聲母、同聲母不同韻……
+function nearMissSpellings(combo, n) {
+  const correct = comboSpelling(combo);
+  const p = comboParts(combo);
+  const out = new Set();
+  ["", "ˊ", "ˇ", "ˋ"].forEach(t => {
+    if (t !== p.tone) out.add(p.initial + p.finalBody + t);
+  });
+  if (p.initial) {
+    confusablesOf(p.initial)
+      .filter(s => BPMF_INITIALS.includes(s))
+      .forEach(s => out.add(s + p.finalBody + p.tone));
+  }
+  PINYIN_COMBOS.forEach(c => {
+    const q = comboParts(c);
+    if (q.initial === p.initial || q.finalBody === p.finalBody) out.add(q.full);
+  });
+  out.delete(correct);
+  const list = shuffle([...out]);
+  // 聲調干擾最多一個，其他用聲母韻母的錯音，比較像真正的「錯音」
+  const toneOnly = list.filter(v => v.replace(GAME_TONE_RE_GLOBAL, "") === p.initial + p.finalBody);
+  const others = list.filter(v => !toneOnly.includes(v));
+  const picked = [...toneOnly.slice(0, 1), ...others].slice(0, n);
+  if (picked.length < n) {
+    shuffle(PINYIN_COMBOS.map(comboSpelling))
+      .forEach(v => { if (picked.length < n && v !== correct && !picked.includes(v)) picked.push(v); });
+  }
+  return picked;
 }
 
 function replayAnimation(el, className, duration = 700) {
@@ -397,29 +590,50 @@ function setFcLocked(locked) {
   if (locked) fcSpeakTimer = setTimeout(() => setFcLocked(false), 6000);
 }
 
+let fcExample = null;  // 目前顯示的例詞 { word, emoji }
+
+function showFlashcardExample(example) {
+  fcExample = example;
+  document.getElementById("fcEmoji").textContent = example.emoji;
+  document.getElementById("fcWord").textContent = example.word;
+}
+
 function renderFlashcard() {
   const item = BOPOMOFO_SYMBOLS[fcIndex];
   const card = document.getElementById("flashcard");
   document.getElementById("fcSymbol").textContent = item.symbol;
-  document.getElementById("fcEmoji").textContent = item.emoji;
-  document.getElementById("fcWord").textContent = item.word;
+  showFlashcardExample({ word: item.word, emoji: item.emoji });
+  const more = (WORDS_BY_HEAD[item.symbol] || []).length;
+  document.getElementById("fcMore").textContent = more > 1 ? `👆 點圖片換例子（${more} 個）` : "";
   document.getElementById("fcProgress").textContent =
     (fcIndex + 1) + " / " + BOPOMOFO_SYMBOLS.length;
   replayAnimation(card, "flashcard-swap", 760);
-  // 鎖住箭頭，唔完才解鎖
+  // 鎖住箭頭，念完才解鎖
   setFcLocked(true);
+  speakCurrentFlashcard();
+}
+
+// 點圖片：換一個同字頭的例詞
+function nextFlashcardExample(event) {
+  if (event) event.stopPropagation();
+  const item = BOPOMOFO_SYMBOLS[fcIndex];
+  const list = (WORDS_BY_HEAD[item.symbol] || []).filter(w => w.word !== fcExample.word);
+  if (!list.length) { speakCurrentFlashcard(); return; }
+  showFlashcardExample(list[randomInt(list.length)]);
+  replayAnimation(document.getElementById("fcEmoji"), "emoji-bounce", 600);
   speakCurrentFlashcard();
 }
 
 function speakCurrentFlashcard() {
   const item = BOPOMOFO_SYMBOLS[fcIndex];
-  const myGen = _fcGen;  // 捕捕當前世代
-  // 先唔符號，檢查世代後唔例字，避免切畫面後舊 callback 干擾
+  const word = fcExample ? fcExample.word : item.word;
+  const myGen = ++_fcGen;  // 重新點擊時讓上一輪的 callback 作廢
+  // 先念符號，再念例詞
   speak(item.symbol, () => {
-    if (_fcGen !== myGen) return;       // 已切畫面，中止
+    if (_fcGen !== myGen) return;
     setTimeout(() => {
       if (_fcGen !== myGen) return;
-      speak(item.word, () => {
+      speak(word, () => {
         if (_fcGen === myGen) setFcLocked(false);
       });
     }, 200);
@@ -445,11 +659,14 @@ let matchLocked = false;
 
 function startMatchRound() {
   matchLocked = false;
-  matchTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+  // 不要連續兩題同一個音
+  const prev = matchTarget;
+  do {
+    matchTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+  } while (prev && matchTarget.symbol === prev.symbol);
 
-  const others = shuffle(
-    BOPOMOFO_SYMBOLS.filter(s => s.symbol !== matchTarget.symbol)
-  ).slice(0, 3);
+  const others = pickDistractorSymbols(matchTarget.symbol, 3)
+    .map(sym => BOPOMOFO_SYMBOLS.find(s => s.symbol === sym));
   const choices = shuffle([matchTarget, ...others]);
 
   const grid = document.getElementById("matchChoices");
@@ -483,6 +700,7 @@ function handleMatchChoice(choice, btn) {
   } else {
     btn.classList.add("wrong");
     burstAtElement(btn, false, 12);
+    breakStreak();
     // 說「這個是ㄉ，不是ㄅ」，念完才讓 banner 消失
     const banner = document.getElementById("feedbackBanner");
     banner.textContent = "再試一次 😊";
@@ -499,7 +717,7 @@ function handleMatchChoice(choice, btn) {
 let pinyinIndex = 0;
 
 function renderPinyin() {
-  const combo = PINYIN_COMBOS[pinyinIndex];
+  const combo = SPLIT_COMBOS[pinyinIndex];
   document.getElementById("pinyinInitial").textContent = combo.initial;
 
   // 把音調符號從韻母拆開，各自顯示
@@ -512,18 +730,18 @@ function renderPinyin() {
     (toneChar ? `<span class="slot-tone">${toneChar}</span>` : '');
 
   document.getElementById("pinyinProgress").textContent =
-    (pinyinIndex + 1) + " / " + PINYIN_COMBOS.length;
+    (pinyinIndex + 1) + " / " + SPLIT_COMBOS.length;
   document.getElementById("pinyinResult").innerHTML = "";
   replayAnimation(document.querySelector("#screen-pinyin .pinyin-row"), "pinyin-row-swap", 760);
 }
 
 function speakPart(which) {
-  const combo = PINYIN_COMBOS[pinyinIndex];
+  const combo = SPLIT_COMBOS[pinyinIndex];
   speak(which === "initial" ? combo.initial : combo.final);
 }
 
 function combinePinyin() {
-  const combo = PINYIN_COMBOS[pinyinIndex];
+  const combo = SPLIT_COMBOS[pinyinIndex];
   speak(combo.word);
   document.getElementById("pinyinResult").innerHTML =
     '<div class="word-emoji">' + combo.emoji + '</div>' +
@@ -533,12 +751,12 @@ function combinePinyin() {
 }
 
 function nextPinyin() {
-  pinyinIndex = (pinyinIndex + 1) % PINYIN_COMBOS.length;
+  pinyinIndex = (pinyinIndex + 1) % SPLIT_COMBOS.length;
   renderPinyin();
 }
 
 function prevPinyin() {
-  pinyinIndex = (pinyinIndex - 1 + PINYIN_COMBOS.length) % PINYIN_COMBOS.length;
+  pinyinIndex = (pinyinIndex - 1 + SPLIT_COMBOS.length) % SPLIT_COMBOS.length;
   renderPinyin();
 }
 
@@ -602,6 +820,51 @@ function updateQuizHeader() {
   document.getElementById("quizStars").textContent = "⭐️ " + quizScore;
 }
 
+// 10 種題型輪流出現，同一種不會連續出兩次
+const QUIZ_TYPES = [
+  "hearSymbol",  // 聽符號音 → 選符號
+  "seeSymbol",   // 看符號 → 選字頭相同的圖
+  "hearWord",    // 聽詞語 → 選字頭（含沒有圖的聽力詞）
+  "seePinyin",   // 看拼音 → 選圖
+  "hearPinyin",  // 聽字 → 選拼音
+  "hearTone",    // 聽字 → 選聲調
+  "hearRime",    // 聽字 → 選韻（ㄢ/ㄤ、ㄣ/ㄥ 等）
+  "oddOne",      // 四張圖，找字頭不一樣的
+  "combine",     // 看聲母＋韻 → 拼起來是哪張圖
+  "sameHead"     // 找和題目圖字頭一樣的圖
+];
+let quizLastType = null;
+
+function quizAsk(text) {
+  return `<div class="quiz-ask">${text}</div>`;
+}
+
+function quizEmojiButton(wordObj, isCorrect, showWord = true) {
+  const btn = document.createElement("button");
+  btn.className = "choice-card emoji-choice";
+  btn.innerHTML = `<span class="emoji-choice-pic">${wordObj.emoji}</span>` +
+    (showWord ? `<span class="emoji-choice-word">${wordObj.word}</span>` : "");
+  btn.onclick = () => handleQuizAnswer(isCorrect, btn);
+  return btn;
+}
+
+function quizSyllableButton(spelling, isCorrect, size = 65) {
+  const btn = document.createElement("button");
+  btn.className = "choice-card";
+  btn.style.padding = "5px";
+  btn.innerHTML = renderPinyinHtml(spelling, size);
+  btn.onclick = () => handleQuizAnswer(isCorrect, btn);
+  return btn;
+}
+
+function quizSymbolButton(symbol, isCorrect) {
+  const btn = document.createElement("button");
+  btn.className = "choice-card";
+  btn.textContent = symbol;
+  btn.onclick = () => handleQuizAnswer(isCorrect, btn);
+  return btn;
+}
+
 function nextQuizQuestion() {
   if (quizQuestionNum >= QUIZ_LENGTH) {
     finishQuiz();
@@ -610,113 +873,135 @@ function nextQuizQuestion() {
   quizLocked = false;
   updateQuizHeader();
 
+  let type;
+  do { type = QUIZ_TYPES[randomInt(QUIZ_TYPES.length)]; } while (type === quizLastType);
+  quizLastType = type;
+
   const area = document.getElementById("quizQuestionArea");
-  const rand = Math.random();
-  let type = "hearSymbol";
-  if (rand < 0.2) type = "hearSymbol";
-  else if (rand < 0.4) type = "seeSymbol";
-  else if (rand < 0.6) type = "hearWord";
-  else if (rand < 0.8) type = "seePinyin";
-  else type = "hearPinyin";
+  const speakerBox = '<div class="prompt-box"><button class="speaker-btn" id="quizSpeaker">🔊</button></div>';
+  const grid = () => document.getElementById("quizChoices");
+  const gridHtml = '<div class="choices-grid" id="quizChoices"></div>';
+  const setSpeaker = text => {
+    document.getElementById("quizSpeaker").onclick = () => speak(text);
+    speak(text);
+  };
 
-  if (type === "hearSymbol" || type === "seeSymbol" || type === "hearWord") {
-    const target = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
-    const others = shuffle(
-      BOPOMOFO_SYMBOLS.filter(s => s.symbol !== target.symbol)
-    ).slice(0, 3);
+  if (type === "hearSymbol") {
+    const target = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)].symbol;
+    area.innerHTML = quizAsk("聽一聽，是哪個注音？") + speakerBox + gridHtml;
+    shuffle([target, ...pickDistractorSymbols(target, 3)])
+      .forEach(sym => grid().appendChild(quizSymbolButton(sym, sym === target)));
+    setSpeaker(target);
 
-    if (type === "hearSymbol") {
-      const choices = shuffle([target, ...others]);
-      area.innerHTML =
-        '<div class="prompt-box"><button class="speaker-btn" id="quizSpeaker">🔊</button></div>' +
-        '<div class="choices-grid" id="quizChoices"></div>';
-      document.getElementById("quizSpeaker").onclick = () => speak(target.symbol);
-      const grid = document.getElementById("quizChoices");
-      choices.forEach(choice => {
-        const btn = document.createElement("button");
-        btn.className = "choice-card";
-        btn.textContent = choice.symbol;
-        btn.onclick = () => handleQuizAnswer(choice.symbol === target.symbol, btn);
-        grid.appendChild(btn);
-      });
-      speak(target.symbol);
-    } else if (type === "seeSymbol") {
-      const choices = shuffle([target, ...others]);
-      const targetWordObj = getWordForSymbol(target);
-      area.innerHTML =
-        '<div class="prompt-box"><div class="flashcard" style="cursor:default;height:220px;width:min(300px,70vw)">' +
-        '<div class="symbol-big" style="font-size:140px">' + target.symbol + '</div></div></div>' +
-        '<div class="choices-grid" id="quizChoices"></div>';
-      const grid = document.getElementById("quizChoices");
-      choices.forEach(choice => {
-        const btn = document.createElement("button");
-        btn.className = "choice-card";
-        btn.style.fontSize = "60px";
-        const choiceWordObj = choice.symbol === target.symbol ? targetWordObj : getWordForSymbol(choice);
-        btn.textContent = choiceWordObj.emoji;
-        btn.onclick = () => handleQuizAnswer(choice.symbol === target.symbol, btn);
-        grid.appendChild(btn);
-      });
-    } else {
-      // hearWord: Hear a vocabulary word, choose the correct symbol
-      const choices = shuffle([target, ...others]);
-      const targetWordObj = getWordForSymbol(target);
-      area.innerHTML =
-        '<div class="prompt-box"><button class="speaker-btn" id="quizSpeaker">🔊</button></div>' +
-        '<div class="choices-grid" id="quizChoices"></div>';
-      document.getElementById("quizSpeaker").onclick = () => speak(targetWordObj.word);
-      const grid = document.getElementById("quizChoices");
-      choices.forEach(choice => {
-        const btn = document.createElement("button");
-        btn.className = "choice-card";
-        btn.textContent = choice.symbol;
-        btn.onclick = () => handleQuizAnswer(choice.symbol === target.symbol, btn);
-        grid.appendChild(btn);
-      });
-      speak(targetWordObj.word);
-    }
+  } else if (type === "seeSymbol") {
+    const pool = symbolsWithWords();
+    const target = pool[randomInt(pool.length)].symbol;
+    const others = pickDistractorSymbols(target, 3, pool.map(s => s.symbol));
+    area.innerHTML = quizAsk("哪一個的第一個音是它？") +
+      '<div class="prompt-box"><div class="flashcard quiz-symbol-card" id="quizSymbolCard">' +
+      '<div class="symbol-big" style="font-size:140px">' + target + '</div></div></div>' + gridHtml;
+    document.getElementById("quizSymbolCard").onclick = () => speak(target);
+    shuffle([target, ...others]).forEach(sym =>
+      grid().appendChild(quizEmojiButton(randomWordForHead(sym), sym === target)));
+    speak(target);
+
+  } else if (type === "hearWord") {
+    const pool = BOPOMOFO_SYMBOLS.filter(s => (LISTEN_BY_HEAD[s.symbol] || []).length);
+    const target = pool[randomInt(pool.length)].symbol;
+    const list = LISTEN_BY_HEAD[target];
+    const wordObj = list[randomInt(list.length)];
+    area.innerHTML = quizAsk("聽詞語，第一個音是哪個注音？") + speakerBox + gridHtml;
+    shuffle([target, ...pickDistractorSymbols(target, 3, pool.map(s => s.symbol))])
+      .forEach(sym => grid().appendChild(quizSymbolButton(sym, sym === target)));
+    setSpeaker(wordObj.word);
+
+  } else if (type === "seePinyin") {
+    const target = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+    area.innerHTML = quizAsk("念念看，是哪一張圖？") +
+      '<div class="prompt-box"><div class="flashcard quiz-symbol-card">' +
+      renderPinyinHtml(comboSpelling(target), 130) + '</div></div>' + gridHtml;
+    shuffle([target, ...pickOtherCombos(target, 3)])
+      .forEach(c => grid().appendChild(quizEmojiButton(c, c === target, false)));
+
+  } else if (type === "hearPinyin") {
+    const target = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+    const correct = comboSpelling(target);
+    const near = nearMissSpellings(target, 1);
+    const others = pickOtherCombos(target, 3).map(comboSpelling).filter(v => !near.includes(v)).slice(0, 2);
+    area.innerHTML = quizAsk("聽一聽，注音怎麼拼？") + speakerBox + gridHtml;
+    shuffle([correct, ...near, ...others])
+      .forEach(sp => grid().appendChild(quizSyllableButton(sp, sp === correct)));
+    setSpeaker(target.word);
+
+  } else if (type === "hearTone") {
+    // 單字念起來聲調最清楚
+    const target = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+    const p = comboParts(target);
+    area.innerHTML = quizAsk(`聽一聽「${target.emoji}」是第幾聲？`) + speakerBox + gridHtml;
+    ["", "ˊ", "ˇ", "ˋ"].forEach(t =>
+      grid().appendChild(quizSyllableButton(p.initial + p.finalBody + t, t === p.tone, 60)));
+    setSpeaker(target.word);
+
+  } else if (type === "hearRime") {
+    const pool = PINYIN_COMBOS.filter(c => comboParts(c).finalBody.length);
+    const target = pool[randomInt(pool.length)];
+    const rime = comboParts(target).finalBody;
+    const allRimes = uniqueValues(pool.map(c => comboParts(c).finalBody));
+    // 易混淆的韻（ㄢ↔ㄤ、ㄣ↔ㄥ、ㄧㄢ↔ㄧㄤ…）優先當干擾
+    const swap = { "ㄢ": "ㄤ", "ㄤ": "ㄢ", "ㄣ": "ㄥ", "ㄥ": "ㄣ", "ㄞ": "ㄟ", "ㄟ": "ㄞ", "ㄛ": "ㄜ", "ㄜ": "ㄛ" };
+    const last = rime.slice(-1);
+    const tricky = swap[last] ? [rime.slice(0, -1) + swap[last]] : [];
+    const others = uniqueValues([...tricky.filter(r => allRimes.includes(r)), ...shuffle(allRimes)])
+      .filter(r => r !== rime).slice(0, 3);
+    area.innerHTML = quizAsk(`「${target.emoji} ${target.word}」的韻是哪一個？`) + speakerBox + gridHtml;
+    shuffle([rime, ...others]).forEach(r => grid().appendChild(quizSyllableButton(r, r === rime, 60)));
+    setSpeaker(target.word);
+
+  } else if (type === "oddOne") {
+    const heads = Object.keys(WORDS_BY_HEAD).filter(h => WORDS_BY_HEAD[h].length >= 3);
+    const same = heads[randomInt(heads.length)];
+    const odd = pickDistractorSymbols(same, 1, Object.keys(WORDS_BY_HEAD))[0];
+    const sameWords = shuffle(WORDS_BY_HEAD[same]).slice(0, 3);
+    const oddWord = randomWordForHead(odd);
+    area.innerHTML = quizAsk("哪一個的第一個音不一樣？<small>點一下聽，再點一下作答</small>") + gridHtml;
+    shuffle([...sameWords, oddWord]).forEach(w => {
+      const btn = quizEmojiButton(w, w === oddWord);
+      const answer = btn.onclick;
+      // 第一次點只念出來，再點一次才作答，讓孩子可以先聽
+      btn.onclick = () => {
+        if (btn.dataset.heard) { answer(); return; }
+        grid().querySelectorAll(".emoji-choice").forEach(b => { delete b.dataset.heard; b.classList.remove("heard"); });
+        btn.dataset.heard = "1";
+        btn.classList.add("heard");
+        speak(w.word);
+      };
+      grid().appendChild(btn);
+    });
+    speak("哪一個的第一個音不一樣？");
+
+  } else if (type === "combine") {
+    const target = SPLIT_COMBOS[randomInt(SPLIT_COMBOS.length)];
+    area.innerHTML = quizAsk("拼起來是哪一個？") +
+      '<div class="prompt-box quiz-combine">' +
+      `<div class="pinyin-slot quiz-slot">${target.initial}</div><span class="plus-sign">➕</span>` +
+      `<div class="pinyin-slot quiz-slot">${renderPinyinHtml(target.final, 90)}</div></div>` + gridHtml;
+    shuffle([target, ...pickOtherCombos(target, 3, SPLIT_COMBOS)])
+      .forEach(c => grid().appendChild(quizEmojiButton(c, c === target, false)));
+    speakSequence([target.initial, target.final], 250);
+
   } else {
-    // seePinyin or hearPinyin (testing 2-character pinyin combinations)
-    const targetPinyin = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
-    const othersPinyin = shuffle(
-      PINYIN_COMBOS.filter(c => c.word !== targetPinyin.word)
-    ).slice(0, 3);
-    const choices = shuffle([targetPinyin, ...othersPinyin]);
-    
-    if (type === "seePinyin") {
-      area.innerHTML =
-        '<div class="prompt-box"><div class="flashcard" style="cursor:default;height:220px;width:min(300px,70vw);display:flex;align-items:center;justify-content:center;">' +
-        renderPinyinHtml(targetPinyin.initial + targetPinyin.final, 130) +
-        '</div></div>' +
-        '<div class="choices-grid" id="quizChoices"></div>';
-      
-      const grid = document.getElementById("quizChoices");
-      choices.forEach(choice => {
-        const btn = document.createElement("button");
-        btn.className = "choice-card";
-        btn.style.fontSize = "60px";
-        btn.textContent = choice.emoji;
-        btn.onclick = () => handleQuizAnswer(choice.word === targetPinyin.word, btn);
-        grid.appendChild(btn);
-      });
-    } else {
-      // hearPinyin
-      area.innerHTML =
-        '<div class="prompt-box"><button class="speaker-btn" id="quizSpeaker">🔊</button></div>' +
-        '<div class="choices-grid" id="quizChoices"></div>';
-      document.getElementById("quizSpeaker").onclick = () => speak(targetPinyin.word);
-      
-      const grid = document.getElementById("quizChoices");
-      choices.forEach(choice => {
-        const btn = document.createElement("button");
-        btn.className = "choice-card";
-        btn.style.padding = "5px";
-        btn.innerHTML = renderPinyinHtml(choice.initial + choice.final, 65);
-        btn.onclick = () => handleQuizAnswer(choice.word === targetPinyin.word, btn);
-        grid.appendChild(btn);
-      });
-      speak(targetPinyin.word);
-    }
+    // sameHead
+    const pool = symbolsWithWords().filter(s => WORDS_BY_HEAD[s.symbol].length >= 2);
+    const head = pool[randomInt(pool.length)].symbol;
+    const [promptWord, answerWord] = shuffle(WORDS_BY_HEAD[head]).slice(0, 2);
+    const others = pickDistractorSymbols(head, 3, symbolsWithWords().map(s => s.symbol)).map(randomWordForHead);
+    area.innerHTML = quizAsk("哪一個的第一個音和它一樣？") +
+      '<div class="prompt-box"><div class="flashcard quiz-symbol-card" id="quizPromptWord">' +
+      `<div class="word-emoji" style="font-size:80px">${promptWord.emoji}</div><div class="word-text">${promptWord.word}</div></div></div>` +
+      gridHtml;
+    document.getElementById("quizPromptWord").onclick = () => speak(promptWord.word);
+    shuffle([answerWord, ...others]).forEach(w => grid().appendChild(quizEmojiButton(w, w === answerWord)));
+    speak(promptWord.word);
   }
 }
 
@@ -825,7 +1110,10 @@ function startMoleGame() {
 }
 
 function pickMoleTarget() {
-  moleTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+  const prev = moleTarget;
+  do {
+    moleTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+  } while (prev && moleTarget.symbol === prev.symbol);
 }
 
 function replayMoleSound() {
@@ -846,18 +1134,19 @@ function scheduleMoleBatch() {
     popMoleBatch();
     // 每次新一批地鼠出現就重播目標音
     setTimeout(() => { if (moleRunning) speak(moleTarget.symbol); }, 100);
-    molePopTimeout = setTimeout(() => scheduleMoleBatch(), 3500);
+    // 打得越多，地鼠越快縮回去（最快 2.2 秒）
+    const stay = Math.max(2200, 3600 - moleScore * 90);
+    molePopTimeout = setTimeout(() => scheduleMoleBatch(), stay);
   }, 350);
 }
 
 function popMoleBatch() {
   const holes = document.querySelectorAll('.mole-hole');
-  const count = 3 + randomInt(2); // 3 或 4 個
+  // 分數越高，冒出來的地鼠越多（3 → 5 隻）
+  const count = Math.min(5, 3 + Math.floor(moleScore / 6) + randomInt(2));
   const indices = shuffle([...Array(MOLE_COUNT).keys()]).slice(0, count);
 
-  const others = shuffle(
-    BOPOMOFO_SYMBOLS.filter(s => s.symbol !== moleTarget.symbol)
-  ).slice(0, count - 1).map(s => s.symbol);
+  const others = pickDistractorSymbols(moleTarget.symbol, count - 1);
 
   const symbols = shuffle([moleTarget.symbol, ...others]);
 
@@ -885,10 +1174,13 @@ function handleMoleClick(idx) {
     hole.classList.add('whacked');
     setTimeout(() => hole.classList.remove('whacked'), 300);
     showMoleReward(hole);
+    playCorrectDingDing();
+    rewardCorrect();
     pickMoleTarget();
     scheduleMoleBatch();
   } else {
-    // 打錯：暴示懲罰 + 暫停 3 秒（地鼠全部下去，停止新出現）
+    // 打錯：顯示懲罰 + 暫停 3 秒（地鼠全部下去，停止新出現）
+    breakStreak();
     showMolePenalty(hole);
     hole.classList.add('wrong-shake');
     setTimeout(() => hole.classList.remove('wrong-shake'), 400);
@@ -968,13 +1260,6 @@ function showMolePenalty(holeEl) {
 let whTarget = null;
 let whLocked = false;
 
-function getWordForSymbol(item) {
-  const extras1 = (typeof INITIAL_WORD_EXTRAS !== 'undefined' && INITIAL_WORD_EXTRAS[item.symbol]) || [];
-  const extras2 = (typeof OTHER_WORD_EXTRAS !== 'undefined' && OTHER_WORD_EXTRAS[item.symbol]) || [];
-  const all = [{ word: item.word, emoji: item.emoji }, ...extras1, ...extras2];
-  return all[randomInt(all.length)];
-}
-
 // 看圖找字頭：用預載語音念中文詞
 let _whAudio = null;
 
@@ -988,16 +1273,26 @@ function playWhWord(word) {
   speechSynthesis.speak(utter);
 }
 
+let whLastWord = null;
+
 function startWordHeadRound() {
   whLocked = false;
-  whTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
-  const chosen = getWordForSymbol(whTarget);
+  // 先挑符號再挑詞，讓每個字頭出現的機會差不多
+  // 有圖的詞和純聽力詞混著出（沒有圖時顯示耳朵，靠聽的）
+  const pool = symbolsWithListenWords();
+  let chosen;
+  do {
+    whTarget = pool[randomInt(pool.length)];
+    chosen = randomListenWordForHead(whTarget.symbol);
+  } while (chosen.word === whLastWord);
+  whLastWord = chosen.word;
 
-  document.getElementById('whEmoji').textContent = chosen.emoji;
+  document.getElementById('whEmoji').textContent = chosen.emoji || '👂';
   document.getElementById('whWord').textContent  = chosen.word;
   replayAnimation(document.querySelector("#screen-wordhead .flashcard"), "flashcard-swap", 760);
 
-  const others = shuffle(BOPOMOFO_SYMBOLS.filter(s => s.symbol !== whTarget.symbol)).slice(0, 3);
+  const others = pickDistractorSymbols(whTarget.symbol, 3)
+    .map(sym => BOPOMOFO_SYMBOLS.find(s => s.symbol === sym));
   const choices = shuffle([whTarget, ...others]);
 
   const grid = document.getElementById('whChoices');
@@ -1048,7 +1343,7 @@ const PICTURE_IMAGES = {
   "牛": "images/picture/cow.jpg",
   "樹": "images/picture/tree.jpg"
 };
-const PICTURE_IMAGE_COMBOS = PINYIN_COMBOS.filter(combo => PICTURE_IMAGES[combo.word]);
+let pictureDeck = [];
 let pictureScore = 0;
 let pictureQuestionNum = 0;
 let pictureCombo = null;
@@ -1065,6 +1360,10 @@ function startPictureGame() {
   pictureQuestionNum = 0;
   pictureRunning = true;
   pictureLocked = false;
+  // 每輪 10 題不重複；有實拍照片的字一定會出現，其餘用圖示補滿
+  const photos = shuffle(PINYIN_COMBOS.filter(c => PICTURE_IMAGES[c.word])).slice(0, 4);
+  const rest = shuffle(PINYIN_COMBOS.filter(c => !PICTURE_IMAGES[c.word]));
+  pictureDeck = shuffle([...photos, ...rest.slice(0, PICTURE_LENGTH - photos.length)]);
   document.getElementById('pictureGameover').style.display = 'none';
   nextPictureRound();
 }
@@ -1076,7 +1375,7 @@ function nextPictureRound() {
   }
 
   pictureLocked = false;
-  pictureCombo = PICTURE_IMAGE_COMBOS[randomInt(PICTURE_IMAGE_COMBOS.length)];
+  pictureCombo = pictureDeck[pictureQuestionNum];
 
   document.getElementById('pictureProgress').textContent = `第 ${pictureQuestionNum + 1} / ${PICTURE_LENGTH} 題`;
   document.getElementById('pictureStars').textContent = `⭐ ${pictureScore}`;
@@ -1085,11 +1384,13 @@ function nextPictureRound() {
   resetPictureAnimationState();
 
   const correctSpelling = comboSpelling(pictureCombo);
-  const others = shuffle(PINYIN_COMBOS
+  // 一個「差一點點」的錯音 + 兩個不同的音
+  const near = nearMissSpellings(pictureCombo, 1);
+  const others = pickOtherCombos(pictureCombo, 4)
     .map(comboSpelling)
-    .filter(value => value !== correctSpelling)
-  ).slice(0, 3);
-  const choices = shuffle([correctSpelling, ...others]);
+    .filter(v => !near.includes(v))
+    .slice(0, 2);
+  const choices = shuffle([correctSpelling, ...near, ...others]);
 
   const grid = document.getElementById('pictureChoices');
   grid.innerHTML = '';
@@ -1106,9 +1407,22 @@ function nextPictureRound() {
 
 function renderPicturePhoto(combo) {
   const img = document.getElementById("pictureImage");
+  const big = document.getElementById("pictureEmojiBig");
   if (!img) return;
-  img.src = PICTURE_IMAGES[combo.word];
-  img.alt = combo.word;
+  const photo = PICTURE_IMAGES[combo.word];
+  if (photo) {
+    img.src = photo;
+    img.alt = combo.word;
+    img.style.display = "";
+    if (big) big.style.display = "none";
+  } else {
+    img.removeAttribute("src");
+    img.style.display = "none";
+    if (big) {
+      big.textContent = combo.emoji;
+      big.style.display = "";
+    }
+  }
 }
 
 function replayPictureSound() {
@@ -1152,7 +1466,7 @@ function playCorrectDingDing() {
 
 function showPictureQuickCorrect() {
   const banner = document.getElementById("feedbackBanner");
-  banner.textContent = "燈燈！";
+  banner.textContent = PRAISES_TEXT[randomInt(PRAISES_TEXT.length)];
   banner.className = "feedback-banner show good";
   burstAtViewportCenter(true, 12);
   setTimeout(() => banner.classList.remove("show"), 420);
@@ -1178,6 +1492,7 @@ function handlePictureChoice(value, btn) {
   document.getElementById('pictureStars').textContent = `⭐ ${pictureScore}`;
   showPictureQuickCorrect();
   playCorrectDingDing();
+  rewardCorrect();
 
   setTimeout(() => {
     if (pictureRunning) nextPictureRound();
@@ -1313,7 +1628,7 @@ function nextTrainRound() {
     return;
   }
 
-  trainCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  trainCombo = SPLIT_COMBOS[randomInt(SPLIT_COMBOS.length)];
   trainStep = 0;
   trainLocked = false;
 
@@ -1350,19 +1665,16 @@ function renderTrainChoices() {
 
   let values;
   if (trainStep === 0) {
-    values = buildChoiceValues(
-      parts.initial,
-      BOPOMOFO_SYMBOLS.filter(item => item.category === "initial").map(item => item.symbol),
-      4
-    );
+    values = shuffle([parts.initial, ...pickDistractorSymbols(parts.initial, 3, BPMF_INITIALS.split(""))]);
   } else if (trainStep === 1) {
     values = buildChoiceValues(
       parts.finalBody,
-      PINYIN_COMBOS.map(combo => comboParts(combo).finalBody),
+      [...SPLIT_COMBOS.map(combo => comboParts(combo).finalBody), ...confusablesOf(parts.finalBody)],
       4
     );
   } else {
-    values = buildChoiceValues(parts.tone, GAME_TONE_OPTIONS, 4);
+    // 四個聲調固定順序排好，比較好比較
+    values = ["", "ˊ", "ˇ", "ˋ"];
   }
 
   values.forEach(value => {
@@ -1549,7 +1861,8 @@ function nextMonsterRound() {
   resetMonsterAnimationState();
 
   const correctSpelling = comboSpelling(monsterCombo);
-  const values = buildChoiceValues(correctSpelling, PINYIN_COMBOS.map(comboSpelling), 4);
+  // 錯音獸的陷阱：都是「聽起來很像」的錯音
+  const values = shuffle([correctSpelling, ...nearMissSpellings(monsterCombo, 3)]);
   const grid = document.getElementById("monsterChoices");
   grid.innerHTML = "";
   values.forEach(value => {
@@ -1795,6 +2108,7 @@ function nextIslandRound() {
   document.getElementById("islandWord").textContent = islandCombo.word;
   updateIslandHint();
   renderIslandTower();
+  buildIslandPieceValues();
   renderIslandPieces();
   resetIslandAnimationState();
   speak(islandCombo.word);
@@ -1822,22 +2136,27 @@ function renderIslandTower() {
   `;
 }
 
+let islandPieceValues = [];
+
+function buildIslandPieceValues() {
+  const size = Math.max(6, islandTargetPieces.length + 2);
+  const targets = uniqueValues(islandTargetPieces);
+  // 干擾塊優先用易混淆音，讓拼圖需要真的聽清楚
+  const tricky = targets.flatMap(confusablesOf);
+  const pool = [...tricky, ...shuffle(BOPOMOFO_SYMBOLS.map(item => item.symbol)), "ˊ", "ˇ", "ˋ"];
+  const extras = uniqueValues(pool).filter(v => !targets.includes(v));
+  islandPieceValues = shuffle([...targets, ...extras.slice(0, size - targets.length)]);
+}
+
 function renderIslandPieces() {
-  const pool = [
-    ...BOPOMOFO_SYMBOLS.map(item => item.symbol),
-    "ˊ", "ˇ", "ˋ", "˙"
-  ];
-  const values = buildChoiceValues(
-    islandTargetPieces[0],
-    [...islandTargetPieces, ...shuffle(pool)],
-    Math.max(6, islandTargetPieces.length)
-  );
-  const orderedValues = shuffle(uniqueValues([...islandTargetPieces, ...values]).slice(0, Math.max(6, islandTargetPieces.length)));
   const grid = document.getElementById("islandPieces");
   grid.innerHTML = "";
 
-  orderedValues.forEach(value => {
-    const used = islandSelectedPieces.includes(value);
+  islandPieceValues.forEach(value => {
+    // 同一塊在題目中出現幾次，就要用幾次才算用完
+    const need = islandTargetPieces.filter(v => v === value).length;
+    const usedCount = islandSelectedPieces.filter(v => v === value).length;
+    const used = need > 0 && usedCount >= need;
     const btn = document.createElement("button");
     btn.className = `choice-card island-piece-card${used ? " used" : ""}`;
     btn.innerHTML = renderGameChoiceHtml(value, 68, "game-bopomofo island-piece-bopomofo");
@@ -2041,7 +2360,7 @@ function renderRhythmLanes() {
     const lane = document.createElement("button");
     lane.className = "rhythm-lane waiting";
     lane.innerHTML = `
-      <div class="rhythm-note">${index === rhythmCorrectIndex ? "4" : ""}</div>
+      <div class="rhythm-note">♪</div>
       <div class="rhythm-hit-line"></div>
       <div class="rhythm-lane-label">${renderGameChoiceHtml(value, 56, "game-bopomofo rhythm-bopomofo")}</div>
     `;
@@ -2153,6 +2472,7 @@ function handleRhythmTap(index, lane) {
   updateRhythmHud();
   burstAtElement(lane, true, 14);
   playCorrectDingDing();
+  rewardCorrect();
   rhythmNextTimer = setTimeout(nextRhythmBeat, 680);
 }
 
@@ -2508,12 +2828,22 @@ function moveMazePlayer(dr, dc) {
     return;
   }
 
-  if (cell.type === "target") {
-    document.getElementById("mazeHint").textContent = "順序不對，先聽題目";
+  if (cell.type === "target" || cell.type === "decoy") {
+    if (cell.type === "decoy") mazeCells[nextRow][nextCol] = { type: "path" };
+    mazeLives--;
+    breakStreak();
+    updateMazeHud();
     animateMazeWrong();
-  } else if (cell.type === "decoy") {
-    document.getElementById("mazeHint").textContent = "這不是題目的注音";
-    animateMazeWrong();
+    speakGamePiece(cell.piece);
+    if (mazeLives <= 0) {
+      renderMazeGrid();
+      mazeLocked = true;
+      mazeAdvanceTimer = setTimeout(endMazeGame, 700);
+      return;
+    }
+    document.getElementById("mazeHint").textContent = cell.type === "target"
+      ? "順序不對，先撿前面的注音"
+      : "這不是題目的注音，少一顆愛心";
   }
 
   if (cell.type === "exit" && cell.open) {
@@ -2548,6 +2878,7 @@ function replayMazeSound() {
 function endMazeGame() {
   mazeRunning = false;
   mazeLocked = true;
+  clearTimeout(mazeAdvanceTimer);
   document.getElementById("mazeFinalScore").textContent = mazeScore;
   document.getElementById("mazeGameover").style.display = "flex";
   const msg = mazeScore >= MAZE_LENGTH ? "走完整個迷宮！散開的注音都撿對了！" :
@@ -2589,11 +2920,15 @@ function startMemoryGame() {
   document.getElementById('memoryMoves').textContent   = '翻牌次數：0';
   document.getElementById('memoryMatched').textContent = '配對：0 / ' + MEM_PAIRS;
 
-  const chosen = shuffle(BOPOMOFO_SYMBOLS).slice(0, MEM_PAIRS);
+  // 符號牌 ↔ 字頭是這個符號的圖片牌；避開容易混淆的音同時出現太多
+  const chosen = shuffle(symbolsWithWords()).slice(0, MEM_PAIRS);
   const cards  = [];
   chosen.forEach((item, i) => {
-    cards.push({ matchId: i, type: 'symbol', display: item.symbol, item });
-    cards.push({ matchId: i, type: 'emoji',  display: item.emoji,  item });
+    const w = randomWordForHead(item.symbol);
+    cards.push({ matchId: i, type: 'symbol', display: item.symbol, speakText: item.symbol });
+    cards.push({ matchId: i, type: 'emoji',
+                 display: `<span class="memory-pic">${w.emoji}</span><span class="memory-word">${w.word}</span>`,
+                 speakText: w.word });
   });
 
   const grid = document.getElementById('memoryGrid');
@@ -2615,7 +2950,7 @@ function handleMemoryFlip(el, card) {
   if (el.classList.contains('flipped') || el.classList.contains('matched')) return;
 
   el.classList.add('flipped');
-  speak(card.item.symbol);
+  speak(card.speakText);
   memFlipped.push({ el, card });
 
   if (memFlipped.length === 2) {
@@ -2638,6 +2973,7 @@ function handleMemoryFlip(el, card) {
       }
     } else {
       memLocked = true;
+      breakStreak();
       setTimeout(() => {
         a.el.classList.remove('flipped');
         b.el.classList.remove('flipped');
@@ -2656,11 +2992,18 @@ let toneLocked = false;
 
 function startToneRound() {
   toneLocked = false;
-  toneSet    = TONE_SETS[randomInt(TONE_SETS.length)];
+  const prevSet = toneSet;
+  do {
+    toneSet = TONE_SETS[randomInt(TONE_SETS.length)];
+  } while (toneSet === prevSet);
   toneTarget = toneSet.tones[randomInt(toneSet.tones.length)];
 
   document.getElementById('toneEmoji').textContent = toneTarget.emoji;
-  document.getElementById('toneWord').textContent  = toneTarget.word;
+  // 把要辨識聲調的那個字標出來
+  document.getElementById('toneWord').innerHTML = [...toneTarget.word]
+    .map((ch, i) => i === toneTarget.hl ? `<span class="tone-hl">${ch}</span>` : ch)
+    .join("");
+  replayAnimation(document.querySelector("#screen-tone .flashcard"), "flashcard-swap", 760);
 
   playToneQuestion();
 
@@ -2727,9 +3070,11 @@ function handleToneChoice(tone, btn) {
     banner.className = "feedback-banner show good";
     burstAtViewportCenter(true, 12);
     playCorrectDingDing();
+    rewardCorrect();
     setTimeout(() => banner.classList.remove("show"), 900);
     setTimeout(startToneRound, 1100);
   } else {
+    breakStreak();
     btn.classList.add('wrong');
     banner.textContent = "再試一次 😊";
     banner.className = "feedback-banner show bad";
@@ -2826,7 +3171,10 @@ function startBalloonGame() {
 }
 
 function pickBalloonTarget() {
-  balloonTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+  const prev = balloonTarget;
+  do {
+    balloonTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
+  } while (prev && balloonTarget.symbol === prev.symbol);
 }
 
 function replayBalloonSound() {
@@ -2838,9 +3186,7 @@ function launchBalloons() {
   const container = document.getElementById('balloonContainer');
   container.innerHTML = '';
   
-  const others = shuffle(
-    BOPOMOFO_SYMBOLS.filter(s => s.symbol !== balloonTarget.symbol)
-  ).slice(0, 2).map(s => s.symbol);
+  const others = pickDistractorSymbols(balloonTarget.symbol, 2);
   
   const symbols = shuffle([balloonTarget.symbol, ...others]);
   
@@ -2915,6 +3261,8 @@ function handleBalloonClick(sym, balloonEl) {
       // ── 射中！氣球爆 + 彩帶 ──
       balloonScore++;
       document.getElementById('balloonScore').textContent = balloonScore;
+      playCorrectDingDing();
+      rewardCorrect();
 
       // 分數彈跳
       const scoreEl = document.getElementById('balloonScore');
@@ -2937,6 +3285,7 @@ function handleBalloonClick(sym, balloonEl) {
     } else {
       // ── 射不中！MISS ──
       balloonEl.dataset.hit = '';  // 允許再點
+      breakStreak();
 
       // MISS 文字
       const miss = document.createElement('div');
@@ -3049,7 +3398,12 @@ function startClawGame() {
   initClawControls();
 }
 
+let clawControlsReady = false;
+
 function initClawControls() {
+  // 只綁一次，避免每玩一次就多一組 window 監聽器
+  if (clawControlsReady) return;
+  clawControlsReady = true;
   const btnLeft = document.getElementById('btnClawLeft');
   const btnRight = document.getElementById('btnClawRight');
   const stick = document.getElementById('joystickStick');
@@ -3179,16 +3533,20 @@ function initClawCapsules() {
   let symbols = [];
   
   if (isPinyinRound) {
-    symbols = shuffle(PINYIN_COMBOS).slice(0, 5);
+    // 5 個拼法都不同的音節，才不會有兩個正確答案
+    const first = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+    symbols = [first, ...pickOtherCombos(first, 4)];
   } else {
-    symbols = shuffle(BOPOMOFO_SYMBOLS).slice(0, 5).map(s => {
-      const chosen = getWordForSymbol(s);
-      return {
-        ...s,
-        word: chosen.word,
-        emoji: chosen.emoji
-      };
-    });
+    // 5 個不同字頭，念的詞語字頭就是要夾的符號
+    const pool = symbolsWithListenWords();
+    const first = pool[randomInt(pool.length)];
+    symbols = [first, ...pickDistractorSymbols(first.symbol, 4, pool.map(s => s.symbol))
+      .map(sym => pool.find(s => s.symbol === sym))]
+      .map(s => {
+        const chosen = randomListenWordForHead(s.symbol);
+        return { ...s, word: chosen.word, emoji: chosen.emoji };
+      });
+    symbols = shuffle(symbols);
   }
   
   symbols.forEach((symObj, i) => {
@@ -3308,8 +3666,14 @@ function dropClaw() {
       
       if (caughtIdx !== -1) {
         if (!isCorrect) {
-          // 夾錯了：夾不起來，語音提示錯誤，靜止三秒
+          // 夾錯了：夾不起來，念出夾到的是什麼，靜止三秒
           showFeedback(false);
+          const wrongCap = clawCapsulesData[caughtIdx];
+          setTimeout(() => {
+            if (!clawRunning) return;
+            if (wrongCap.isPinyin) speakSequence(["這是", wrongCap.word, "再聽一次", clawTarget.word], 250);
+            else speakSequence(["這是", wrongCap.symbol, "再聽一次", clawTarget.word], 250);
+          }, 900);
           
           setTimeout(() => {
             // 4. 空爪升起
@@ -3462,9 +3826,9 @@ let spellLocked = false;
 let spellRunning = false;
 
 // 所有題庫用到的韻符池（含聲調），供第二步生成干擾選項
-const SPELL_FINALS = [...new Set(PINYIN_COMBOS.map(c => c.final))];
+const SPELL_FINALS = [...new Set(SPLIT_COMBOS.map(c => c.final))];
 // 所有聲母池，供第一步生成干擾選項
-const SPELL_INITIALS = [...new Set(PINYIN_COMBOS.map(c => c.initial))];
+const SPELL_INITIALS = [...new Set(SPLIT_COMBOS.map(c => c.initial))];
 
 function startSpellGame() {
   spellScore = 0;
@@ -3482,7 +3846,7 @@ function nextSpellRound() {
   }
   spellLocked = false;
   spellStep = 'initial';
-  spellCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  spellCombo = SPLIT_COMBOS[randomInt(SPLIT_COMBOS.length)];
 
   document.getElementById('spellEmoji').textContent = spellCombo.emoji;
   document.getElementById('spellWord').textContent  = spellCombo.word;
@@ -3511,7 +3875,15 @@ function renderSpellChoices(step) {
     pool = SPELL_FINALS;
   }
 
-  const others = shuffle(pool.filter(v => v !== correct)).slice(0, 3);
+  let others;
+  if (step === 'initial') {
+    others = pickDistractorSymbols(correct, 3, pool);
+  } else {
+    // 韻符：放一個「同韻不同調」的陷阱，練聲調
+    const body = correct.replace(GAME_TONE_RE_GLOBAL, "");
+    const sameBody = shuffle(["", "ˊ", "ˇ", "ˋ"].map(t => body + t).filter(v => v !== correct)).slice(0, 1);
+    others = [...sameBody, ...shuffle(pool.filter(v => v !== correct && !sameBody.includes(v))).slice(0, 2)];
+  }
   const choices = shuffle([correct, ...others]);
 
   const grid = document.getElementById('spellChoices');
@@ -3585,3 +3957,4 @@ function stopSpellGame() {
   spellRunning = false;
   spellLocked = false;
 }
+updateStarBank();

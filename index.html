@@ -4,17 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=39">
+<link rel="stylesheet" href="style.css?v=40">
 </head>
 <body>
 
 <button class="home-btn" id="homeBtn" onclick="goHome()">🏠</button>
 
 <div class="feedback-banner" id="feedbackBanner"></div>
+<div class="streak-badge" id="streakBadge"></div>
+
+<!-- 新貼紙 -->
+<div class="sticker-overlay" id="stickerUnlock" onclick="closeStickerUnlock()">
+  <div class="sticker-unlock-box">
+    <div class="sticker-unlock-title">🎉 新貼紙！</div>
+    <div class="sticker-unlock-emoji" id="stickerUnlockEmoji">🐣</div>
+    <button class="big-btn combine-btn" type="button">好耶！</button>
+  </div>
+</div>
+
+<!-- 貼紙簿 -->
+<div class="sticker-overlay" id="stickerBook" onclick="if (event.target === this) closeStickerBook()">
+  <div class="sticker-book-box">
+    <div class="sticker-book-title">📒 我的貼紙簿</div>
+    <div class="sticker-grid" id="stickerGrid"></div>
+    <div class="sticker-book-hint" id="stickerBookHint"></div>
+    <button class="big-btn combine-btn" type="button" onclick="closeStickerBook()">關閉</button>
+  </div>
+</div>
 
 <!-- 首頁 -->
 <div class="screen active" id="screen-home">
   <h1>🎈 注音樂園 🎈</h1>
+  <div class="star-bank">
+    <div class="star-bank-stars">⭐ <span id="starBankCount">0</span></div>
+    <button class="star-bank-book" type="button" onclick="openStickerBook()">
+      📒 貼紙 <span id="stickerBankCount">0 / 40</span>
+      <span class="sticker-progress"><span class="sticker-progress-fill" id="stickerProgressFill"></span></span>
+    </button>
+  </div>
   <div class="menu-grid">
     <button class="menu-card card-1" onclick="showScreen('flashcards')">
       <span class="icon">🀄</span>
@@ -171,8 +198,9 @@
   <h2>認識注音符號</h2>
   <div class="flashcard" id="flashcard" onclick="speakCurrentFlashcard()">
     <div class="symbol-big" id="fcSymbol">ㄅ</div>
-    <div class="word-emoji" id="fcEmoji">👨</div>
+    <div class="word-emoji" id="fcEmoji" onclick="nextFlashcardExample(event)">👨</div>
     <div class="word-text" id="fcWord">爸爸</div>
+    <div class="fc-more" id="fcMore"></div>
   </div>
   <div class="card-nav">
     <button class="nav-arrow" onclick="prevFlashcard()">⬅️</button>
@@ -202,7 +230,7 @@
   <div class="result-box" id="pinyinResult"></div>
   <div class="card-nav">
     <button class="nav-arrow" onclick="prevPinyin()">⬅️</button>
-    <span class="progress-text" id="pinyinProgress">1 / 22</span>
+    <span class="progress-text" id="pinyinProgress"></span>
     <button class="nav-arrow" onclick="nextPinyin()">➡️</button>
   </div>
 </div>
@@ -490,6 +518,7 @@
   <div class="picture-card" onclick="replayPictureSound()">
     <div class="picture-media" id="pictureMedia">
       <img class="picture-photo" id="pictureImage" alt="">
+      <div class="picture-emoji-big" id="pictureEmojiBig" style="display:none"></div>
     </div>
     <div class="picture-word" id="pictureWord"></div>
     <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayPictureSound()">🔊</button>
@@ -535,7 +564,7 @@
   </div>
 </div>
 
-<script src="data.js?v=39"></script>
-<script src="app.js?v=39"></script>
+<script src="data.js?v=40"></script>
+<script src="app.js?v=40"></script>
 </body>
 </html>

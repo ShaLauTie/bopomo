@@ -4882,3 +4882,316 @@ h1, h2 {
   70% { opacity: 1; transform: scale(1.06) translateY(-4px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* ==========================================================
+   v40：星星存錢筒、貼紙簿、連對、題型擴充
+   ========================================================== */
+
+.star-bank {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: -24px 0 22px;
+}
+
+.star-bank-stars,
+.star-bank-book {
+  background: #ffffffd9;
+  border: 4px solid #ffd166;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #5b4636;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.1);
+}
+
+.star-bank-book {
+  border-color: #c4b5fd;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.star-bank-book:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.1); }
+
+.sticker-progress {
+  display: inline-block;
+  width: 70px;
+  height: 12px;
+  border-radius: 999px;
+  background: #ede9fe;
+  overflow: hidden;
+}
+
+.sticker-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #a78bfa, #f472b6);
+  transition: width 0.4s ease;
+}
+
+.streak-badge {
+  position: fixed;
+  top: 22px;
+  right: 18px;
+  z-index: 55;
+  background: linear-gradient(135deg, #ff7b54, #ffb703);
+  color: #fff;
+  font-size: 26px;
+  font-weight: bold;
+  padding: 8px 18px;
+  border-radius: 999px;
+  box-shadow: 0 6px 14px rgba(255,123,84,0.4);
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.streak-badge.show { opacity: 1; transform: scale(1); }
+
+@keyframes streak-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35) rotate(-6deg); }
+  100% { transform: scale(1); }
+}
+
+.streak-badge.streak-pop { animation: streak-pop 0.5s ease; }
+
+.sticker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(91,70,54,0.45);
+  padding: 16px;
+}
+
+.sticker-overlay.show { display: flex; }
+
+.sticker-unlock-box,
+.sticker-book-box {
+  background: #fffaf0;
+  border: 6px solid #ffd166;
+  border-radius: 30px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.sticker-unlock-title,
+.sticker-book-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: #5b4636;
+}
+
+.sticker-unlock-emoji {
+  font-size: 140px;
+  animation: sticker-spin-in 0.8s cubic-bezier(.2,1.6,.4,1);
+}
+
+@keyframes sticker-spin-in {
+  0% { transform: scale(0) rotate(-200deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.sticker-slot {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  font-size: 40px;
+}
+
+.sticker-slot.got { background: #fff; box-shadow: 0 4px 0 rgba(0,0,0,0.08); }
+.sticker-slot.locked { background: #eee6dc; font-size: 26px; opacity: 0.55; }
+
+.sticker-book-hint {
+  font-size: 20px;
+  color: #7c5e48;
+  text-align: center;
+}
+
+/* 字卡：點圖換例子 */
+#fcEmoji { cursor: pointer; }
+.fc-more { font-size: 16px; color: #9a7b63; margin-top: 4px; min-height: 20px; }
+
+@keyframes emoji-bounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3) rotate(8deg); }
+  100% { transform: scale(1); }
+}
+
+.emoji-bounce { animation: emoji-bounce 0.6s ease; }
+
+/* 看圖選注音：沒有照片時的大圖示 */
+.picture-emoji-big { font-size: 140px; line-height: 1; }
+
+/* 聲調：要辨識的那個字 */
+.tone-hl {
+  color: #ff5d8f;
+  background: #fff0f5;
+  border-bottom: 5px solid #ff5d8f;
+  border-radius: 8px;
+  padding: 0 4px;
+}
+
+/* 小測驗新題型 */
+.quiz-ask {
+  font-size: 26px;
+  font-weight: bold;
+  color: #5b4636;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.quiz-ask small {
+  display: block;
+  font-size: 16px;
+  color: #9a7b63;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.quiz-symbol-card {
+  cursor: pointer;
+  height: 220px;
+  width: min(300px, 70vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.quiz-combine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.quiz-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 90px;
+}
+
+.choice-card.emoji-choice {
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+}
+
+.emoji-choice-pic { font-size: 62px; line-height: 1.1; }
+.emoji-choice-word { font-size: 20px; color: #5b4636; font-weight: bold; }
+.choice-card.emoji-choice.heard { outline: 5px solid #ffd166; }
+
+/* 記憶配對：圖片牌顯示詞語 */
+.memory-back { flex-direction: column; }
+.memory-pic { font-size: 1em; line-height: 1.1; }
+.memory-word { font-size: 0.55em; color: #5b4636; font-weight: bold; }
+
+@media (max-width: 520px) {
+  .star-bank { margin: -14px 0 16px; }
+  .star-bank-stars, .star-bank-book { font-size: 18px; padding: 6px 12px; }
+  .sticker-slot { font-size: 30px; }
+  .streak-badge { font-size: 18px; top: 26px; }
+  .quiz-ask { font-size: 20px; }
+  .emoji-choice-pic { font-size: 46px; }
+  .emoji-choice-word { font-size: 16px; }
+}
+
+/* ---------- 共用特效（之前缺少樣式，粒子會擠進版面） ---------- */
+
+.screen-particle {
+  position: fixed;
+  z-index: 110;
+  font-size: 28px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: particle-fly 0.9s ease-out forwards;
+}
+
+@keyframes particle-fly {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+  70% { opacity: 1; }
+  100% {
+    transform: translate(calc(-50% + var(--px)), calc(-50% + var(--py))) scale(1.1) rotate(var(--spin));
+    opacity: 0;
+  }
+}
+
+.screen-firefly {
+  position: absolute;
+  z-index: 0;
+  font-size: 26px;
+  color: #c9a98f;
+  pointer-events: none;
+  opacity: 0;
+  animation: firefly-float 3.8s ease-in-out forwards;
+}
+
+@keyframes firefly-float {
+  0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  20% { opacity: 0.55; }
+  80% { opacity: 0.4; }
+  100% { transform: translate(var(--float-x), var(--float-y)) scale(1); opacity: 0; }
+}
+
+@keyframes stage-pop {
+  0% { opacity: 0.4; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.screen-stage-pop > * { animation: stage-pop 0.35s ease-out; }
+
+@keyframes card-swap {
+  0% { transform: rotateY(80deg) scale(0.9); opacity: 0.3; }
+  100% { transform: rotateY(0) scale(1); opacity: 1; }
+}
+
+.flashcard-swap { animation: card-swap 0.45s ease-out; }
+.pinyin-row-swap { animation: card-swap 0.45s ease-out; }
+
+@keyframes mega-pulse {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.18); }
+  60% { transform: scale(0.95); }
+}
+
+.speaker-mega-pulse { animation: mega-pulse 0.8s ease; }
+
+@keyframes launch {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(-10px) scale(1.06); }
+  100% { transform: translateY(0); }
+}
+
+.button-launch { animation: launch 0.5s ease; }
+
+.prompt-box.quiz-combine { flex-direction: row; }
+.quiz-combine .quiz-slot { width: 130px; height: 130px; font-size: 80px; }
