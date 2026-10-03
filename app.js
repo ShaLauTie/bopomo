@@ -67,13 +67,14 @@ let _currentAudio = null;
  * @param {string}   url    - 音訊 URL
  * @param {Function} [onEnd] - 播完後的回呼
  */
-function playAudioUrl(url, onEnd) {
+function playAudioUrl(url, onEnd, rate = 1) {
   if (_currentAudio) {
     _currentAudio.pause();
     _currentAudio.onended = null;
     _currentAudio = null;
   }
   const audio = new Audio(url);
+  audio.playbackRate = rate;  // 放慢時瀏覽器會保持音高
   _currentAudio = audio;
   const myScreenGen = _screenGen;
   if (onEnd) audio.addEventListener("ended", () => {
@@ -115,7 +116,10 @@ function speakViaGoogle(text, onEnd) {
     _currentAudio.onended = null;
     _currentAudio = null;
   }
-  const audio = new Audio(url);
+  const audio = new Audio();
+  // Google 會拒絕帶著其他網站來源的請求，所以不送 Referer
+  audio.referrerPolicy = "no-referrer";
+  audio.src = url;
   _currentAudio = audio;
   const myScreenGen = _screenGen;
   if (onEnd) audio.addEventListener("ended", () => {
@@ -164,23 +168,6 @@ function speakFallback(text) {
   speechSynthesis.speak(utter);
 }
 
-// 輔助函式：將詞彙字與字之間加上空格，減緩語速並避免特定字元（如「烏龜」）在語音引擎中聽起來太快或碎裂
-let _vocabRegex = null;
-function spaceOutVocabulary(text) {
-  if (!_vocabRegex) {
-    const vocabWords = [
-      ...BOPOMOFO_SYMBOLS.map(s => s.word),
-      ...WORD_BANK.map(w => w.word)
-    ];
-    // 去除重複，只留 2 字以上；長詞優先，避免短詞先被取代
-    const uniqueVocabs = [...new Set(vocabWords)].filter(w => w && w.length >= 2);
-    uniqueVocabs.sort((a, b) => b.length - a.length);
-    _vocabRegex = new RegExp(uniqueVocabs.join("|"), "g");
-  }
-  // 前面多加一個空格讓語音有明顯頓點
-  return text.replace(_vocabRegex, word => " " + word.split("").join(" ")).trim();
-}
-
 /**
  * 主要 speak 函式。
  * - 純注音符號（含帶聲調，如「ㄚˋ」）→ 教育部官方 WAV
@@ -188,17 +175,36 @@ function spaceOutVocabulary(text) {
  * @param {string}   text
  * @param {Function} [onEnd]
  */
+// 複合韻（如「ㄧㄠˇ」）→ 念起來一樣的代表字（「咬」）
+function rimeSpeakChar(text) {
+  const toneMatch = text.match(/[ˊˇˋ˙]/);
+  const list = RIME_SPEAK_CHAR[text.replace(TONE_MARKS, "")];
+  if (!list) return null;
+  const idx = { "ˊ": 1, "ˇ": 2, "ˋ": 3 }[toneMatch ? toneMatch[0] : ""] || 0;
+  return list[idx] || list[0];
+}
+
 function speak(text, onEnd) {
   const bare = text.replace(TONE_MARKS, "");
-  // 是否為單一注音符號（去聲調後查表）
+  // 單一注音符號 → 教育部音檔
   if (BPMF_TO_WAV[bare]) {
     speakSymbol(text, onEnd);
     return;
   }
-  // 將詞彙分開，減緩發音速度並避免發音碎裂
-  const spacedText = spaceOutVocabulary(text);
-  // 含注音符號的複合字串 → 先轉成可唸的中文
-  speakViaGoogle(bopomofoToSpeakable(spacedText), onEnd);
+  // 複合韻 → 代表字
+  const rimeChar = rimeSpeakChar(text);
+  if (rimeChar) {
+    speak(rimeChar, onEnd);
+    return;
+  }
+  // 預先產生的語音檔（最穩定，不需要網路語音服務）
+  const key = text.trim();
+  if (typeof TTS_FILES !== "undefined" && TTS_FILES.has(ttsHash(key))) {
+    playAudioUrl(`sounds/tts/${ttsHash(key)}.mp3`, onEnd, 0.9);
+    return;
+  }
+  // 沒有音檔的文字 → 線上語音，再不行用裝置內建語音
+  speakViaGoogle(bopomofoToSpeakable(text), onEnd);
 }
 
 /**
@@ -1045,7 +1051,7 @@ function finishQuiz() {
     '<button class="big-btn combine-btn" onclick="startQuiz()">再玩一次</button>' +
     '</div>';
   document.getElementById("quizProgress").textContent = "完成！";
-  speak("恭喜你，得到了 " + quizScore + " 顆星星！");
+  speak("恭喜你，完成小測驗！");
 }
 
 // ========== 打地鼠遊戲 ==========
@@ -1264,13 +1270,7 @@ let whLocked = false;
 let _whAudio = null;
 
 function playWhWord(word) {
-  if (_whAudio) { _whAudio.pause(); _whAudio = null; }
-  if (!('speechSynthesis' in window)) return;
-  const utter = new SpeechSynthesisUtterance(word);
-  utter.lang  = 'zh-TW';
-  if (_zhVoice) utter.voice = _zhVoice;
-  utter.rate  = 0.85;
-  speechSynthesis.speak(utter);
+  speak(word);
 }
 
 let whLastWord = null;
@@ -1574,7 +1574,7 @@ function toneLabel(tone) {
 }
 
 function toneSpeakText(tone) {
-  return toneLabel(tone);
+  return TONE_NAMES[tone] || TONE_NAMES[""];
 }
 
 function isTonePiece(value) {
@@ -2400,14 +2400,7 @@ function playRhythmTapSound(accent = false) {
 }
 
 function speakRhythmBeat(text) {
-  if (!("speechSynthesis" in window)) return;
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "zh-TW";
-  if (_zhVoice) utter.voice = _zhVoice;
-  utter.rate = 1.25;
-  utter.pitch = text === "答" ? 1.0 : 1.12;
-  utter.volume = 1;
-  speechSynthesis.speak(utter);
+  speak(text);
 }
 
 function playRhythmCount() {
@@ -3034,23 +3027,15 @@ function playToneQuestion() {
   const myGen  = ++_toneGen;
   const myWord = toneTarget.word;  // 只念中文詞如「馬」
 
-  if (!('speechSynthesis' in window)) return;
-
   // 先清一次佇列
-  speechSynthesis.cancel();
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
 
   // 延遲 200ms 讓 cancel 生效，再次清除後才 speak
   setTimeout(() => {
     if (_toneGen !== myGen) return;
     // 再清一次：防止其他遊戲的 error callback 在這 200ms 內偷塞了 utterance
-    speechSynthesis.cancel();
-    if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
-
-    const utter = new SpeechSynthesisUtterance(myWord);
-    utter.lang  = 'zh-TW';
-    if (_zhVoice) utter.voice = _zhVoice;
-    utter.rate  = 0.85;
-    speechSynthesis.speak(utter);
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    speak(myWord);
   }, 200);
 }
 
