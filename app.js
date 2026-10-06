@@ -771,7 +771,7 @@ function renderPinyinHtml(bopomofoStr, baseSize = 120, extraClass = '') {
   const TONE = /[ˊˇˋ˙]/;
   const toneChar = (bopomofoStr.match(TONE) || [''])[0];
   const bodyChars = bopomofoStr.replace(TONE, '');
-  
+
   // 根據字數縮小字型大小以防超出區域
   let fontSize = baseSize;
   if (bodyChars.length === 2) fontSize = baseSize * 0.75;
@@ -781,7 +781,7 @@ function renderPinyinHtml(bopomofoStr, baseSize = 120, extraClass = '') {
   for (let char of bodyChars) {
     symbolsHtml += `<div>${char}</div>`;
   }
-  
+
   const className = ['bopomofo-vertical', extraClass].filter(Boolean).join(' ');
 
   return `
@@ -1602,9 +1602,20 @@ function fullSpellingPieces(spelling) {
   return pieces;
 }
 
+// 題目詞語：要拼的字用顏色標出來（單字就直接顯示）
+function questionWordHtml(q) {
+  if (q.hl === undefined || q.word.length <= 1) return q.word;
+  return [...q.word].map((ch, i) => i === q.hl ? `<span class="tone-hl">${ch}</span>` : ch).join("");
+}
+
+function questionChar(q) {
+  return q.char || q.word;
+}
+
 // ========== 注音小火車 ==========
 
-const TRAIN_LENGTH = 8;
+const TRAIN_LENGTH = 10;
+let trainDeck = [];
 let trainScore = 0;
 let trainQuestionNum = 0;
 let trainCombo = null;
@@ -1618,6 +1629,7 @@ function startTrainGame() {
   trainStep = 0;
   trainRunning = true;
   trainLocked = false;
+  trainDeck = makeQuestionDeck(SPLIT_QUESTIONS, TRAIN_LENGTH);
   document.getElementById("trainGameover").style.display = "none";
   nextTrainRound();
 }
@@ -1628,14 +1640,14 @@ function nextTrainRound() {
     return;
   }
 
-  trainCombo = SPLIT_COMBOS[randomInt(SPLIT_COMBOS.length)];
+  trainCombo = trainDeck[trainQuestionNum];
   trainStep = 0;
   trainLocked = false;
 
   document.getElementById("trainProgress").textContent = `第 ${trainQuestionNum + 1} / ${TRAIN_LENGTH} 題`;
   document.getElementById("trainStars").textContent = `⭐ ${trainScore}`;
   document.getElementById("trainEmoji").textContent = trainCombo.emoji;
-  document.getElementById("trainWord").textContent = trainCombo.word;
+  document.getElementById("trainWord").innerHTML = questionWordHtml(trainCombo);
   document.getElementById("trainInitialCar").innerHTML = "";
   document.getElementById("trainFinalCar").innerHTML = "";
   document.getElementById("trainToneCar").textContent = "";
@@ -1643,7 +1655,7 @@ function nextTrainRound() {
 
   updateTrainHint();
   renderTrainChoices();
-  speak(trainCombo.word);
+  speak(promptText(trainCombo));
 }
 
 function trainExpectedValue() {
@@ -1669,7 +1681,7 @@ function renderTrainChoices() {
   } else if (trainStep === 1) {
     values = buildChoiceValues(
       parts.finalBody,
-      [...SPLIT_COMBOS.map(combo => comboParts(combo).finalBody), ...confusablesOf(parts.finalBody)],
+      [...SPLIT_QUESTIONS.map(combo => comboParts(combo).finalBody), ...confusablesOf(parts.finalBody)],
       4
     );
   } else {
@@ -1805,7 +1817,7 @@ function animateTrainWrong() {
 }
 
 function replayTrainSound() {
-  if (trainCombo) speak(trainCombo.word);
+  if (trainCombo) speak(promptText(trainCombo));
 }
 
 function endTrainGame() {
@@ -1825,6 +1837,7 @@ function stopTrainGame() {
 // ========== 怪獸吃錯音 ==========
 
 const MONSTER_LENGTH = 10;
+let monsterDeck = [];
 let monsterScore = 0;
 let monsterQuestionNum = 0;
 let monsterCombo = null;
@@ -1837,6 +1850,7 @@ function startMonsterGame() {
   monsterQuestionNum = 0;
   monsterWrongCount = 0;
   monsterRunning = true;
+  monsterDeck = makeQuestionDeck(SYLLABLE_QUESTIONS, MONSTER_LENGTH);
   monsterLocked = false;
   document.getElementById("monsterGameover").style.display = "none";
   nextMonsterRound();
@@ -1848,16 +1862,16 @@ function nextMonsterRound() {
     return;
   }
 
-  monsterCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  monsterCombo = monsterDeck[monsterQuestionNum];
   monsterLocked = false;
 
   document.getElementById("monsterProgress").textContent = `第 ${monsterQuestionNum + 1} / ${MONSTER_LENGTH} 題`;
   document.getElementById("monsterStars").textContent = `⭐ ${monsterScore}`;
   document.getElementById("monsterFace").textContent = "👾";
   document.getElementById("monsterEmoji").textContent = monsterCombo.emoji;
-  document.getElementById("monsterWord").textContent = monsterCombo.word;
+  document.getElementById("monsterWord").innerHTML = questionWordHtml(monsterCombo);
   updateMonsterBelly();
-  updateMonsterPersona(`嗷！我要吃「${monsterCombo.word}」的注音！`, "hungry");
+  updateMonsterPersona(`嗷！我要吃「${questionChar(monsterCombo)}」的注音！`, "hungry");
   resetMonsterAnimationState();
 
   const correctSpelling = comboSpelling(monsterCombo);
@@ -1873,11 +1887,11 @@ function nextMonsterRound() {
     grid.appendChild(btn);
   });
 
-  speak(monsterCombo.word);
+  speak(promptText(monsterCombo));
 }
 
 function replayMonsterSound() {
-  if (monsterCombo) speak(monsterCombo.word);
+  if (monsterCombo) speak(promptText(monsterCombo));
 }
 
 function handleMonsterChoice(value, btn) {
@@ -1897,7 +1911,7 @@ function handleMonsterChoice(value, btn) {
       if (monsterRunning) {
         monsterLocked = false;
         document.getElementById("monsterFace").textContent = "👾";
-        updateMonsterPersona(`再餵一次「${monsterCombo.word}」的正確注音！`, "hungry");
+        updateMonsterPersona(`再餵一次「${questionChar(monsterCombo)}」的正確注音！`, "hungry");
       }
     }, 1250);
     return;
@@ -2072,6 +2086,7 @@ function animateMonsterSpitSnack(btn) {
 // ========== 注音拼圖島 ==========
 
 const ISLAND_LENGTH = 8;
+let islandDeck = [];
 let islandScore = 0;
 let islandQuestionNum = 0;
 let islandCombo = null;
@@ -2087,6 +2102,7 @@ function startIslandGame() {
   islandSelectedPieces = [];
   islandRunning = true;
   islandLocked = false;
+  islandDeck = makeQuestionDeck(SYLLABLE_QUESTIONS, ISLAND_LENGTH);
   document.getElementById("islandGameover").style.display = "none";
   nextIslandRound();
 }
@@ -2097,7 +2113,7 @@ function nextIslandRound() {
     return;
   }
 
-  islandCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  islandCombo = islandDeck[islandQuestionNum];
   islandTargetPieces = fullSpellingPieces(comboSpelling(islandCombo));
   islandSelectedPieces = [];
   islandLocked = false;
@@ -2105,13 +2121,13 @@ function nextIslandRound() {
   document.getElementById("islandProgress").textContent = `第 ${islandQuestionNum + 1} / ${ISLAND_LENGTH} 題`;
   document.getElementById("islandStars").textContent = `⭐ ${islandScore}`;
   document.getElementById("islandEmoji").textContent = islandCombo.emoji;
-  document.getElementById("islandWord").textContent = islandCombo.word;
+  document.getElementById("islandWord").innerHTML = questionWordHtml(islandCombo);
   updateIslandHint();
   renderIslandTower();
   buildIslandPieceValues();
   renderIslandPieces();
   resetIslandAnimationState();
-  speak(islandCombo.word);
+  speak(promptText(islandCombo));
 }
 
 function renderIslandTower() {
@@ -2208,7 +2224,7 @@ function handleIslandPiece(value, btn) {
 }
 
 function replayIslandSound() {
-  if (islandCombo) speak(islandCombo.word);
+  if (islandCombo) speak(promptText(islandCombo));
 }
 
 function endIslandGame() {
@@ -2283,6 +2299,7 @@ function animateIslandComplete() {
 // ========== 注音節奏台 ==========
 
 const RHYTHM_LENGTH = 8;
+let rhythmDeck = [];
 const RHYTHM_COUNT_MS = 820;
 const RHYTHM_ANSWER_MS = 2600;
 
@@ -2309,6 +2326,7 @@ function startRhythmGame() {
   rhythmStreak = 0;
   rhythmRunning = true;
   rhythmLocked = false;
+  rhythmDeck = makeQuestionDeck(SYLLABLE_QUESTIONS, RHYTHM_LENGTH);
   document.getElementById("rhythmGameover").style.display = "none";
   nextRhythmBeat();
 }
@@ -2325,7 +2343,7 @@ function nextRhythmBeat() {
   }
 
   rhythmLocked = false;
-  rhythmCombo = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
+  rhythmCombo = rhythmDeck[rhythmBeatNum];
   const correctSpelling = comboSpelling(rhythmCombo);
   rhythmChoices = buildChoiceValues(correctSpelling, PINYIN_COMBOS.map(comboSpelling), 3);
   rhythmCorrectIndex = rhythmChoices.indexOf(correctSpelling);
@@ -2333,13 +2351,13 @@ function nextRhythmBeat() {
   rhythmAnswerOpen = false;
 
   document.getElementById("rhythmEmoji").textContent = rhythmCombo.emoji;
-  document.getElementById("rhythmWord").textContent = rhythmCombo.word;
+  document.getElementById("rhythmWord").innerHTML = questionWordHtml(rhythmCombo);
   document.getElementById("rhythmStatus").textContent = "聽詞語，前三拍跟著答";
   updateRhythmHud();
   updateRhythmCount();
   renderRhythmLanes();
 
-  speak(rhythmCombo.word, () => {
+  speak(promptText(rhythmCombo), () => {
     if (!rhythmRunning || rhythmLocked) return;
     rhythmCountTimer = setTimeout(playRhythmCount, 260);
   });
@@ -2486,7 +2504,7 @@ function missRhythmBeat() {
 }
 
 function replayRhythmSound() {
-  if (rhythmCombo) speak(rhythmCombo.word);
+  if (rhythmCombo) speak(promptText(rhythmCombo));
 }
 
 function endRhythmGame() {
@@ -3135,77 +3153,126 @@ function _speakFallbackBalloon(bare) {
 }
 
 function startBalloonGame() {
+  updateBalloonModeButtons();
   balloonScore = 0;
   balloonTimeLeft = 45;
   balloonRunning = true;
-  
+
   document.getElementById('balloonScore').textContent = '0';
   document.getElementById('balloonTimer').textContent = '45';
   document.getElementById('balloonGameover').style.display = 'none';
   document.getElementById('balloonContainer').innerHTML = '';
-  
+
   clearInterval(balloonTimerInt);
   balloonTimerInt = setInterval(() => {
     balloonTimeLeft--;
     document.getElementById('balloonTimer').textContent = balloonTimeLeft;
     if (balloonTimeLeft <= 0) endBalloonGame();
   }, 1000);
-  
+
   pickBalloonTarget();
   launchBalloons();
 }
 
+// 模式：single = 氣球上是一個注音符號；multi = 氣球上是整個拼音
+const BALLOON_MODE_KEY = "bpmf_balloon_mode";
+let balloonMode = "single";
+try { balloonMode = localStorage.getItem(BALLOON_MODE_KEY) === "multi" ? "multi" : "single"; } catch (e) {}
+let balloonTargetValue = null;  // 要射的那顆氣球上的內容
+
+function setBalloonMode(mode) {
+  balloonMode = mode;
+  try { localStorage.setItem(BALLOON_MODE_KEY, mode); } catch (e) {}
+  updateBalloonModeButtons();
+  stopBalloonGame();
+  balloonTarget = null;
+  startBalloonGame();
+}
+
+function updateBalloonModeButtons() {
+  document.getElementById("balloonModeSingle").classList.toggle("active", balloonMode === "single");
+  document.getElementById("balloonModeMulti").classList.toggle("active", balloonMode === "multi");
+  document.getElementById("balloonModeHint").textContent =
+    balloonMode === "single" ? "聽音射氣球！" : "聽字射拼音！";
+}
+
 function pickBalloonTarget() {
   const prev = balloonTarget;
+  if (balloonMode === "multi") {
+    do {
+      balloonTarget = SYLLABLE_QUESTIONS[randomInt(SYLLABLE_QUESTIONS.length)];
+    } while (prev && balloonTarget.char === prev.char);
+    balloonTargetValue = comboSpelling(balloonTarget);
+    return;
+  }
   do {
     balloonTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
   } while (prev && balloonTarget.symbol === prev.symbol);
+  balloonTargetValue = balloonTarget.symbol;
 }
 
 function replayBalloonSound() {
-  if (balloonTarget) playBalloonSymbol(balloonTarget.symbol);
+  if (!balloonTarget) return;
+  if (balloonMode === "multi") speak(promptText(balloonTarget));
+  else playBalloonSymbol(balloonTarget.symbol);
 }
 
 function launchBalloons() {
   if (!balloonRunning) return;
   const container = document.getElementById('balloonContainer');
   container.innerHTML = '';
-  
-  const others = pickDistractorSymbols(balloonTarget.symbol, 2);
-  
-  const symbols = shuffle([balloonTarget.symbol, ...others]);
-  
+
+  let others;
+  if (balloonMode === "multi") {
+    // 一顆「聽起來很像」的錯音 + 一顆不同的音
+    const near = nearMissSpellings(balloonTarget, 1);
+    const far = pickOtherCombos(balloonTarget, 3, SYLLABLE_QUESTIONS)
+      .map(comboSpelling).filter(v => !near.includes(v)).slice(0, 1);
+    others = [...near, ...far];
+  } else {
+    others = pickDistractorSymbols(balloonTarget.symbol, 2);
+  }
+
+  const symbols = shuffle([balloonTargetValue, ...others]);
+
   symbols.forEach((sym, i) => {
     const balloon = document.createElement('div');
-    balloon.className = 'balloon';
+    balloon.className = balloonMode === "multi" ? 'balloon balloon-multi' : 'balloon';
     balloon.style.background = BALLOON_COLORS[randomInt(BALLOON_COLORS.length)];
-    balloon.style.left = (15 + i * 30) + '%';
-    balloon.textContent = sym;
-    
+    // 三顆氣球平均分在三等分的中間，寬氣球也不會超出邊界
+    balloon.style.left = balloonMode === "multi"
+      ? `calc(${i * 33.3 + 16.6}% - 52px)`
+      : (15 + i * 30) + '%';
+    if (balloonMode === "multi") {
+      balloon.innerHTML = renderPinyinHtml(sym, 40, 'balloon-bopomofo');
+    } else {
+      balloon.textContent = sym;
+    }
+
     const string = document.createElement('div');
     string.className = 'balloon-string';
     balloon.appendChild(string);
-    
+
     balloon.onclick = () => handleBalloonClick(sym, balloon);
-    
+
     // Auto remove and relaunch
     balloon.addEventListener('animationend', (e) => {
       if (e.animationName === 'floatUp' && balloonRunning) {
         if (container.contains(balloon)) {
           // If the correct one flew away, just relaunch
-          if (sym === balloonTarget.symbol && !document.querySelector('.balloon-penalty')) {
+          if (sym === balloonTargetValue && !document.querySelector('.balloon-penalty')) {
              clearTimeout(balloonCreateTimeout);
              balloonCreateTimeout = setTimeout(launchBalloons, 500);
           }
         }
       }
     });
-    
+
     container.appendChild(balloon);
   });
 
   // 氣球出現後立刻念題目
-  playBalloonSymbol(balloonTarget.symbol);
+  replayBalloonSound();
 }
 
 function handleBalloonClick(sym, balloonEl) {
@@ -3242,7 +3309,7 @@ function handleBalloonClick(sym, balloonEl) {
   setTimeout(() => {
     dart.remove();
 
-    if (sym === balloonTarget.symbol) {
+    if (sym === balloonTargetValue) {
       // ── 射中！氣球爆 + 彩帶 ──
       balloonScore++;
       document.getElementById('balloonScore').textContent = balloonScore;
@@ -3329,10 +3396,10 @@ function endBalloonGame() {
   clearInterval(balloonTimerInt);
   clearTimeout(balloonCreateTimeout);
   document.getElementById('balloonContainer').innerHTML = '';
-  
+
   document.getElementById('balloonFinalScore').textContent = balloonScore;
   document.getElementById('balloonGameover').style.display = 'flex';
-  
+
   const msg = balloonScore >= 15 ? '哇！你超厲害！' :
               balloonScore >= 8  ? '很棒！繼續加油！' : '再試一次！';
   speak(msg);
@@ -3362,7 +3429,7 @@ function startClawGame() {
   clawRunning = true;
   isGrabbing = false;
   clawPos = 80;
-  
+
   const arm = document.getElementById('clawArm');
   arm.style.left = '80%';
   arm.style.transition = '';
@@ -3377,7 +3444,7 @@ function startClawGame() {
   document.getElementById('clawProgress').textContent = '第 1 / 5 題';
   document.getElementById('clawGameover').style.display = 'none';
   document.getElementById('btnClawDrop').disabled = false;
-  
+
   initClawCapsules();
   pickNextClawTarget();
   initClawControls();
@@ -3392,18 +3459,18 @@ function initClawControls() {
   const btnLeft = document.getElementById('btnClawLeft');
   const btnRight = document.getElementById('btnClawRight');
   const stick = document.getElementById('joystickStick');
-  
+
   // 清除舊有的監聽器以防重複綁定
   const newBtnLeft = btnLeft.cloneNode(true);
   const newBtnRight = btnRight.cloneNode(true);
   btnLeft.parentNode.replaceChild(newBtnLeft, btnLeft);
   btnRight.parentNode.replaceChild(newBtnRight, btnRight);
-  
+
   const startMove = (dir) => {
     if (!clawRunning || isGrabbing) return;
     if (dir === -1) stick.classList.add('tilt-left');
     else stick.classList.add('tilt-right');
-    
+
     clearInterval(clawMoveInterval);
     clawMoveInterval = setInterval(() => {
       if (!clawRunning || isGrabbing) {
@@ -3416,41 +3483,41 @@ function initClawControls() {
       document.getElementById('clawArm').style.left = clawPos + '%';
     }, 16);
   };
-  
+
   const stopMove = () => {
     stick.classList.remove('tilt-left', 'tilt-right');
     clearInterval(clawMoveInterval);
   };
-  
+
   // 綁定左移按鈕
   newBtnLeft.addEventListener('mousedown', () => startMove(-1));
   newBtnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); startMove(-1); });
   newBtnLeft.addEventListener('mouseup', stopMove);
   newBtnLeft.addEventListener('mouseleave', stopMove);
   newBtnLeft.addEventListener('touchend', stopMove);
-  
+
   // 綁定右移按鈕
   newBtnRight.addEventListener('mousedown', () => startMove(1));
   newBtnRight.addEventListener('touchstart', (e) => { e.preventDefault(); startMove(1); });
   newBtnRight.addEventListener('mouseup', stopMove);
   newBtnRight.addEventListener('mouseleave', stopMove);
   newBtnRight.addEventListener('touchend', stopMove);
-  
+
   // 搖桿拖拉邏輯
   const joystickArea = document.querySelector('.control-joystick-area');
   const baseEl = document.querySelector('.joystick-base');
   let isDraggingJoystick = false;
   let currentDragDir = 0; // -1 for left, 1 for right, 0 for neutral
-  
+
   function updateJoystickPosition(clientX) {
     const baseRect = baseEl.getBoundingClientRect();
     const centerX = baseRect.left + baseRect.width / 2;
     const diff = clientX - centerX;
-    
+
     let angle = diff * 0.8;
     if (angle > 35) angle = 35;
     if (angle < -35) angle = -35;
-    
+
     // 根據角度決定夾爪移動
     if (angle < -10) {
       if (currentDragDir !== -1) {
@@ -3470,22 +3537,22 @@ function initClawControls() {
     }
     stick.style.transform = `rotate(${angle}deg)`;
   }
-  
+
   function handleJoystickStart(e) {
     if (!clawRunning || isGrabbing) return;
     isDraggingJoystick = true;
     stick.style.transition = 'none'; // 讓搖桿即時跟隨
-    
+
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     updateJoystickPosition(clientX);
   }
-  
+
   function handleJoystickMove(e) {
     if (!isDraggingJoystick || !clawRunning || isGrabbing) return;
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     updateJoystickPosition(clientX);
   }
-  
+
   function handleJoystickEnd() {
     if (isDraggingJoystick) {
       isDraggingJoystick = false;
@@ -3495,11 +3562,11 @@ function initClawControls() {
       stopMove();
     }
   }
-  
+
   joystickArea.addEventListener('mousedown', handleJoystickStart);
   window.addEventListener('mousemove', handleJoystickMove);
   window.addEventListener('mouseup', handleJoystickEnd);
-  
+
   joystickArea.addEventListener('touchstart', handleJoystickStart, { passive: true });
   window.addEventListener('touchmove', handleJoystickMove, { passive: true });
   window.addEventListener('touchend', handleJoystickEnd);
@@ -3513,14 +3580,14 @@ function initClawCapsules() {
   const container = document.getElementById('clawCapsules');
   container.innerHTML = '';
   clawCapsulesData = [];
-  
+
   const singleRowX = [15, 32, 50, 68, 85];
   let symbols = [];
-  
+
   if (isPinyinRound) {
     // 5 個拼法都不同的音節，才不會有兩個正確答案
-    const first = PINYIN_COMBOS[randomInt(PINYIN_COMBOS.length)];
-    symbols = [first, ...pickOtherCombos(first, 4)];
+    const first = SYLLABLE_QUESTIONS[randomInt(SYLLABLE_QUESTIONS.length)];
+    symbols = [first, ...pickOtherCombos(first, 4, SYLLABLE_QUESTIONS)];
   } else {
     // 5 個不同字頭，念的詞語字頭就是要夾的符號
     const pool = symbolsWithListenWords();
@@ -3529,11 +3596,12 @@ function initClawCapsules() {
       .map(sym => pool.find(s => s.symbol === sym))]
       .map(s => {
         const chosen = randomListenWordForHead(s.symbol);
-        return { ...s, word: chosen.word, emoji: chosen.emoji };
+        // 考的是第一個字的字頭（念「汽車的汽」）
+        return { ...s, word: chosen.word, emoji: chosen.emoji, hl: 0 };
       });
     symbols = shuffle(symbols);
   }
-  
+
   symbols.forEach((symObj, i) => {
     const x = singleRowX[i];
     const el = document.createElement('div');
@@ -3541,7 +3609,7 @@ function initClawCapsules() {
     el.className = `capsule ${colorClass}`;
     el.style.left = `calc(${x}% - 37px)`;
     el.style.bottom = `15px`;
-    
+
     let symStr = '';
     let isPinyin = false;
     if (isPinyinRound) {
@@ -3550,10 +3618,10 @@ function initClawCapsules() {
     } else {
       symStr = symObj.symbol;
     }
-    
+
     el.innerHTML = renderPinyinHtml(symStr, 34);
     container.appendChild(el);
-    
+
     clawCapsulesData.push({
       el: el,
       symbol: symStr,
@@ -3565,7 +3633,7 @@ function initClawCapsules() {
       isCaught: false,
       symObj: symObj
     });
-    
+
     el.onclick = () => {
       if (!clawRunning || isGrabbing) return;
       clawPos = x;
@@ -3578,10 +3646,10 @@ function initClawCapsules() {
 function pickNextClawTarget() {
   const remaining = clawCapsulesData.filter(c => !c.isCaught);
   if (remaining.length === 0) return;
-  
+
   const targetCap = remaining[randomInt(remaining.length)];
   clawTarget = targetCap.symObj;
-  
+
   document.getElementById('clawRoofDisplay').textContent = '❓';
   replayClawSound();
 }
@@ -3589,7 +3657,7 @@ function pickNextClawTarget() {
 function replayClawSound() {
   if (clawTarget) {
     if (clawTarget.word) {
-      speak(clawTarget.word);
+      speak(promptText(clawTarget));
     } else {
       speak(clawTarget.symbol);
     }
@@ -3600,19 +3668,19 @@ function dropClaw() {
   if (!clawRunning || isGrabbing) return;
   isGrabbing = true;
   document.getElementById('btnClawDrop').disabled = true;
-  
+
   const arm = document.getElementById('clawArm');
   const line = arm.querySelector('.claw-line');
   const caughtItem = document.getElementById('clawCaught');
-  
+
   // 1. 爪子張開 (Claw open)
   arm.classList.remove('closed');
   arm.classList.add('open');
-  
+
   // 尋找水平位置最接近的禮物盒 (8% 誤差範圍內)
   let caughtIdx = -1;
   let minDiff = 8;
-  
+
   clawCapsulesData.forEach((cap, i) => {
     if (cap.el.classList.contains('empty') || cap.isCaught) return;
     const diff = Math.abs(cap.x - clawPos);
@@ -3621,7 +3689,7 @@ function dropClaw() {
       caughtIdx = i;
     }
   });
-  
+
   let isCorrect = false;
   if (caughtIdx !== -1) {
     const cap = clawCapsulesData[caughtIdx];
@@ -3631,24 +3699,24 @@ function dropClaw() {
       isCorrect = (cap.symbol === clawTarget.symbol);
     }
   }
-  
+
   // 只降到能碰到禮物盒的高度即可 (動態計算)
   const machineHeight = document.getElementById('clawMachine').offsetHeight;
   const targetDepth = (machineHeight - 110) + 'px';
-  
+
   setTimeout(() => {
     // 2. 夾爪下降 (Claw drop)
     arm.style.transition = 'top 1s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     arm.style.top = targetDepth;
-    
+
     setTimeout(() => {
       // 3. 抓取收爪 (Clasp claws)
       arm.classList.remove('open');
       arm.classList.add('closed');
-      
+
       let colorClass = '';
       let caughtSymbol = '';
-      
+
       if (caughtIdx !== -1) {
         if (!isCorrect) {
           // 夾錯了：夾不起來，念出夾到的是什麼，靜止三秒
@@ -3656,18 +3724,18 @@ function dropClaw() {
           const wrongCap = clawCapsulesData[caughtIdx];
           setTimeout(() => {
             if (!clawRunning) return;
-            if (wrongCap.isPinyin) speakSequence(["這是", wrongCap.word, "再聽一次", clawTarget.word], 250);
-            else speakSequence(["這是", wrongCap.symbol, "再聽一次", clawTarget.word], 250);
+            if (wrongCap.isPinyin) speakSequence(["這是", promptText(wrongCap.symObj), "再聽一次", promptText(clawTarget)], 250);
+            else speakSequence(["這是", wrongCap.symbol, "再聽一次", promptText(clawTarget)], 250);
           }, 900);
-          
+
           setTimeout(() => {
             // 4. 空爪升起
             arm.style.top = '32px';
-            
+
             setTimeout(() => {
               // 回到原始位置
               arm.style.left = clawPos + '%';
-              
+
               setTimeout(() => {
                 arm.style.transition = '';
                 arm.classList.remove('open', 'closed');
@@ -3678,35 +3746,35 @@ function dropClaw() {
           }, 3000);
           return; // 結束夾錯的流程
         }
-        
+
         // 夾對了：正常夾取
         const cap = clawCapsulesData[caughtIdx];
         cap.el.classList.add('empty');
         cap.isCaught = true;
         caughtSymbol = cap.symbol;
         colorClass = cap.colorClass;
-        
+
         // 爪中顯示被夾到的禮物盒
         caughtItem.innerHTML = renderPinyinHtml(cap.symbol, 28);
         caughtItem.className = `claw-caught visible ${colorClass}`;
       }
-      
+
       setTimeout(() => {
         // 4. 夾爪升起 (Pull up)
         arm.style.top = '32px';
-        
+
         setTimeout(() => {
           // 5. 升到頂端後移動 (Move to chute)
           if (caughtIdx !== -1) {
             arm.style.transition = 'left 1.2s ease-in-out';
             arm.style.left = '50px'; // 移動至出物口上方
-            
+
             setTimeout(() => {
               // 6. 鬆爪掉落 (Release)
               arm.classList.remove('closed');
               arm.classList.add('open');
               caughtItem.classList.remove('visible');
-              
+
               // 出物口掉落特效
               const machine = document.getElementById('clawMachine');
               const fallEl = document.createElement('div');
@@ -3716,34 +3784,34 @@ function dropClaw() {
               fallEl.style.transition = 'top 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.6s, transform 0.6s';
               fallEl.innerHTML = renderPinyinHtml(caughtSymbol, 28);
               machine.appendChild(fallEl);
-              
+
               // 強制重繪以觸發動畫
               void fallEl.offsetWidth;
-              
+
               fallEl.style.top = 'calc(100% - 70px)';
               fallEl.style.opacity = '0';
               fallEl.style.transform = 'scale(0.6)';
-              
+
               setTimeout(() => {
                 fallEl.remove();
               }, 600);
-              
+
               // 答對結算
               clawScore++;
               document.getElementById('clawScore').textContent = clawScore;
               showFeedback(true);
-              
+
               setTimeout(() => {
                 // 7. 爪子回到原位 (Move back)
                 arm.style.left = clawPos + '%';
-                
+
                 setTimeout(() => {
                   arm.style.transition = '';
                   arm.classList.remove('open');
-                  
+
                   isGrabbing = false;
                   document.getElementById('btnClawDrop').disabled = false;
-                  
+
                   if (clawQuestionNum === 5) {
                     // 5 題全部答對，贏得挑戰！
                     endClawGame(true);
@@ -3755,7 +3823,7 @@ function dropClaw() {
                   }
                 }, 1200);
               }, 600);
-              
+
             }, 1200);
           } else {
             // 沒抓到 (空抓)，重置狀態，允許繼續操作
@@ -3763,7 +3831,7 @@ function dropClaw() {
             isGrabbing = false;
             document.getElementById('btnClawDrop').disabled = false;
           }
-          
+
         }, 800);
       }, 500);
     }, 800);
@@ -3774,13 +3842,13 @@ function endClawGame(isWin) {
   clawRunning = false;
   clearInterval(clawMoveInterval);
   document.getElementById('btnClawDrop').disabled = true;
-  
+
   const box = document.getElementById('clawGameover');
   const emojiEl = box.querySelector('.gameover-box div:nth-child(1)');
   const titleEl = box.querySelector('.gameover-box div:nth-child(2)');
-  
+
   document.getElementById('clawFinalScore').textContent = clawScore;
-  
+
   if (isWin) {
     emojiEl.textContent = '🎉';
     titleEl.textContent = '挑戰成功！';
@@ -3790,7 +3858,7 @@ function endClawGame(isWin) {
     titleEl.textContent = '挑戰失敗！';
     speak('差一點點，再試一次吧！');
   }
-  
+
   box.style.display = 'flex';
 }
 
@@ -3802,6 +3870,7 @@ function stopClawGame() {
 // ========== 拼字工廠 ==========
 
 const SPELL_LENGTH = 10;
+let spellDeck = [];
 
 let spellScore = 0;
 let spellQuestionNum = 0;
@@ -3811,15 +3880,16 @@ let spellLocked = false;
 let spellRunning = false;
 
 // 所有題庫用到的韻符池（含聲調），供第二步生成干擾選項
-const SPELL_FINALS = [...new Set(SPLIT_COMBOS.map(c => c.final))];
+const SPELL_FINALS = [...new Set(SPLIT_QUESTIONS.map(c => c.final))];
 // 所有聲母池，供第一步生成干擾選項
-const SPELL_INITIALS = [...new Set(SPLIT_COMBOS.map(c => c.initial))];
+const SPELL_INITIALS = [...new Set(SPLIT_QUESTIONS.map(c => c.initial))];
 
 function startSpellGame() {
   spellScore = 0;
   spellQuestionNum = 0;
   spellRunning = true;
   spellLocked = false;
+  spellDeck = makeQuestionDeck(SPLIT_QUESTIONS, SPELL_LENGTH);
   document.getElementById('spellGameover').style.display = 'none';
   nextSpellRound();
 }
@@ -3831,16 +3901,16 @@ function nextSpellRound() {
   }
   spellLocked = false;
   spellStep = 'initial';
-  spellCombo = SPLIT_COMBOS[randomInt(SPLIT_COMBOS.length)];
+  spellCombo = spellDeck[spellQuestionNum];
 
   document.getElementById('spellEmoji').textContent = spellCombo.emoji;
-  document.getElementById('spellWord').textContent  = spellCombo.word;
+  document.getElementById('spellWord').innerHTML  = questionWordHtml(spellCombo);
 
   // 拼字槽：同一個音節直排，等孩子依序選聲母與韻符
   renderSpellSyllable();
 
   renderSpellChoices('initial');
-  speak(spellCombo.word);
+  speak(promptText(spellCombo));
 }
 
 function updateSpellHint() {
@@ -3926,7 +3996,7 @@ function handleSpellChoice(value, step, btn) {
 }
 
 function replaySpellSound() {
-  if (spellCombo) speak(spellCombo.word);
+  if (spellCombo) speak(promptText(spellCombo));
 }
 
 function endSpellGame() {

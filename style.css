@@ -5228,3 +5228,48 @@ h1, h2 {
     max-width: min(720px, 94vw);
   }
 }
+
+/* ---------- 射氣球：單注音 / 拼音 模式 ---------- */
+.balloon-modes {
+  display: flex;
+  gap: 6px;
+  background: #ffffffcc;
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.balloon-modes button {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 18px;
+  font-weight: bold;
+  font-family: inherit;
+  color: #7c5e48;
+  background: transparent;
+  cursor: pointer;
+}
+
+.balloon-modes button.active {
+  background: linear-gradient(135deg, #ff9dbf, #ffb36b);
+  color: #fff;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.12);
+}
+
+.balloon.balloon-multi {
+  width: 104px;
+  height: 128px;
+  animation-duration: 6.5s, 2s, 1.45s;
+}
+
+.balloon-multi .bopomofo-vertical {
+  color: #fff;
+  text-shadow: 1px 2px 4px rgba(0,0,0,0.35);
+  line-height: 1;
+}
+
+.balloon-multi .bopomofo-tone {
+  color: #fff;
+}
+.balloon-modes button { white-space: nowrap; }
+#screen-balloon .mole-header { flex-wrap: wrap; justify-content: center; gap: 8px; }

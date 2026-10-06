@@ -52,6 +52,12 @@ async function download(text, file) {
     }
     await sleep(200);
   }
+  // 詞庫拿掉的字詞，音檔也一併刪掉
+  const keep = new Set(done.map(h => h + ".mp3"));
+  const removed = fs.readdirSync(outDir).filter(f => f.endsWith(".mp3") && !keep.has(f));
+  removed.forEach(f => fs.unlinkSync(path.join(outDir, f)));
+  if (removed.length) console.log(`\n刪除 ${removed.length} 個用不到的音檔`);
+
   const manifest = "// 由 tools/gen_tts.js 產生，請勿手動修改\nconst TTS_FILES = new Set(" +
     JSON.stringify(done.sort()) + ");\n";
   fs.writeFileSync(path.join(root, "tts-manifest.js"), manifest);

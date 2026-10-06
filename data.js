@@ -74,7 +74,7 @@ const WORD_BANK_RAW = [
   ["飛機", "ㄈㄟ ㄐㄧ", "✈️"], ["蜂蜜", "ㄈㄥ ㄇㄧˋ", "🍯"], ["房子", "ㄈㄤˊ ˙ㄗ", "🏠"],
   ["斧頭", "ㄈㄨˇ ˙ㄊㄡ", "🪓"], ["番茄", "ㄈㄢ ㄑㄧㄝˊ", "🍅"], ["風箏", "ㄈㄥ ㄓㄥ", "🪁"],
   ["肥皂", "ㄈㄟˊ ㄗㄠˋ", "🧼"], ["飯糰", "ㄈㄢˋ ㄊㄨㄢˊ", "🍙"], ["鳳梨", "ㄈㄥˋ ㄌㄧˊ", "🍍"],
-  ["帆船", "ㄈㄢ ㄔㄨㄢˊ", "⛵"], ["粉紅色", "ㄈㄣˇ ㄏㄨㄥˊ ㄙㄜˋ", "🩷"], ["番薯", "ㄈㄢ ㄕㄨˇ", "🍠"],
+  ["帆船", "ㄈㄢˊ ㄔㄨㄢˊ", "⛵"], ["粉紅色", "ㄈㄣˇ ㄏㄨㄥˊ ㄙㄜˋ", "🩷"], ["番薯", "ㄈㄢ ㄕㄨˇ", "🍠"],
   ["飛碟", "ㄈㄟ ㄉㄧㄝˊ", "🛸"], ["風", "ㄈㄥ", "💨"],
   // ㄉ
   ["弟弟", "ㄉㄧˋ ˙ㄉㄧ", "👦"], ["蛋糕", "ㄉㄢˋ ㄍㄠ", "🎂"], ["燈泡", "ㄉㄥ ㄆㄠˋ", "💡"],
@@ -132,7 +132,7 @@ const WORD_BANK_RAW = [
   ["汽車", "ㄑㄧˋ ㄔㄜ", "🚗"], ["企鵝", "ㄑㄧˋ ㄜˊ", "🐧"], ["氣球", "ㄑㄧˋ ㄑㄧㄡˊ", "🎈"],
   ["鉛筆", "ㄑㄧㄢ ㄅㄧˇ", "✏️"], ["青蛙", "ㄑㄧㄥ ㄨㄚ", "🐸"], ["橋", "ㄑㄧㄠˊ", "🌉"],
   ["錢包", "ㄑㄧㄢˊ ㄅㄠ", "👛"], ["茄子", "ㄑㄧㄝˊ ˙ㄗ", "🍆"], ["巧克力", "ㄑㄧㄠˇ ㄎㄜˋ ㄌㄧˋ", "🍫"],
-  ["騎馬", "ㄑㄧˊ ㄇㄚˇ", "🏇"], ["裙子", "ㄑㄩㄣˊ ˙ㄗ", "👗"], ["拳擊", "ㄑㄩㄢˊ ㄐㄧ", "🥊"],
+  ["騎馬", "ㄑㄧˊ ㄇㄚˇ", "🏇"], ["裙子", "ㄑㄩㄣˊ ˙ㄗ", "👗"], ["拳擊", "ㄑㄩㄢˊ ㄐㄧˊ", "🥊"],
   ["蚯蚓", "ㄑㄧㄡ ㄧㄣˇ", "🪱"], ["七", "ㄑㄧ", "7️⃣"], ["錢", "ㄑㄧㄢˊ", "💰"],
   // ㄒ
   ["西瓜", "ㄒㄧ ㄍㄨㄚ", "🍉"], ["鞋子", "ㄒㄧㄝˊ ˙ㄗ", "👟"], ["熊", "ㄒㄩㄥˊ", "🐻"],
@@ -329,7 +329,7 @@ const TONE_SETS = [
     { mark: "", word: "湯匙", hl: 0, emoji: "🥄" }, { mark: "ˊ", word: "糖果", hl: 0, emoji: "🍬" },
     { mark: "ˇ", word: "躺下", hl: 0, emoji: "🛌" }, { mark: "ˋ", word: "燙", hl: 0, emoji: "🥵" }]},
   { spelling: "ㄈㄢ", tones: [
-    { mark: "", word: "帆船", hl: 0, emoji: "⛵" }, { mark: "ˊ", word: "煩惱", hl: 0, emoji: "😩" },
+    { mark: "", word: "翻書", hl: 0, emoji: "📖" }, { mark: "ˊ", word: "帆船", hl: 0, emoji: "⛵" },
     { mark: "ˋ", word: "飯糰", hl: 0, emoji: "🍙" }]},
   { spelling: "ㄒㄧ", tones: [
     { mark: "", word: "西瓜", hl: 0, emoji: "🍉" }, { mark: "ˇ", word: "洗衣服", hl: 0, emoji: "🧺" },
@@ -484,6 +484,62 @@ const PINYIN_COMBOS = SYLLABLE_BANK_RAW.map(([word, zhuyin, emoji]) => {
 // 有聲母、也有韻的音節：適合「聲母 + 韻符 + 聲調」三段式拼音遊戲
 const SPLIT_COMBOS = PINYIN_COMBOS.filter(c => c.initial && c.final.replace(BPMF_TONE_RE, ""));
 
+// ── 拼一個音的題庫 ──
+// 單字音節之外，圖片詞語裡的每一個字也拿來出題（例如「蘋果」的「蘋」），
+// hl 是要拼的那個字在詞裡的位置。排除：輕聲字、三聲連讀會變調的字。
+const SYLLABLE_QUESTIONS = (() => {
+  const seen = new Set();
+  const out = [];
+  const add = (word, emoji, hl, z) => {
+    const p = parseSyllable(z);
+    const key = word[hl] + z;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ initial: p.initial, final: p.rime + p.tone, word, emoji, hl, char: word[hl], zhuyin: z });
+  };
+  PINYIN_COMBOS.forEach(c => add(c.word, c.emoji, 0, c.zhuyin));
+  WORD_BANK.forEach(w => {
+    w.syllables.forEach((z, i) => {
+      if (z.includes("˙")) return;
+      const next = w.syllables[i + 1];
+      if (z.includes("ˇ") && next && next.includes("ˇ")) return;
+      add(w.word, w.emoji, i, z);
+    });
+  });
+  return out;
+})();
+const SPLIT_QUESTIONS = SYLLABLE_QUESTIONS.filter(q => q.initial && q.final.replace(BPMF_TONE_RE, ""));
+
+function _shuffleCopy(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// 題目要念的話：多字詞要說清楚考哪個字，例如「汽車的汽」
+function promptText(q) {
+  if (!q.word || q.word.length <= 1) return q.word;
+  return `${q.word}的${q.word[q.hl || 0]}`;
+}
+
+// 一輪的題目：洗牌後取 n 題，同一個字、同一個詞都只出現一次
+function makeQuestionDeck(pool, n) {
+  const usedChar = new Set();
+  const usedWord = new Set();
+  const deck = [];
+  for (const q of _shuffleCopy(pool)) {
+    if (deck.length >= n) break;
+    if (usedChar.has(q.char || q.word) || usedWord.has(q.word)) continue;
+    usedChar.add(q.char || q.word);
+    usedWord.add(q.word);
+    deck.push(q);
+  }
+  return deck;
+}
+
 // ===================================================================
 // 語音：預先產生的 mp3（sounds/tts/），用 tools/gen_tts.js 產生
 // ===================================================================
@@ -500,7 +556,7 @@ function ttsHash(text) {
 
 // 複合韻單獨念時用的代表字（一、二、三、四聲；null = 沒有常用字，改念一聲）
 const RIME_SPEAK_CHAR = {
-  "ㄧㄚ": ["鴨", "牙", "雅", "亞"], "ㄧㄝ": ["耶", "爺", "也", "葉"],
+  "ㄧㄚ": ["鴨", "牙", "雅", null], "ㄧㄝ": ["耶", "爺", "也", "葉"],
   "ㄧㄠ": ["腰", "搖", "咬", "藥"], "ㄧㄡ": ["優", "油", "有", "右"],
   "ㄧㄢ": ["煙", "鹽", "眼", "燕"], "ㄧㄣ": ["音", "銀", "引", "印"],
   "ㄧㄤ": ["央", "羊", "養", "樣"], "ㄧㄥ": ["英", "贏", "影", "硬"],
@@ -538,5 +594,8 @@ function allTtsTexts() {
   TONE_SETS.forEach(set => set.tones.forEach(t => texts.add(t.word)));
   Object.values(RIME_SPEAK_CHAR).forEach(list => list.forEach(ch => ch && texts.add(ch)));
   Object.values(TONE_NAMES).forEach(t => texts.add(t));
+  // 「汽車的汽」：拼音題的每個字、夾娃娃機的字頭題
+  SYLLABLE_QUESTIONS.forEach(q => texts.add(promptText(q)));
+  LISTEN_BANK.forEach(w => texts.add(promptText({ word: w.word, hl: 0 })));
   return [...texts];
 }
