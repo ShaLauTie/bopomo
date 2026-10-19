@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=43">
+<link rel="stylesheet" href="style.css?v=45">
 </head>
 <body>
 
@@ -12,6 +12,17 @@
 
 <div class="feedback-banner" id="feedbackBanner"></div>
 <div class="streak-badge" id="streakBadge"></div>
+
+<!-- 10 題一輪的成績（聽音找符號、聲調辨識） -->
+<div class="mole-gameover" id="roundGameover" style="display:none">
+  <div class="gameover-box">
+    <div style="font-size:3.5rem">🏆</div>
+    <div style="font-size:1.4rem;font-weight:bold;color:#5b4636" id="roundTitle">完成了！</div>
+    <div class="big-score">⭐ <span id="roundFinalScore">0</span> / 10</div>
+    <button class="big-btn combine-btn" id="roundAgainBtn" type="button">再玩一次！</button>
+    <button class="big-btn round-home-btn" type="button" onclick="goHome()">回上一頁</button>
+  </div>
+</div>
 
 <!-- 新貼紙 -->
 <div class="sticker-overlay" id="stickerUnlock" onclick="closeStickerUnlock()">
@@ -43,13 +54,9 @@
     </button>
   </div>
   <div class="menu-grid">
-    <button class="menu-card card-1" onclick="showScreen('flashcards')">
-      <span class="icon">🀄</span>
-      <span>認識注音符號</span>
-    </button>
-    <button class="menu-card card-2" onclick="showScreen('match')">
-      <span class="icon">🎧</span>
-      <span>聽音找符號</span>
+    <button class="menu-card card-basics" onclick="showScreen('basics')" style="background: linear-gradient(135deg, #86efac, #22c55e);">
+      <span class="icon">🌱</span>
+      <span>入門區</span>
     </button>
     <button class="menu-card card-3" onclick="showScreen('pinyin')">
       <span class="icon">🧩</span>
@@ -58,14 +65,6 @@
     <button class="menu-card card-4" onclick="showScreen('quiz')">
       <span class="icon">🏆</span>
       <span>小測驗</span>
-    </button>
-    <button class="menu-card card-5" onclick="showScreen('mole')">
-      <span class="icon">🔨</span>
-      <span>打地鼠</span>
-    </button>
-    <button class="menu-card card-6" onclick="showScreen('wordhead')">
-      <span class="icon">🔤</span>
-      <span>看圖找字頭</span>
     </button>
     <button class="menu-card card-13" onclick="showScreen('picture')" style="background: linear-gradient(135deg, #5eead4, #60a5fa);">
       <span class="icon">🖼️</span>
@@ -86,14 +85,6 @@
     <button class="menu-card card-17" onclick="showScreen('rhythm')" style="background: linear-gradient(135deg, #ef4444, #f59e0b);">
       <span class="icon">🥁</span>
       <span>注音節奏台</span>
-    </button>
-    <button class="menu-card card-18" onclick="showScreen('maze')" style="background: linear-gradient(135deg, #14b8a6, #64748b);">
-      <span class="icon">🧭</span>
-      <span>注音迷宮</span>
-    </button>
-    <button class="menu-card card-7" onclick="showScreen('memory')">
-      <span class="icon">🃏</span>
-      <span>記憶配對</span>
     </button>
     <button class="menu-card card-8" onclick="showScreen('tone')">
       <span class="icon">🎵</span>
@@ -156,40 +147,27 @@
   </div>
 </div>
 
-<!-- 注音迷宮 -->
-<div class="screen" id="screen-maze">
-  <h2>注音迷宮 🧭</h2>
-  <div class="picture-header maze-header">
-    <span id="mazeProgress">題目 1 / 6</span>
-    <span id="mazeLives">❤❤❤❤</span>
-    <span class="stars" id="mazeStars">⭐ 0</span>
-  </div>
-
-  <div class="maze-stage">
-    <div class="maze-info-card" onclick="replayMazeSound()">
-      <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayMazeSound()">🔊</button>
-      <div class="maze-emoji" id="mazeEmoji"></div>
-      <div class="maze-word" id="mazeWord"></div>
-      <div class="maze-order" id="mazeOrder"></div>
-      <div class="maze-hint" id="mazeHint">聽題目，撿散開的注音</div>
-    </div>
-    <div class="maze-grid" id="mazeGrid"></div>
-  </div>
-
-  <div class="maze-controls">
-    <button class="maze-move-btn maze-up" type="button" aria-label="往上" onclick="moveMazePlayer(-1, 0)">▲</button>
-    <button class="maze-move-btn maze-left" type="button" aria-label="往左" onclick="moveMazePlayer(0, -1)">◀</button>
-    <button class="maze-move-btn maze-right" type="button" aria-label="往右" onclick="moveMazePlayer(0, 1)">▶</button>
-    <button class="maze-move-btn maze-down" type="button" aria-label="往下" onclick="moveMazePlayer(1, 0)">▼</button>
-  </div>
-
-  <div class="mole-gameover" id="mazeGameover" style="display:none">
-    <div class="gameover-box">
-      <div style="font-size:3.5rem">🧭</div>
-      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">迷宮完成</div>
-      <div class="big-score">⭐ <span id="mazeFinalScore">0</span></div>
-      <button class="big-btn combine-btn" onclick="startMazeGame()">再闖一次</button>
-    </div>
+<!-- 入門區：認識單一注音符號的遊戲 -->
+<div class="screen" id="screen-basics">
+  <h2>🌱 入門區</h2>
+  <div class="basics-hint">先認識一個一個的注音符號</div>
+  <div class="menu-grid basics-grid">
+    <button class="menu-card card-1" onclick="showScreen('flashcards')">
+      <span class="icon">🀄</span>
+      <span>認識注音符號</span>
+    </button>
+    <button class="menu-card card-2" onclick="showScreen('match')">
+      <span class="icon">🎧</span>
+      <span>聽音找符號</span>
+    </button>
+    <button class="menu-card card-5" onclick="showScreen('mole')">
+      <span class="icon">🔨</span>
+      <span>打地鼠</span>
+    </button>
+    <button class="menu-card card-7" onclick="showScreen('memory')">
+      <span class="icon">🃏</span>
+      <span>記憶配對</span>
+    </button>
   </div>
 </div>
 
@@ -212,6 +190,10 @@
 <!-- 聽音找符號 遊戲 -->
 <div class="screen" id="screen-match">
   <h2>聽音找符號</h2>
+  <div class="picture-header">
+    <span id="matchProgress">第 1 / 10 題</span>
+    <span class="stars" id="matchStars">⭐ 0</span>
+  </div>
   <div class="prompt-box">
     <button class="speaker-btn" id="matchSpeaker" onclick="replayMatchSound()">🔊</button>
   </div>
@@ -239,7 +221,7 @@
 <div class="screen" id="screen-quiz">
   <h2>小測驗</h2>
   <div class="quiz-header">
-    <span id="quizProgress">第 1 / 16 題</span>
+    <span id="quizProgress">第 1 / 10 題</span>
     <span class="stars" id="quizStars">⭐️ 0</span>
   </div>
   <div id="quizQuestionArea"></div>
@@ -269,18 +251,6 @@
   </div>
 </div>
 
-<!-- 看圖找字頭 -->
-<div class="screen" id="screen-wordhead">
-  <h2>看圖找字頭</h2>
-  <div class="prompt-box">
-    <div class="flashcard" style="cursor:pointer;height:220px;width:min(300px,70vw)" onclick="replayWordHeadSound()">
-      <div class="word-emoji" id="whEmoji" style="font-size:70px"></div>
-      <div class="word-text" id="whWord"></div>
-    </div>
-  </div>
-  <div class="choices-grid" id="whChoices"></div>
-</div>
-
 <!-- 記憶配對 -->
 <div class="screen" id="screen-memory">
   <h2>記憶配對</h2>
@@ -294,6 +264,10 @@
 <!-- 聲調辨識 -->
 <div class="screen" id="screen-tone">
   <h2>聲調辨識</h2>
+  <div class="picture-header">
+    <span id="toneProgress">第 1 / 10 題</span>
+    <span class="stars" id="toneStars">⭐ 0</span>
+  </div>
   <div class="prompt-box">
     <div class="flashcard" style="cursor:pointer;height:220px;width:min(300px,70vw)" onclick="replayToneSound()">
       <div class="word-emoji" id="toneEmoji" style="font-size:70px"></div>
@@ -568,8 +542,8 @@
   </div>
 </div>
 
-<script src="data.js?v=43"></script>
-<script src="tts-manifest.js?v=43"></script>
-<script src="app.js?v=43"></script>
+<script src="data.js?v=45"></script>
+<script src="tts-manifest.js?v=45"></script>
+<script src="app.js?v=45"></script>
 </body>
 </html>
