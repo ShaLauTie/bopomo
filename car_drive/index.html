@@ -41,6 +41,26 @@ button{font-size:18px;padding:8px 22px;margin:10px 10px 0 0;border:0;border-radi
 button.sec{background:#3a4560}
 #wzText{font-size:24px;margin:10px 0}
 #wzAxes{font-family:monospace;font-size:13px;color:#9ab;white-space:pre;max-height:220px;overflow:hidden}
+/* ---- phone / tablet touch controls ---- */
+#touch,#rot,.touchOnly{display:none}
+body.touch.playing #touch{display:block;position:fixed;inset:0;z-index:70;touch-action:none;-webkit-user-select:none;-webkit-touch-callout:none}
+body.touch .touchOnly{display:block}body.touch .kbOnly,body.touch #help{display:none}
+body.touch #mini{width:112px;height:112px}body.touch #nav{width:150px;top:54px}body.touch #navBox{font-size:12px}body.touch #navDist{font-size:16px}
+body.touch .msg{font-size:15px;padding:4px 10px}body.touch #msgs{top:30%;width:52%}body.touch #speed{font-size:36px}
+.tb{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:16px;background:rgba(20,26,36,.42);border:2px solid rgba(255,255,255,.35);color:#fff;font-weight:700;font-size:20px;box-sizing:border-box;text-shadow:0 1px 2px #000}
+.tb.on{background:rgba(80,180,255,.45);border-color:#9df}
+#tGas{right:18px;bottom:22px;width:96px;height:150px;background:rgba(40,150,80,.4)}
+#tBrk{right:126px;bottom:22px;width:96px;height:110px;background:rgba(190,50,50,.4)}
+#tHand{right:126px;bottom:144px;width:96px;height:52px;font-size:15px}
+#tSteer{left:14px;bottom:14px;width:min(44vw,300px);height:170px;border-radius:24px;background:rgba(20,26,36,.25)}
+#tWheel{width:120px;height:120px;border-radius:50%;border:12px solid rgba(255,255,255,.55);box-sizing:border-box;position:relative;pointer-events:none}
+#tWheel:after{content:'';position:absolute;left:50%;top:-12px;width:8px;height:20px;margin-left:-4px;background:#ff7a30;border-radius:3px}
+#tTop{position:absolute;left:50%;top:6px;transform:translateX(-50%);display:flex;gap:8px}
+#tTop .tb,#tSide .tb{position:static;width:54px;height:44px;font-size:18px;border-radius:12px}
+#tSide{position:absolute;right:12px;top:118px;display:flex;gap:6px}
+#rot{position:fixed;inset:0;z-index:200;background:#0d1220;color:#fff;align-items:center;justify-content:center;flex-direction:column;font-size:22px;text-align:center}
+@media (orientation:portrait){body.touch #rot{display:flex}}
+@media (max-height:520px){.panel{padding:12px 18px;line-height:1.45;font-size:14px}.panel h1{font-size:22px}button{font-size:16px;padding:7px 18px}}
 </style>
 </head>
 <body>
@@ -51,10 +71,19 @@ button.sec{background:#3a4560}
   <div id="nav"><canvas id="mini" width="170" height="170"></canvas><div id="navBox"><div id="navArrow">⬆</div><div id="navText"></div><div id="navDist"></div><div id="navMis" style="clear:both;font-size:12px;opacity:.8"></div></div></div>
   <div id="msgs"></div><div id="flash" style="position:fixed;inset:0;pointer-events:none;opacity:0;z-index:5"></div>
   <div id="sigs"><span id="sL">◀</span><span id="sR">▶</span></div>
-  <div id="help">C 方向盤設定 ｜ G 畫質 ｜ N 日夜 ｜ T 天氣 ｜ M 大地圖 ｜ 滑鼠移動 看四周(V 開關) ｜ H 喇叭</div>
+  <div id="help">C 方向盤設定 ｜ G 畫質 ｜ N 日夜 ｜ T 天氣 ｜ M 大地圖 ｜ 滑鼠移動 看四周(V 開關) ｜ H / 滑鼠左鍵 喇叭</div>
   <div id="bigmap" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);align-items:center;justify-content:center;pointer-events:none"><canvas id="bmC" width="820" height="820" style="width:min(86vh,92vw);height:min(86vh,92vw);border-radius:50%;box-shadow:0 10px 50px rgba(0,0,0,.65)"></canvas></div>
 </div>
 
+<div id="touch">
+  <div id="tTop"><div class="tb" data-a="KeyQ">◀</div><div class="tb" data-a="KeyX">⚠</div><div class="tb" data-a="KeyE">▶</div></div>
+  <div id="tSide"><div class="tb" data-a="KeyR" id="tRev">D/R</div><div class="tb" data-k="KeyH">📢</div><div class="tb" data-a="KeyM">🗺</div><div class="tb" data-a="KeyN">🌙</div></div>
+  <div class="tb" id="tSteer"><div id="tWheel"></div></div>
+  <div class="tb" id="tHand" data-k="Space">手煞車</div>
+  <div class="tb" id="tBrk" data-k="KeyS">煞車</div>
+  <div class="tb" id="tGas" data-k="KeyW">油門</div>
+</div>
+<div id="rot"><div style="font-size:60px">📱↻</div>請把手機轉成橫向來玩</div>
 <div id="start"><div class="panel">
   <h1>🚗 日本ドライブ <small style="font-size:14px;opacity:.7">右ハンドル・左側通行</small></h1>
   <div class="cols">
@@ -64,13 +93,17 @@ button.sec{background:#3a4560}
     <h2>重點規則</h2>
     <div>靠左行駛・市區 40/首都高 60<br>紅燈、<b>止まれ</b>、<b>踏切</b>前要完全停車<br>轉彎打方向燈、讓行人<br>🅿 開進<b>コインパーキング</b>停入空格可加分<br>⛽ 油不夠時到<b>加油站</b>停在加油機旁加油<br>後車按喇叭 → 靠左讓路<br>⭕ 大圓環(北海道很多):順時針(往左)繞行<br>🚓 短時間違規 3 次警車會追來,被追到要繳罰金<br>🏝 北海道 ⇄ 東京 ⇄ 横浜 ⇄ 大阪:四個島只能走首都高跨海大橋</div>
   </div>
-  <div>
+  <div class="touchOnly">
+    <h2>手機操作</h2>
+    <div>左下 <b>方向盤</b>:按住左右拖曳轉向<br>右下 <b style="color:#5d8">油門</b>・<b style="color:#f77">煞車</b>・手煞車(甩尾)<br>上方 ◀ ▶ 方向燈・⚠ 警示燈<br>右側 D/R 倒車・📢 喇叭・🗺 地圖・🌙 日夜<br>在畫面空白處拖曳可以看四周</div>
+  </div>
+  <div class="kbOnly">
     <h2>鍵盤</h2>
     <table>
       <tr><td><kbd>W</kbd><kbd>S</kbd> 油門/煞車</td><td><kbd>A</kbd><kbd>D</kbd> 轉向</td></tr>
       <tr><td><kbd>Q</kbd><kbd>E</kbd> 方向燈</td><td><kbd>X</kbd> 警示燈</td></tr>
       <tr><td><kbd>R</kbd> 倒車</td><td><kbd>Space</kbd> 手煞車(甩尾)</td></tr>
-      <tr><td><kbd>H</kbd> 喇叭</td><td><kbd>N</kbd> 日/夜 <kbd>G</kbd> 畫質 <kbd>T</kbd> 天氣</td></tr>
+      <tr><td><kbd>H</kbd>/滑鼠左鍵 喇叭</td><td><kbd>N</kbd> 日/夜 <kbd>G</kbd> 畫質 <kbd>T</kbd> 天氣</td></tr>
       <tr><td><kbd>[</kbd><kbd>]</kbd> 視角</td><td><kbd>C</kbd> 方向盤設定</td></tr>
     </table>
   </div>
@@ -91,6 +124,8 @@ button.sec{background:#3a4560}
 <script>
 'use strict';
 const T = THREE;
+const isTouch = /[?&]touch=1/.test(location.search) || (matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0);
+if (isTouch) document.body.classList.add('touch');
 const S = 80, RW = 4, CYC = 48, HJ = 3; let LIMIT = 40;
 const isIC = i => ((i % 3) + 3) % 3 === 0;
 const fourLane = j => j === HJ || (j !== 0 && j !== HJ - 1 && (hash(j, 5, 61) < 0.7 || ((j % 3) + 3) % 3 === 1));
@@ -121,7 +156,7 @@ function inDiag(x, z) {
   const u = x - (ci * S + RW), v = z - (cj * S + rxOf(cj));
   return u > -3 && v > -3 && u < 34 && v < 34 && Math.abs(u + v - 30) < 4.3;
 }
-const TXT = ['止まれ', '徐行', '通学路', '前方注意', '速度落とせ', '右折'], TXT_LEN = [3, 2, 3, 4, 5, 2];
+const TXT = ['止まれ', '徐行', '通学路', '前方注意', '速度落とせ', '右折', 'ゾーン30'], TXT_LEN = [3, 2, 3, 4, 5, 2, 5];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const sgn = v => v < 0 ? -1 : 1;
 function hash(a, b, c) { c = c || 0; let h = Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) + Math.imul(c | 0, 1442695041); h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
@@ -649,6 +684,12 @@ function buildSeaCell(i, j) {
 }
 const rbAsph = new T.MeshLambertMaterial({ color: new T.Color(ASPH[0], ASPH[1], ASPH[2]) }), rbGrass = new T.MeshLambertMaterial({ color: 0x4f8a45 }), rbApron = new T.MeshLambertMaterial({ color: 0x8c8a84 });
 const walkMat = new T.MeshLambertMaterial({ color: new T.Color(0xb4b2aa) }), snowWalkMat = new T.MeshLambertMaterial({ color: 0xe8ecf0 });
+const schoolSignGeo = new T.PlaneGeometry(0.9, 1.3), hodoGeo = new T.PlaneGeometry(4.4, 0.55); let schoolM = null, hodoM = null;
+function schoolSignMat() { if (!schoolM) { const c = mkCanvas(128, 184), x = c.getContext('2d'); x.fillStyle = '#f5c400'; x.beginPath(); x.moveTo(64, 4); x.lineTo(124, 64); x.lineTo(64, 124); x.lineTo(4, 64); x.closePath(); x.fill(); x.lineWidth = 5; x.strokeStyle = '#111'; x.stroke();
+    x.fillStyle = '#111'; for (const [cx, h] of [[50, 1], [78, 0.85]]) { x.beginPath(); x.arc(cx, 44, 7 * h, 0, 7); x.fill(); x.fillRect(cx - 6 * h, 52, 12 * h, 26 * h); x.fillRect(cx - 6 * h, 78, 4, 16 * h); x.fillRect(cx + 2 * h, 78, 4, 16 * h); }
+    x.fillStyle = '#fff'; x.fillRect(14, 134, 100, 44); x.strokeStyle = '#111'; x.lineWidth = 3; x.strokeRect(14, 134, 100, 44); x.fillStyle = '#111'; x.font = 'bold 30px "Yu Gothic","Meiryo",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('通学路', 64, 157);
+    schoolM = new T.MeshLambertMaterial({ map: new T.CanvasTexture(c), transparent: true, alphaTest: 0.4, side: T.DoubleSide }); } return schoolM; }
+function hodoMat() { if (!hodoM) { const c = mkCanvas(512, 64), x = c.getContext('2d'); x.fillStyle = '#e8efe9'; x.fillRect(0, 0, 512, 64); x.fillStyle = '#1d4b3a'; x.font = 'bold 40px "Yu Gothic","Meiryo",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('桜ヶ丘歩道橋', 256, 34); hodoM = new T.MeshLambertMaterial({ map: new T.CanvasTexture(c) }); } return hodoM; }
 function buildCell(i, j) {
   if (!isLand(i, j)) return buildSeaCell(i, j);
   const B = new Batch(), L = new Batch(), rnd = rng(Math.floor(hash(i, j, 1) * 1e9));
@@ -749,6 +790,28 @@ function buildCell(i, j) {
         B.box('col', ox - RW - 0.6, 1.5, exitZ, 0.08, 3, 0.08, POLE); sgnQuad(B, 6, ox - RW - 0.6, 2.75, exitZ, 0, ow, 0.9);
       }
       for (const sg of [-1, 1]) B.orect('col', ox + sg * (RW - 0.35), mzc, 0, 1, mz1 - mz0, 0.12, 0.06, WHITE);
+    }
+  }
+
+  // ---------- Japanese street details: 矢羽根 bike markings, school-zone green shoulders, 歩道橋 ----------
+  if (!rur && !hwRow) {
+    const BLUE = [0.16, 0.42, 0.85], GRN = [0.24, 0.58, 0.34], BRG = [0.62, 0.74, 0.7], BRG2 = [0.5, 0.62, 0.6];
+    if (four) for (const sg of [-1, 1]) { const dir = -sg, zc = oz + sg * (rx - 0.95); // bikes ride with the traffic on the left edge
+      for (let q = ox + RW + 12; q < ox + S - RW - 12; q += 7) { B.orect('col', q - dir * 0.3, zc - 0.27, dir * 0.71, 0.71, 0.9, 0.26, 0.064, BLUE); B.orect('col', q - dir * 0.3, zc + 0.27, dir * 0.71, -0.71, 0.9, 0.26, 0.064, BLUE); } }
+    if (!nz && !isRound(i, j) && !isRound(i, j + 1) && !four && hash(i, j, 141) < 0.32) { // スクールゾーン
+      const z0 = oz + rx + 7, z1 = oz + S - rxN - 7;
+      if (z1 > z0 + 12) { for (const sg of [-1, 1]) B.rect('col', Math.min(ox + sg * (RW - 1.15), ox + sg * (RW - 0.42)), z0, Math.max(ox + sg * (RW - 1.15), ox + sg * (RW - 0.42)), z1, 0.058, GRN);
+        txtQuad(B, 6, ox + 2, z0 + 4, 0, 1, 0.75, 3.4); txtQuad(B, 6, ox - 2, z1 - 4, 0, -1, 0.75, 3.4); txtQuad(B, 2, ox + 2, (z0 + z1) / 2, 0, 1, 0.75, 2.4);
+        B.box('col', ox + RW + 0.9, 1.4, z0 + 1, 0.08, 2.8, 0.08, [0.6, 0.62, 0.64]); const sm = new T.Mesh(schoolSignGeo, schoolSignMat()); sm.position.set(ox + RW + 0.9, 2.55, z0 + 0.95); sm.rotation.y = Math.PI; extras.push(sm); } }
+    if (four && !minor && !isRound(i, j) && !rail && !river && !diag && !preRow && hash(i, j, 151) < 0.24) { // 歩道橋 over the wide road, stairs on the outer edge of both sidewalks
+      const bxc = ox + RW + 9, half = rx + 3.2;
+      B.box('col', bxc, 5.3, oz, 2.4, 0.5, 2 * half, BRG); for (const sx of [-1, 1]) B.box('col', bxc + sx * 1.16, 6.1, oz, 0.08, 1.1, 2 * half, BRG2);
+      for (const sg of [-1, 1]) { const zc = oz + sg * (rx + 3.0);
+        B.box('col', bxc, 2.6, zc, 0.5, 5.2, 0.5, BRG2);
+        for (let k = 0; k < 13; k++) { const top = 5.3 - (k + 1) * 0.405; if (top <= 0.05) break; B.box('col', bxc + 1.55 + k * 0.7, top / 2 + 0.15, zc, 0.7, top, 1.4, [0.7, 0.71, 0.7]); }
+        for (const dz of [-0.72, 0.72]) for (let k = 0; k < 13; k += 2) B.box('col', bxc + 1.55 + k * 0.7, 5.8 - k * 0.405, zc + dz, 0.06, 0.06, 0.06, BRG2);
+        rects.push([bxc - 0.3, zc - 0.75, bxc + 10.5, zc + 0.75]); }
+      for (const sx of [-1, 1]) { const m = new T.Mesh(hodoGeo, hodoMat()); m.position.set(bxc + sx * 1.22, 5.3, oz); m.rotation.y = sx * Math.PI / 2; extras.push(m); }
     }
   }
 
@@ -1221,7 +1284,9 @@ function updatePeds(c, t) {
   for (const p of c.peds) {
     if (p.fly) continue;
     p.mesh.visible = near; if (!near) { p.moving = false; continue; }
-    const startPh = p.W === 'X' ? 0 : st.zStart, tcw = st.tc - startPh - p.delay;
+    const startPh = p.W === 'X' ? 0 : st.zStart, tcw0 = st.tc - startPh - p.delay, pdt = Math.min(0.1, t - (p.lt || t)); p.lt = t;
+    if (tcw0 <= 0) p.boost = 0; else if (t - (p.hurryT || -99) < 5 && p.moving) p.boost = (p.boost || 0) + pdt * 1.4;
+    const tcw = tcw0 + (p.boost || 0);
     const side = (((st.n + p.k + p.arm) & 1) ? -1 : 1);
     const prog = tcw <= 0 ? 0 : Math.min(1, tcw / p.dur);
     const lat = side * (p.rl + 1.3) * (1 - 2 * prog);
@@ -1231,10 +1296,98 @@ function updatePeds(c, t) {
     const y = Math.abs(lat) > p.rl + 0.05 ? 0.15 : 0.02;
     p.mesh.position.set(p.x, y, p.z);
     p.mesh.rotation.y = Math.atan2(-side * p.px, -side * p.pz);
-    const sw = p.moving ? Math.sin(t * 7 + p.k * 2) * 0.6 : 0;
+    const sw = p.moving ? Math.sin(t * (t - (p.hurryT || -99) < 5 ? 13 : 7) + p.k * 2) * 0.6 : 0;
     p.mesh.userData.l1.rotation.x = sw; p.mesh.userData.l2.rotation.x = -sw;
     p.mesh.position.y += p.moving ? Math.abs(Math.sin(t * 7)) * 0.03 : 0;
   }
+}
+
+// ============ bicycles (ママチャリ): most ride on the sidewalk, some on the left edge of the road ============
+const bikes = [], bikeGeoC = {}, bikeMat = new T.MeshLambertMaterial({ vertexColors: true }), BIKE_N = isTouch ? 10 : 18, BIKE_SW = 1.8;
+function bikeGeo(ci) {
+  if (bikeGeoC[ci]) return bikeGeoC[ci];
+  const parts = [], fc = [[0.86, 0.86, 0.88], [0.72, 0.16, 0.16], [0.2, 0.35, 0.68], [0.95, 0.95, 0.95], [0.25, 0.25, 0.27], [0.9, 0.72, 0.2]][ci % 6], blk = [0.07, 0.07, 0.07], sil = [0.72, 0.74, 0.77], cl = new T.Color(pedCols[ci % pedCols.length]).toArray(), skin = [0.9, 0.76, 0.63];
+  const tube = (a, b, r, c) => { const A = new T.Vector3(...a), B = new T.Vector3(...b), o = new T.Object3D(); o.position.copy(A).add(B).multiplyScalar(0.5); o.lookAt(B); o.updateMatrix(); parts.push({ g: new T.BoxGeometry(r, r, A.distanceTo(B)), m: o.matrix.clone(), c }); };
+  const at = (g, x, y, z, rx, ry, c) => { const o = new T.Object3D(); o.position.set(x, y, z); o.rotation.set(rx || 0, ry || 0, 0); o.updateMatrix(); parts.push({ g, m: o.matrix.clone(), c }); };
+  for (const z of [-0.55, 0.55]) at(new T.TorusGeometry(0.33, 0.035, 6, 18), 0, 0.36, z, 0, Math.PI / 2, blk);
+  tube([0, 0.38, 0.08], [0, 0.36, 0.55], 0.04, fc); tube([0, 0.36, 0.55], [0, 0.84, 0.18], 0.04, fc); tube([0, 0.38, 0.08], [0, 0.86, 0.2], 0.045, fc);
+  tube([0, 0.4, 0.04], [0, 0.82, -0.42], 0.05, fc); tube([0, 0.84, -0.42], [0, 0.36, -0.55], 0.035, sil); tube([0, 0.84, -0.42], [0, 1.05, -0.38], 0.035, sil); tube([-0.28, 1.05, -0.34], [0.28, 1.05, -0.34], 0.03, sil);
+  at(new T.BoxGeometry(0.18, 0.06, 0.26), 0, 0.9, 0.2, 0, 0, blk); at(new T.BoxGeometry(0.34, 0.22, 0.28), 0, 0.92, -0.64, 0, 0, [0.45, 0.47, 0.5]); at(new T.BoxGeometry(0.2, 0.03, 0.32), 0, 0.72, 0.52, 0, 0, sil);
+  at(pedGeo.body, 0, 1.3, 0.12, -0.28, 0, cl); at(pedGeo.head, 0, 1.78, 0.0, 0, 0, skin); at(new T.SphereGeometry(0.13, 8, 6), 0, 1.83, 0.03, 0, 0, [0.1, 0.08, 0.07]);
+  for (const sx of [-1, 1]) tube([sx * 0.2, 1.52, 0.02], [sx * 0.26, 1.06, -0.33], 0.08, cl);
+  return bikeGeoC[ci] = mergeGeos(parts);
+}
+function bikeOK(ax, line, pos, road) { // is there a sidewalk (or road edge) to ride on here?
+  if (ax === 'x') { const I = Math.floor(pos / S), J = Math.round(line / S); if (!isLand(I, J) || J === HJ || rural(I, J) || rural(I, J - 1) || diagCell(I, J) || diagCell(I, J - 1)) return false; }
+  else { const I = Math.round(line / S), J = Math.floor(pos / S); if (!isLand(I, J) || noZ(I, J) || J === HJ || J === HJ - 1 || rural(I, J) || rural(I - 1, J) || diagCell(I, J) || diagCell(I - 1, J)) return false; }
+  const x = ax === 'x' ? pos : line, z = ax === 'x' ? line : pos, ni = Math.round(x / S), nj = Math.round(z / S);
+  return !(isRound(ni, nj) && Math.hypot(x - ni * S, z - nj * S) < RB_O + 9);
+}
+function bikeLine(ax, base, side, road, dir) { return ax === 'x' ? base + (road ? -dir * (rxOf(Math.round(base / S)) - 0.9) : side * (rxOf(Math.round(base / S)) + BIKE_SW)) : base + (road ? dir * (RW - 0.9) : side * (RW + BIKE_SW)); }
+function spawnBike(b) {
+  for (let t = 0; t < 40; t++) {
+    const ax = Math.random() < 0.5 ? 'x' : 'z', I = Math.round(P.x / S) + rint(-2, 2), J = Math.round(P.z / S) + rint(-2, 2), road = Math.random() < 0.28, dir = Math.random() < 0.5 ? 1 : -1, side = Math.random() < 0.5 ? 1 : -1;
+    const isl = isleOf(I, J); if (!isl || (isl.snow && Math.random() < 0.6)) continue;
+    const line = bikeLine(ax, ax === 'x' ? J * S : I * S, side, road, dir), pos = (ax === 'x' ? I * S : J * S) + 14 + Math.random() * 52, x = ax === 'x' ? pos : line, z = ax === 'x' ? line : pos, d = Math.hypot(x - P.x, z - P.z);
+    if (d < 45 || d > 160 || !bikeOK(ax, line, pos, road)) continue;
+    Object.assign(b, { ax, line, pos, dir, road, v: road ? 4.6 + Math.random() : 3.3 + Math.random() * 1.2, down: 0, live: true }); b.g.visible = true; b.g.rotation.set(0, 0, 0); return;
+  }
+  b.live = false; b.g.visible = false;
+}
+function bikeBell() { for (let k = 0; k < 2; k++) { tone(3150, 3100, 0.28, 'sine', 0.05, k * 0.17); tone(4700, 4650, 0.18, 'sine', 0.02, k * 0.17); } }
+function updateBikes(dt) {
+  if (!bikes.length) for (let k = 0; k < BIKE_N; k++) { const g = new T.Group(), body = new T.Mesh(bikeGeo(k % 8), bikeMat); body.castShadow = true; g.add(body);
+    const legs = [0, 1].map(q => { const l = new T.Mesh(pedGeo.leg, legM); l.position.set(q ? 0.1 : -0.1, 0.98, 0.16); g.add(l); return l; }); scene.add(g); bikes.push({ g, legs, ph: Math.random() * 6, bell: -9, live: false }); }
+  const fx = -Math.sin(P.th), fz = -Math.cos(P.th);
+  for (const b of bikes) {
+    if (!b.live || b.down > 0) { if (b.down > 0) { b.down -= dt; if (b.down <= 0) spawnBike(b); } else if (Math.random() < dt * 2) spawnBike(b); continue; }
+    let next = b.pos + b.dir * b.v * (simT - (b.hurryT || -99) < 4 ? 1.6 : 1) * dt;
+    // at a corner (sidewalk riders only) sometimes turn onto the cross street, away from the road they were on
+    if (!b.road) { const n = Math.round(next / S) * S, rx_ = b.ax === 'x' ? RW + BIKE_SW : rxOf(Math.round(next / S)) + BIKE_SW, c = n - b.dir * rx_;
+      if ((b.pos - c) * (next - c) <= 0 && Math.random() < 0.35) { const base = b.ax === 'x' ? Math.round(b.line / S) * S : Math.round(b.line / S) * S, sd = Math.sign(b.line - base) || 1, nax = b.ax === 'x' ? 'z' : 'x';
+        if (bikeOK(nax, c, b.line + sd * 6, false)) { b.ax = nax; b.pos = b.line; b.line = c; b.dir = sd; next = b.pos + b.dir * b.v * dt; } } }
+    if (!bikeOK(b.ax, b.line, next + b.dir * 4, b.road)) { b.dir = -b.dir; if (b.road) { const base = Math.round(b.line / S) * S; b.line = 2 * base - b.line; } next = b.pos; }
+    b.pos = next;
+    const x = b.ax === 'x' ? b.pos : b.line, z = b.ax === 'x' ? b.line : b.pos, dx = x - P.x, dz = z - P.z, d = Math.hypot(dx, dz);
+    if (d > 175) { spawnBike(b); continue; }
+    const hx = b.ax === 'x' ? b.dir : 0, hz = b.ax === 'z' ? b.dir : 0, ty = Math.atan2(-hx, -hz);
+    b.g.rotation.y += normAng(ty - b.g.rotation.y) * Math.min(1, dt * 6); b.g.position.set(x, b.road ? 0.02 : 0.15, z);
+    b.ph += dt * b.v * 2.2; b.legs[0].rotation.x = -0.9 + Math.sin(b.ph) * 0.55; b.legs[1].rotation.x = -0.9 - Math.sin(b.ph) * 0.55;
+    if (P.lay) continue;
+    if (d < 1.35 && Math.abs(P.v) > 0.6) { violation('撞到腳踏車!', 50); thud(); yelp(); P.v *= 0.6; b.down = 6; b.g.rotation.z = Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1); b.g.position.y = 0.35; continue; }
+    if (d < 7 && Math.abs(P.v) > 2 && simT - b.bell > 5 && dx * fx + dz * fz > 0) { b.bell = simT; bikeBell(); }
+  }
+}
+
+// ============ honking at people: they hurry, get angry, or flip you off ============
+let hornWas = false, hornReactT = -9;
+const reactTex = {}, reacts = [];
+function reactMat(e) {
+  if (!reactTex[e]) { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = 'rgba(255,255,255,.92)'; x.beginPath(); x.arc(64, 60, 52, 0, 7); x.fill(); x.beginPath(); x.moveTo(50, 104); x.lineTo(64, 126); x.lineTo(76, 104); x.fill();
+    x.font = '68px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(e, 64, 64); reactTex[e] = new T.SpriteMaterial({ map: new T.CanvasTexture(c), depthTest: false, fog: false }); }
+  return reactTex[e];
+}
+function showReact(e, get, h) { const sp = new T.Sprite(reactMat(e)); sp.scale.set(1.5, 1.5, 1); sp.renderOrder = 10; scene.add(sp); reacts.push({ sp, get, h, t0: simT }); }
+function updateReacts() {
+  for (let k = reacts.length - 1; k >= 0; k--) { const r = reacts[k], a = simT - r.t0, pos = r.get();
+    if (a > 2.6 || !pos) { scene.remove(r.sp); reacts.splice(k, 1); continue; }
+    r.sp.position.set(pos[0], pos[1] + r.h + Math.min(a, 0.3) * 1.2 + Math.sin(a * 9) * 0.05, pos[2]); const s_ = 1.5 * Math.min(1, a * 5); r.sp.scale.set(s_, s_, 1); }
+}
+function hornReact() {
+  const fx = -Math.sin(P.th), fz = -Math.cos(P.th), seen = (x, z, R) => { const dx = x - P.x, dz = z - P.z, d = Math.hypot(dx, dz); return d < 12 || (d < R && (dx * fx + dz * fz) / d > 0.35); };
+  const pick = () => { const r = Math.random(); return r < 0.45 ? 'hurry' : r < 0.75 ? 'angry' : 'finger'; };
+  let n = 0;
+  if (!P.lay) for (const c of cells.values()) { if (Math.abs(c.i * S - P.x) > 60 || Math.abs(c.j * S - P.z) > 60) continue;
+    for (const p of c.peds) { if (!p.mesh || !p.mesh.visible || p.fly || !seen(p.x, p.z, 30) || n > 6) continue; n++;
+      let r = pick(); if (r === 'hurry' && !p.moving) r = Math.random() < 0.5 ? 'angry' : 'finger';
+      const get = () => p.mesh.visible ? [p.x, p.mesh.position.y, p.z] : null;
+      setTimeout(() => { if (r === 'hurry') { p.hurryT = simT; showReact('💦', get, 2.1); } else if (r === 'angry') showReact(Math.random() < 0.5 ? '💢' : '😠', get, 2.1); else showReact('🖕', get, 2.1); }, 150 + Math.random() * 450); } }
+  for (const a of aiCars) { const [x, z] = aiPos(a); if (!!a.hw !== (P.lay === 1) || !seen(x, z, 40) || n > 10) continue; n++;
+    const r = Math.random(), get = () => aiCars.includes(a) ? [a.mesh.position.x, a.mesh.position.y, a.mesh.position.z] : null, h = (a.mesh.userData.kind === 'bus' || a.mesh.userData.kind === 'truck') ? 3.8 : 2.3;
+    setTimeout(() => { if (r < 0.4) { a.boostT = simT; showReact('💨', get, h); } else if (r < 0.65) { aiHorn(0.18); showReact('😠', get, h); } else if (r < 0.85) showReact('🖕', get, h); else showReact('💢', get, h); }, 250 + Math.random() * 500); }
+  for (const b of bikes) { if (!b.live || b.down > 0 || P.lay || !seen(b.g.position.x, b.g.position.z, 30)) continue;
+    const r = Math.random(), get = () => b.live && b.down <= 0 ? [b.g.position.x, b.g.position.y, b.g.position.z] : null;
+    setTimeout(() => { if (r < 0.45) { b.hurryT = simT; showReact('💦', get, 2.2); } else if (r < 0.7) { bikeBell(); showReact('😠', get, 2.2); } else showReact('🖕', get, 2.2); }, 200 + Math.random() * 400); }
 }
 
 // ============ cell manager ============
@@ -1287,7 +1440,8 @@ bx(0.09, 0.09, 0.4, 0.38, 0.84, -0.62, mDark);
 // slim, rounded A-pillars that start at the base of the windscreen (far from the eye, so they block less)
 beam([-0.84, 0.95, -1.18], [-0.72, 1.58, -0.3], 0.03, mTrim); beam([0.84, 0.95, -1.18], [0.72, 1.58, -0.3], 0.03, mTrim);
 bx(1.8, 0.05, 1.65, 0, 1.6, 0.525, mRoof);
-bx(0.08, 1.0, 2.0, 0.88, 0.5, 0.35, mDark); bx(0.08, 1.0, 2.0, -0.88, 0.5, 0.35, mDark);
+for (const sx of [-1, 1]) { // doors run forward to the A-pillar base and overlap the dashboard ends, with a sill trim on top
+  bx(0.08, 0.98, 2.62, sx * 0.9, 0.49, 0.04, mDark); bx(0.1, 0.05, 2.62, sx * 0.87, 0.99, 0.04, mTrim); bx(0.07, 0.12, 0.9, sx * 0.83, 0.62, 0.15, mDash); }
 bx(1.84, 0.05, 2.4, 0, 0.1, 0.2, mDark); bx(1.8, 0.4, 0.08, 0, 0.2, -0.72, mDash); bx(1.8, 1.1, 0.06, 0, 0.55, 1.35, mDark);
 bx(0.1, 0.5, 0.12, 0.86, 1.25, 0.9, mTrim); bx(0.1, 0.5, 0.12, -0.86, 1.25, 0.9, mTrim);
 bx(0.5, 0.72, 0.12, -0.42, 0.85, 0.85, mDark);
@@ -1315,7 +1469,9 @@ function mirPts(w, h, side, grow, a0, a1) {
 }
 const mirShell = new T.MeshPhongMaterial({ color: 0xe9ecef, specular: 0x808080, shininess: 70 }), mirDark = new T.MeshPhongMaterial({ color: 0x1b1d20, specular: 0x444444, shininess: 40 });
 function makeMirror(w, h, px, py, pz, fw, fh, fov, yaw, housing) {
-  const rt = new T.WebGLRenderTarget(fw, fh, { minFilter: T.LinearFilter, magFilter: T.LinearFilter });
+  const q_ = isTouch ? 1.4 : 2.4; fw = Math.round(fw * q_); fh = Math.round(fh * q_);
+  const rt = renderer.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget ? new T.WebGLMultisampleRenderTarget(fw, fh, { minFilter: T.LinearFilter, magFilter: T.LinearFilter }) : new T.WebGLRenderTarget(fw, fh, { minFilter: T.LinearFilter, magFilter: T.LinearFilter });
+  if (rt.isWebGLMultisampleRenderTarget) rt.samples = isTouch ? 2 : 4; rt.texture.anisotropy = 4;
   rt.texture.wrapS = T.RepeatWrapping; rt.texture.repeat.x = -1; rt.texture.offset.x = 1;
   const side = housing || 0, pod = new T.Group(); pod.position.set(px, py, pz); pod.lookAt(EYE); inter.add(pod);
   // glass: the shape, with UVs spread over its bounding box
@@ -1351,7 +1507,7 @@ for (const [a, b] of [[[-0.9, 0.9, -1.1], [-1.1, 0.9, -1.16]], [[0.9, 0.94, -0.9
 beam([0.05, 1.6, -0.55], [0.05, 1.5, -0.585], 0.012, mirDark);
 car.add(camera); camera.position.copy(EYE);
 // headlights
-const headL = new T.SpotLight(0xfff2cc, 0, 70, 0.55, 0.5, 1); headL.position.set(0, 0.8, -1.5); const headT = new T.Object3D(); headT.position.set(0, 0, -25); car.add(headL, headT); headL.target = headT;
+const headL = new T.SpotLight(0xfff2cc, 0, 70, 0.55, 0.5, 1); headL.position.set(0, 0.8, -1.5); const headT = new T.Object3D(); headT.position.set(0, -1.6, -17); car.add(headL, headT); headL.target = headT;
 const cabinL = new T.PointLight(0xffe0b0, 0, 4, 2); cabinL.position.set(0.2, 1.25, -0.1); car.add(cabinL);
 
 // ============ AI traffic ============
@@ -1448,7 +1604,9 @@ function carGeo(kind) {
 }
 const carDetailMat = new T.MeshLambertMaterial({ vertexColors: true, side: T.DoubleSide });
 const carPaintMat = new T.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x555555, side: T.DoubleSide });
-const tailBox = new T.BoxGeometry(0.34, 0.14, 0.04);
+const tailBox = new T.BoxGeometry(0.34, 0.14, 0.04), headBox = new T.BoxGeometry(0.36, 0.13, 0.05), headLampM = new T.MeshBasicMaterial({ color: 0xbfc3c6 });
+const beamGeo = new T.PlaneGeometry(4.2, 11).rotateX(-Math.PI / 2), beamMat = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 128; const x = c.getContext('2d'), g = x.createRadialGradient(32, 128, 4, 32, 128, 128); g.addColorStop(0, 'rgba(255,240,200,0.75)'); g.addColorStop(0.5, 'rgba(255,235,190,0.28)'); g.addColorStop(1, 'rgba(255,230,180,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 128);
+  return new T.MeshBasicMaterial({ map: new T.CanvasTexture(c), transparent: true, depthWrite: false, blending: T.AdditiveBlending, visible: false }); })();
 const TAXI_COL = [0x1d3c78, 0xf0c020, 0x2a7a3a, 0x222222];
 function makeAICar() {
   let r = Math.random(), kind = 'sed'; for (const [k, p] of KIND_P) { if (r < p) { kind = k; break; } r -= p; }
@@ -1464,6 +1622,8 @@ function makeAICar() {
   const bg = new T.BufferGeometry(); bg.setAttribute('position', G.body.attributes.position); bg.setAttribute('normal', G.body.attributes.normal); bg.setAttribute('color', new T.BufferAttribute(cols, 3));
   const g = new T.Group(); g.add(new T.Mesh(bg, carPaintMat)); g.add(new T.Mesh(G.detail, carDetailMat));
   const tails = [-1, 1].map(sx => { const o = new T.Mesh(tailBox, tailOff); o.position.set(sx * (W / 2 - 0.28), D.tailY, L / 2 + 0.03); g.add(o); return o; });
+  for (const sx of [-1, 1]) { const h = new T.Mesh(headBox, headLampM); h.position.set(sx * (W / 2 - 0.3), D.tailY - 0.05, -L / 2 - 0.03); g.add(h); }
+  { const b = new T.Mesh(beamGeo, beamMat); b.position.set(0, 0.06, -L / 2 - 5.6); b.renderOrder = 2; g.add(b); }
   g.traverse(o => { if (o.isMesh) o.castShadow = true; });
   g.userData.tails = tails; g.userData.len = L; g.userData.kind = kind; return g;
 }
@@ -1503,7 +1663,7 @@ function updateAI(dt) {
       const sj = Math.floor(a.s / S), ahead = a.dir > 0 ? noZ(a.line, sj + 1) : noZ(a.line, sj - 1), dEnd = a.dir > 0 ? (sj + 1) * S - a.s : a.s - sj * S;
       if (noZ(a.line, sj) || (ahead && dEnd < 30)) { kill(); continue; }
     }
-    let vd = a.vmax;
+    let vd = a.vmax * (simT - (a.boostT || -99) < 4 ? 1.35 : 1);
     // next stop line
     const k = a.dir > 0 ? Math.floor((a.s + 9.9) / S) + 1 : Math.ceil((a.s - 9.9) / S) - 1, sd_ = a.axis === 'z' ? rxOf(k) + 4.6 : 8.6, sl = k * S - a.dir * sd_, d = (sl - a.s) * a.dir;
     const ii = a.axis === 'x' ? k : a.line, jj = a.axis === 'x' ? a.line : k;
@@ -2437,7 +2597,7 @@ addEventListener('keydown', e => {
     case 'KeyE': toggleSig('R'); break;
     case 'KeyX': P.haz = !P.haz; P.sigL = P.sigR = false; blinkT = 0; click(); break;
     case 'KeyR': toggleRev(); break;
-    case 'KeyN': setNight(!night); break;
+    case 'KeyN': gameHour = night ? 7 : 19; setNight(!night); break;
     case 'KeyT': setWeather((weather + 1) % 4); weatherT = 240; break;
     case 'KeyG': qi = (qi + 1) % 3; renderScale = 1; applyRes(); notify('畫質 ' + ['標準(無陰影)', '高(即時陰影)', '最高(高解析陰影)'][qi] + '(越高越吃顯卡)', ''); break;
     case 'KeyM': toggleBigMap(); break;
@@ -2448,15 +2608,42 @@ addEventListener('keydown', e => {
   }
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('mousedown', e => { if (!isTouch && started && !wz.active && e.button === 0 && e.target.tagName === 'CANVAS') keys.Mouse = true; });
+addEventListener('mouseup', e => { if (e.button === 0) keys.Mouse = false; });
+addEventListener('blur', () => { keys.Mouse = false; });
 let mouseLook = true, qi = 1, renderScale = 1, fpsAcc = 0, fpsN = 0, fpsShow = 60, perfT = 0;
 function applyRes() { renderer.setPixelRatio([1, 1, 1.5][qi] * renderScale); resize(); const sh = qi > 0; if (renderer.shadowMap.enabled !== sh) { renderer.shadowMap.enabled = sh; scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); }); } const ms = qi === 2 ? 4096 : 2048; if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } } }
 function adaptPerf(dt) { // dynamic resolution: keep the frame rate up on integrated GPUs
   fpsAcc += dt; fpsN++; perfT += dt;
   if (perfT > 1.5) { const fps = fpsN / fpsAcc; fpsShow = Math.round(fps); fpsAcc = 0; fpsN = 0; perfT = 0;
-    if (fps < 45 && renderScale > 0.6) { renderScale = Math.max(0.6, renderScale - 0.1); applyRes(); }
+    if (fps < 45 && renderScale > (isTouch ? 0.45 : 0.6)) { renderScale = Math.max(isTouch ? 0.45 : 0.6, renderScale - 0.1); applyRes(); }
     else if (fps > 58 && renderScale < 1) { renderScale = Math.min(1, renderScale + 0.05); applyRes(); } }
 }
 addEventListener('mousemove', e => { if (!started || wz.active) return; look.ty = mouseLook ? -(e.clientX / innerWidth - 0.5) * 2 * 1.7 : 0; look.tp = mouseLook ? -(e.clientY / innerHeight - 0.5) * 2 * 0.6 : 0; });
+// ---- touch controls (phones / tablets) ----
+let touchSteer = null;
+if (isTouch) {
+  mouseLook = false; qi = 0;
+  const tap = code => { dispatchEvent(new KeyboardEvent('keydown', { code })); dispatchEvent(new KeyboardEvent('keyup', { code })); };
+  document.querySelectorAll('#touch [data-k]').forEach(el => {
+    const k = el.dataset.k, up = e => { keys[k] = false; el.classList.remove('on'); };
+    el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); el.setPointerCapture(e.pointerId); keys[k] = true; el.classList.add('on'); });
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+  });
+  document.querySelectorAll('#touch [data-a]').forEach(el => el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); tap(el.dataset.a); el.classList.add('on'); setTimeout(() => el.classList.remove('on'), 150); }));
+  const sp = $('tSteer'), wh = $('tWheel'); let sid = null, sx0 = 0;
+  sp.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); sp.setPointerCapture(e.pointerId); sid = e.pointerId; sx0 = e.clientX; touchSteer = 0; });
+  sp.addEventListener('pointermove', e => { if (e.pointerId !== sid) return; touchSteer = clamp((e.clientX - sx0) / (sp.clientWidth * 0.36), -1, 1); wh.style.transform = 'rotate(' + touchSteer * 110 + 'deg)'; });
+  const sUp = e => { if (e.pointerId !== sid) return; sid = null; touchSteer = null; wh.style.transform = ''; };
+  sp.addEventListener('pointerup', sUp); sp.addEventListener('pointercancel', sUp);
+  // drag on empty screen to look around; it springs back on release
+  const tl = $('touch'); let lid = null, lx0 = 0, ly0 = 0;
+  tl.addEventListener('pointerdown', e => { if (e.target !== tl) return; lid = e.pointerId; lx0 = e.clientX; ly0 = e.clientY; tl.setPointerCapture(e.pointerId); });
+  tl.addEventListener('pointermove', e => { if (e.pointerId !== lid) return; look.ty = clamp(-(e.clientX - lx0) / innerWidth * 4, -1.7, 1.7); look.tp = clamp(-(e.clientY - ly0) / innerHeight * 1.5, -0.6, 0.6); });
+  const lUp = e => { if (e.pointerId !== lid) return; lid = null; look.ty = look.tp = 0; };
+  tl.addEventListener('pointerup', lUp); tl.addEventListener('pointercancel', lUp);
+  setInterval(() => { const r = $('tRev'); if (r) r.textContent = P.rev ? 'R' : 'D'; }, 300);
+}
 function toggleRev() { if (Math.abs(P.v) > 0.8) { notify('請先完全停車再切換 D / R', ''); return; } P.rev = !P.rev; $('gear').textContent = P.rev ? 'R' : 'D'; }
 
 // ---- gamepad / wheel ----
@@ -2599,13 +2786,20 @@ function horn(on) {
 }
 
 // ============ day / night ============
-let night = false;
+let night = false, gameHour = Math.random() < 0.5 ? 6.5 + Math.random() * 10.5 : (18.5 + Math.random() * 9) % 24;
+const isNightHour = h => h < 6 || h >= 18;
+function updateClock(dt) {
+  gameHour = (gameHour + dt / 60) % 24; const n = isNightHour(gameHour);
+  if (n !== night) { setNight(n); notify(n ? '🌆 天黑了,記得開大燈慢慢開' : '🌅 天亮了', ''); }
+}
+const clockStr = () => { const h = Math.floor(gameHour), m = Math.floor((gameHour - h) * 60); return (night ? '🌙 ' : '☀ ') + h + ':' + (m < 10 ? '0' : '') + m; };
 function setNight(n) {
   night = n; const bg = n ? 0x27324e : 0xd6e8f5;
   scene.background.setHex(bg); scene.fog.color.setHex(bg); scene.fog.near = n ? 30 : 40; scene.fog.far = n ? 150 : 190;
   hemi.intensity = n ? 0.32 : 0.95; hemi.color.setHex(n ? 0x6a7aa8 : 0xdfeeff); sun.intensity = n ? 0.1 : 0.85;
   facade.forEach(m => m.emissive.setHex(n ? 0xffffff : 0x000000));
-  sky.material = skyMats[n ? 1 : 0]; headL.intensity = n ? 2.2 : 0; cabinL.intensity = n ? 0.9 : 0;
+  sky.material = skyMats[n ? 1 : 0]; headL.intensity = n ? 2.4 : 0; cabinL.intensity = n ? 0.9 : 0;
+  headLampM.color.setHex(n ? 0xfffbe6 : 0xbfc3c6); tailOff.color.setHex(n ? 0xb81818 : 0x701010); beamMat.visible = n;
   if (typeof applyEnv === 'function' && typeof weather !== 'undefined') applyEnv();
 }
 
@@ -2695,14 +2889,14 @@ function pickPoint(nMin, nMax) {
     if (!xr && Math.abs(cz_ - HJ * S) < 20) continue;
     if (!xr && blockedZ(ti, tj) === 1) continue; if (rural(ti, tj)) continue;
     // stop in the kerb-side (leftmost) lane, never next to the median
-    const sd = xr ? (P.x < cx_ ? -1 : 1) : (P.z < cz_ ? 1 : -1), w = xr ? rxOf(tj) : RW, lane = w - 1.7;
+    const ow = xr ? 0 : oneWay(ti), sd = xr ? (P.x < cx_ ? -1 : 1) : ow ? ow : (P.z < cz_ ? 1 : -1), w = xr ? rxOf(tj) : RW, lane = w - 1.7;
     return xr ? { x: cx_, z: cz_ + sd * lane, px: cx_, pz: cz_ + sd * (w + 1.3), fy: sd > 0 ? Math.PI : 0 } : { x: cx_ + sd * lane, z: cz_, px: cx_ + sd * (w + 1.3), pz: cz_, fy: sd > 0 ? -Math.PI / 2 : Math.PI / 2 };
   }
   return { x: P.x + 120, z: Math.round(P.z / S) * S - 2, px: P.x + 120, pz: Math.round(P.z / S) * S - 6, fy: 0 };
 }
 function setBeacon(T_, col) { beacon.position.set(T_.x, 0, T_.z); beacon.visible = true; pillar.material.color.setHex(col); bring.material.color.setHex(col); }
 function newMission() {
-  const p = pickPoint(2, 4); nav.phase = 'pick'; nav.T = { x: p.x, z: p.z }; nav.name = '乘客上車處'; nav.t0 = simT; nav.stopT = 0;
+  const p = pickPoint(2, 4); nav.phase = 'pick'; nav.T = { x: p.x, z: p.z, lane: true }; nav.name = '乘客上車處'; nav.t0 = simT; nav.stopT = 0;
   paxMesh.position.set(p.px, 0.15, p.pz); paxMesh.rotation.y = p.fy; paxMesh.visible = true; armUp.visible = true;
   setBeacon(nav.T, 0xffc21a);
   notify('🚕 有客人在招手!到黃色光柱處停車載客', 'good');
@@ -2719,9 +2913,9 @@ function pickPointIn(isl) {
 function startTrip() {
   let p = pickPoint(3, 6), far = false;
   const here = isleAt(P.x, P.z), idx = ISLES.indexOf(here);
-  if (here && Math.random() < 0.35) { const nb = [ISLES[idx - 1], ISLES[idx + 1]].filter(Boolean), dst = nb[rint(0, nb.length - 1)], q = dst && pickPointIn(dst); if (q) { p = q; far = dst; } } nav.phase = 'drop'; nav.T = { x: p.x, z: p.z }; nav.drop = p; nav.name = PLACES[rint(0, PLACES.length - 1)]; nav.t0 = simT; nav.stopT = 0;
+  if (here && Math.random() < 0.35) { const nb = [ISLES[idx - 1], ISLES[idx + 1]].filter(Boolean), dst = nb[rint(0, nb.length - 1)], q = dst && pickPointIn(dst); if (q) { p = q; far = dst; } } nav.phase = 'drop'; nav.T = { x: p.x, z: p.z, lane: true }; nav.drop = p; nav.name = PLACES[rint(0, PLACES.length - 1)]; nav.t0 = simT; nav.stopT = 0;
   { const isl = far || here, cand = LANDMARKS.filter(L => isleOf(L.i, L.j) === isl && L.j !== HJ && L.j !== HJ - 1 && !(isl === here && Math.hypot(L.i * S - P.x, L.j * S - P.z) < 200));
-    if (isl && cand.length && Math.random() < 0.35) { const L = cand[rint(0, cand.length - 1)], w = rxOf(L.j), lane = w - 1.7, cx = L.i * S + 26, cz = L.j * S; p = { x: cx, z: cz + lane, px: cx, pz: cz + w + 1.3, fy: Math.PI }; nav.T = { x: p.x, z: p.z }; nav.drop = p; nav.name = LM_NAME[L.k]; } }
+    if (isl && cand.length && Math.random() < 0.35) { const L = cand[rint(0, cand.length - 1)], w = rxOf(L.j), lane = w - 1.7, cx = L.i * S + 26, cz = L.j * S; p = { x: cx, z: cz + lane, px: cx, pz: cz + w + 1.3, fy: Math.PI }; nav.T = { x: p.x, z: p.z, lane: true }; nav.drop = p; nav.name = LM_NAME[L.k]; } }
   paxMesh.visible = false; fare.on = true; fare.yen = 500; fare.dist = 0;
   setBeacon(nav.T, 0x35b6ff); tone(660, 660, 0.12, 'sine', 0.1); setTimeout(() => tone(990, 990, 0.15, 'sine', 0.1), 150);
   if (far) nav.name = far.n + '・' + nav.name;
@@ -2748,16 +2942,19 @@ function edgeOK(i, j, di, dj) {
   if (dj !== 0) { if (noZ(i, dj > 0 ? j : j - 1)) return false; const ow = oneWay(i); if (ow && dj !== ow) return false; }
   return true;
 }
-function goalNodes(T) {
+// travel direction of the lane a target sits in: x-roads: north half -> east (+x); z-roads: east half -> south (+z)
+function laneDir(T) { const tj = Math.round(T.z / S), ti = Math.round(T.x / S); return Math.abs(T.z - tj * S) < 9 ? { ax: 'x', d: T.z < tj * S ? 1 : -1 } : { ax: 'z', d: T.x > ti * S ? 1 : -1 }; }
+function goalNodes(T) { // [i, j] or [i, j, nextI, nextJ]: reach (i, j), then drive into the segment towards (nextI, nextJ)
   const tj = Math.round(T.z / S), ti = Math.round(T.x / S);
-  if (Math.abs(T.z - tj * S) < 9) { const a = Math.floor(T.x / S); return [[a, tj], [a + 1, tj]]; }
-  const b = Math.floor(T.z / S); return [[ti, b], [ti, b + 1]];
+  if (Math.abs(T.z - tj * S) < 9) { const a = Math.floor(T.x / S); if (T.lane) return laneDir(T).d > 0 ? [[a, tj, a + 1, tj]] : [[a + 1, tj, a, tj]]; return [[a, tj], [a + 1, tj]]; }
+  const b = Math.floor(T.z / S); if (T.lane) return laneDir(T).d > 0 ? [[ti, b, ti, b + 1]] : [[ti, b + 1, ti, b]]; return [[ti, b], [ti, b + 1]];
 }
 function navRoute(i0, j0, fdi, fdj, T) {
   const goals = goalNodes(T), key = (i, j) => i + ',' + j, prev = new Map([[key(i0, j0), null]]), q = [[i0, j0]];
   for (let h = 0; h < q.length && h < 3000; h++) {
     const [i, j] = q[h];
-    if (goals.some(g => g[0] === i && g[1] === j)) { const out = []; let k = key(i, j); while (k) { const [a, b] = k.split(',').map(Number); out.unshift([a, b]); k = prev.get(k); } return out; }
+    const g = goals.find(g => g[0] === i && g[1] === j);
+    if (g && (g.length < 4 || edgeOK(i, j, g[2] - i, g[3] - j))) { const out = []; let k = key(i, j); while (k) { const [a, b] = k.split(',').map(Number); out.unshift([a, b]); k = prev.get(k); } if (g.length > 3) out.push([g[2], g[3]]); return out; }
     for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       if (h === 0 && di === -fdi && dj === -fdj) continue; // no U-turn at the first junction
       if (Math.abs(i + di - i0) > 16 || Math.abs(j + dj - j0) > 16) continue;
@@ -2782,7 +2979,8 @@ function navInstruction() {
   const fx = -Math.sin(P.th), fz = -Math.cos(P.th), T_ = G, alongX = Math.abs(fx) > Math.abs(fz), d = alongX ? sgn(fx) : sgn(fz);
   const pos = alongX ? P.x : P.z, lat = alongX ? P.z : P.x, tAlong = alongX ? T_.x : T_.z, tLat = alongX ? T_.z : T_.x, lineC = Math.round(lat / S) * S;
   const k = d > 0 ? Math.floor((pos + 4) / S) + 1 : Math.ceil((pos - 4) / S) - 1, I = k * S, dist = (I - pos) * d - 8;
-  if (Math.abs(tLat - lineC) < 1 && (tAlong - pos) * d > 0 && (tAlong - pos) * d < (I - pos) * d) return { glyph: '⬆', text: '直行,目的地就在前方', dist: (tAlong - pos) * d, turn: null };
+  const tSide = !T_.lane || (laneDir(T_).ax === (alongX ? 'x' : 'z') && laneDir(T_).d === d);
+  if (Math.abs(tLat - lineC) < 9 && tSide && (tAlong - pos) * d > 0 && (tAlong - pos) * d < (I - pos) * d) return { glyph: '⬆', text: '直行,目的地就在前方', dist: (tAlong - pos) * d, turn: null };
   const Ix = alongX ? I : lineC, Iz = alongX ? lineC : I;
   { const fdi = Math.round(alongX ? d : 0), fdj = Math.round(alongX ? 0 : d), rt = navRoute(Math.round(Ix / S), Math.round(Iz / S), fdi, fdj, T_); navRouteCache = rt;
     if (rt && rt.length > 1) { const di = rt[1][0] - rt[0][0], dj = rt[1][1] - rt[0][1], st = di === fdi && dj === fdj, lf = di === Math.round(fz) && dj === Math.round(-fx);
@@ -2843,7 +3041,7 @@ function updateNavHud() {
 // ============ simulation ============
 function readInput(dt) {
   const kT = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
-  kb.steer += clamp(kT - kb.steer, -dt * (kT === 0 ? 4 : 3), dt * (kT === 0 ? 4 : 3));
+  if (touchSteer !== null) kb.steer = touchSteer; else kb.steer += clamp(kT - kb.steer, -dt * (kT === 0 ? 4 : 3), dt * (kT === 0 ? 4 : 3));
   kb.thr += clamp((keys.KeyW || keys.ArrowUp ? 1 : 0) - kb.thr, -dt * 4, dt * 2.5);
   kb.brk += clamp((keys.KeyS || keys.ArrowDown ? 1 : 0) - kb.brk, -dt * 6, dt * 5);
   const p = readPad() || {};
@@ -2851,7 +3049,7 @@ function readInput(dt) {
     steer: p.steer !== null && p.steer !== undefined ? p.steer : kb.steer,
     thr: p.thr !== null && p.thr !== undefined ? p.thr : kb.thr,
     brk: p.brk !== null && p.brk !== undefined ? p.brk : kb.brk,
-    hand: !!(keys.Space || p.hand), horn: !!(keys.KeyH || p.horn), wheel: p.steer !== null && p.steer !== undefined,
+    hand: !!(keys.Space || p.hand), horn: !!(keys.KeyH || keys.Mouse || p.horn), wheel: p.steer !== null && p.steer !== undefined,
   };
   if (copHold()) { inp.thr = 0; inp.brk = 1; }
   return inp;
@@ -3125,13 +3323,14 @@ function animateCar(dt, inp) {
 setTimeout(() => { const g = $('gpuInfo'); if (g) g.innerHTML = '顯示卡:' + GPU_NAME + (/swiftshader|basic render|llvmpipe|software/i.test(GPU_NAME) ? ' <b style="color:#f66">⚠ 硬體加速沒開!請到 Chrome 設定 → 系統 → 開啟「使用圖形加速功能」</b>' : ' ✔ 硬體加速中'); }, 0);
 function startGame() {
   started = true; paused = false; $('start').style.display = 'none'; initAudio();
+  if (isTouch) { document.body.classList.add('playing'); applyRes(); try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f) Promise.resolve(f.call(d)).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => { }); } catch (e) { } }
   manageCells(true); notify('從北海道・札幌出發!左側通行・限速 40。郊外是被雪蓋住的鄉下路,看紅白箭頭(矢羽根)找路', '');
 }
 let rf = 0;
 function render() {
   inter.visible = false;
   rf++;
-  mirrors.forEach((m, k) => { if (k === 0 || (rf & 1) === (k & 1)) { renderer.setRenderTarget(m.rt); renderer.render(scene, m.cam); } });
+  mirrors.forEach((m, k) => { if (isTouch ? rf % 3 === k : (k === 0 || (rf & 1) === (k & 1))) { renderer.setRenderTarget(m.rt); renderer.render(scene, m.cam); } });
   renderer.setRenderTarget(null); inter.visible = true;
   renderer.render(scene, camera);
 }
@@ -3141,15 +3340,15 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; if (started) adaptPerf(Math.max(dt, 0.001));
   if (wz.active) { wizardStep(now / 1000); }
   else if (started && !paused) {
-    simT += dt; blinkT += dt;
+    simT += dt; blinkT += dt; updateClock(dt);
     const inp = readInput(dt);
     stepPlayer(dt, inp); fadeSkids(dt); updateLimit();
     checkIntersection(dt); checkPeds(); checkCrossing(); checkParking(dt); checkFuel(dt); actuateSignal(); checkHwRules(dt); updateETC(dt); updateDebris(dt); updateFX(dt); updateLandmarks(dt); updateShips(dt); updateWeather(dt); updateSnow(dt); updateCop(dt);
-    manageCells(false); updateSignals(simT); updateAI(dt); updateTrains(dt); updateNav(dt);
+    manageCells(false); updateSignals(simT); updateAI(dt); updateBikes(dt); updateTrains(dt); updateNav(dt);
     animateCar(dt, inp);
     const bo = blinkOn(); if ((P.sigL || P.sigR || P.haz) && bo !== lastBlink) click(); lastBlink = bo;
     clusterT += dt; if (clusterT > 0.04) { clusterT = 0; drawCluster(); }
-    horn(inp.horn);
+    horn(inp.horn); if (inp.horn && !hornWas && simT - hornReactT > 0.8) { hornReactT = simT; hornReact(); } hornWas = inp.horn; updateReacts();
     if (inp.brk > 0.85 && Math.abs(P.v) > 8 && simT - screechT > 0.9) { screechT = simT; screech(); }
     if (roadG) roadG.gain.value = Math.min(Math.abs(P.v), 30) * 0.0034;
     beepT += dt; { const ci = Math.round(P.x / S), cj = Math.round(P.z / S), s_ = sigState(ci, cj, simT), dd = Math.hypot(P.x - ci * S, P.z - cj * S);
@@ -3165,12 +3364,12 @@ function frame(now) {
       { const f = fuel.L / fuel.cap, n = Math.ceil(f * 8); $('fuelV').innerHTML = '⛽ E <span style="color:' + (f < 0.15 ? '#ff5040' : '#7f7') + ';letter-spacing:-1px">' + '▮'.repeat(n) + '<span style="opacity:.25">' + '▮'.repeat(8 - n) + '</span></span> F' + (fuel.filling ? ' ¥' + Math.round(fuel.yen) : ''); }
       $('speed').firstChild.nodeValue = kmh; $('speed').style.color = kmh > LIMIT + 5 ? '#ff6050' : '#fff';
       const on = blinkOn(); $('sL').className = (P.sigL || P.haz) && on ? 'on' : ''; $('sR').className = (P.sigR || P.haz) && on ? 'on' : '';
-      const st = sigState(0, 0, simT); $('clock').textContent = (night ? '夜' : '晝') + ' ' + WEATHER[weather].n + '  ' + fpsShow + 'fps' + (renderScale < 1 ? ' (' + Math.round(renderScale * 100) + '%)' : '');
+      const st = sigState(0, 0, simT); $('clock').textContent = clockStr() + ' ' + WEATHER[weather].n + '  ' + fpsShow + 'fps' + (renderScale < 1 ? ' (' + Math.round(renderScale * 100) + '%)' : '');
     }
   }
   render();
 }
-manageCells(true); setNight(false); animateCar(0.016, { brk: 0 }); drawCluster();
+manageCells(true); setNight(isNightHour(gameHour)); animateCar(0.016, { brk: 0 }); drawCluster();
 requestAnimationFrame(frame);
 setInterval(() => { const g = getPad(); if (!started && g) $('padInfo').textContent = '偵測到:' + g.id + (cfg ? '(已有設定)' : '(尚未設定,請按「設定方向盤」)'); }, 700);
 window.__dbg = { P, cells, aiCars, sigState, setNight, get simT() { return simT; } };
