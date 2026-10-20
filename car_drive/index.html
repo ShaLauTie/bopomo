@@ -57,9 +57,13 @@ body.touch .msg{font-size:15px;padding:4px 10px}body.touch #msgs{top:30%;width:5
 #tSteer{left:14px;bottom:14px;width:min(44vw,300px);height:170px;border-radius:24px;background:rgba(20,26,36,.25)}
 #tWheel{width:120px;height:120px;border-radius:50%;border:12px solid rgba(255,255,255,.55);box-sizing:border-box;position:relative;pointer-events:none}
 #tWheel:after{content:'';position:absolute;left:50%;top:-12px;width:8px;height:20px;margin-left:-4px;background:#ff7a30;border-radius:3px}
-#tTop{position:absolute;left:50%;top:6px;transform:translateX(-50%);display:flex;gap:8px}
-#tTop .tb,#tSide .tb{position:static;width:54px;height:44px;font-size:18px;border-radius:12px}
-#tSide{position:absolute;right:12px;top:118px;display:flex;gap:6px}
+#tTop{position:absolute;left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:58px;transform:translateX(-50%);display:flex;gap:8px}
+#tTop .tb{position:static;width:62px;height:52px;font-size:24px;border-radius:14px}
+#tTop .tb.lit{background:rgba(40,220,90,.75);border-color:#bfb;box-shadow:0 0 14px #3f3}
+#tSide{position:absolute;left:50%;top:8px;transform:translateX(-50%);display:flex;gap:6px}
+#tSide .tb{position:static;width:50px;height:40px;font-size:17px;border-radius:12px}
+body.touch #sigs{left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:10px;font-size:24px;letter-spacing:52px}
+@media (max-width:760px){#tTop .tb{width:52px;height:46px;font-size:20px}#tTop{gap:5px}#tSide .tb{width:44px}}
 #rot{position:fixed;inset:0;z-index:200;background:#0d1220;color:#fff;align-items:center;justify-content:center;flex-direction:column;font-size:22px;text-align:center}
 @media (orientation:portrait){body.touch #rot{display:flex}}
 @media (max-height:520px){.panel{padding:12px 18px;line-height:1.45;font-size:14px}.panel h1{font-size:22px}button{font-size:16px;padding:7px 18px}}
@@ -78,7 +82,7 @@ body.touch .msg{font-size:15px;padding:4px 10px}body.touch #msgs{top:30%;width:5
 </div>
 
 <div id="touch">
-  <div id="tTop"><div class="tb" data-a="KeyQ">◀</div><div class="tb" data-a="KeyX">⚠</div><div class="tb" data-a="KeyE">▶</div></div>
+  <div id="tTop"><div class="tb" data-a="KeyQ" id="tSigL">◀</div><div class="tb" data-a="KeyX" id="tHaz">⚠</div><div class="tb" data-a="KeyE" id="tSigR">▶</div></div>
   <div id="tSide"><div class="tb" data-a="KeyR" id="tRev">D/R</div><div class="tb" data-k="KeyH">📢</div><div class="tb" data-a="KeyM">🗺</div><div class="tb" data-a="KeyN">🌙</div><div class="tb" id="tGyro">📱</div><div class="tb" id="tCenter">🎯</div><div class="tb" data-a="KeyF">😀</div></div>
   <div class="tb" id="tSteer"><div id="tWheel"></div></div>
   <div class="tb" id="tHand" data-k="Space">手煞車</div>
@@ -3113,7 +3117,7 @@ if (isTouch) {
     el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); el.setPointerCapture(e.pointerId); keys[k] = true; el.classList.add('on'); });
     el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
   });
-  document.querySelectorAll('#touch [data-a]').forEach(el => el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); tap(el.dataset.a); el.classList.add('on'); setTimeout(() => el.classList.remove('on'), 150); }));
+  document.querySelectorAll('#touch [data-a]').forEach(el => el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); tap(el.dataset.a); try { navigator.vibrate && navigator.vibrate(15); } catch (e_) { } el.classList.add('on'); setTimeout(() => el.classList.remove('on'), 150); }));
   const sp = $('tSteer'), wh = $('tWheel'); let sid = null, sx0 = 0;
   sp.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); sp.setPointerCapture(e.pointerId); sid = e.pointerId; sx0 = e.clientX; touchSteer = 0; });
   sp.addEventListener('pointermove', e => { if (e.pointerId !== sid) return; touchSteer = clamp((e.clientX - sx0) / (sp.clientWidth * 0.36), -1, 1); wh.style.transform = 'rotate(' + touchSteer * 110 + 'deg)'; });
@@ -4008,6 +4012,7 @@ function frame(now) {
       { const f = fuel.L / fuel.cap, n = Math.ceil(f * 8); $('fuelV').innerHTML = '⛽ E <span style="color:' + (f < 0.15 ? '#ff5040' : '#7f7') + ';letter-spacing:-1px">' + '▮'.repeat(n) + '<span style="opacity:.25">' + '▮'.repeat(8 - n) + '</span></span> F' + (fuel.filling ? ' ¥' + Math.round(fuel.yen) : ''); }
       $('speed').firstChild.nodeValue = kmh; $('speed').style.color = kmh > LIMIT + 5 ? '#ff6050' : '#fff';
       const on = blinkOn(); $('sL').className = (P.sigL || P.haz) && on ? 'on' : ''; $('sR').className = (P.sigR || P.haz) && on ? 'on' : '';
+      if (isTouch) { $('tSigL').classList.toggle('lit', (P.sigL || P.haz) && on); $('tSigR').classList.toggle('lit', (P.sigR || P.haz) && on); $('tHaz').classList.toggle('lit', P.haz && on); }
       const st = sigState(0, 0, simT); $('clock').textContent = clockStr() + ' ' + WEATHER[weather].n + '  ' + fpsShow + 'fps' + (renderScale < 1 ? ' (' + Math.round(renderScale * 100) + '%)' : '');
     }
   }
