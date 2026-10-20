@@ -1791,41 +1791,161 @@ const mDark = lam(0x1b1d20), mDash = lam(0x2b2e33), mTrim = lam(0x3b3f45), mBody
 function bx(w, h, d, x, y, z, m) { const o = new T.Mesh(new T.BoxGeometry(w, h, d), m); o.position.set(x, y, z); inter.add(o); return o; }
 function beam(p1, p2, t, m) { const a = new T.Vector3(...p1), b = new T.Vector3(...p2), g = new T.CylinderGeometry(t, t * 1.3, a.distanceTo(b), 12); g.rotateX(Math.PI / 2); const o = new T.Mesh(g, m); o.position.copy(a).add(b).multiplyScalar(0.5); o.lookAt(b); inter.add(o); return o; }
 const EYE = new T.Vector3(0.38, 1.32, 0.15);
-{ // rounded dashboard: a smooth side profile extruded across the cabin (u = distance forward, v = height)
+// ---------- cabin: modelled on a Japanese right-hand-drive hatchback / taxi (soft dash, vents, centre stack, console, seats, headliner) ----------
+// static parts are merged per material at the end (a handful of draw calls); moving parts (wheel, stalks, pedals, shifter, hazard switch) stay separate
+const CABM = (() => {
+  const grain = (w, f) => { const c = mkCanvas(w, w), x = c.getContext('2d'), d = x.createImageData(w, w);
+    for (let k = 0; k < w * w; k++) { const px = k % w, py = Math.floor(k / w), v = 255 * f(px, py, Math.random()); d.data[k * 4] = d.data[k * 4 + 1] = d.data[k * 4 + 2] = clamp(v, 0, 255); d.data[k * 4 + 3] = 255; }
+    x.putImageData(d, 0, 0); const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; return t; };
+  const tPlastic = grain(128, (x, y, r) => 0.9 + r * 0.1), tFabric = grain(64, (x, y, r) => 0.82 + ((x + y) % 4 < 2 ? 0.1 : 0) + ((x - y + 64) % 6 < 1 ? -0.06 : 0) + r * 0.08),
+    tCarpet = grain(128, (x, y, r) => 0.7 + r * 0.3), tHead = grain(64, (x, y, r) => 0.9 + r * 0.1);
+  const rep = (t, n) => { const c = t.clone(); c.needsUpdate = true; c.repeat.set(n, n); return c; };
+  const M = (color, o) => { o = o || {}; const base = { color }; if (o.map) base.map = o.map; if (o.side) base.side = o.side;
+    return isTouch || !o.shine ? new T.MeshLambertMaterial(base) : new T.MeshPhongMaterial(Object.assign(base, { shininess: o.shine, specular: o.spec || 0x333333 })); };
+  return {
+    pad: M(0x2a2c30, { map: rep(tPlastic, 6), shine: 8, spec: 0x111111 }),      // soft-touch dashboard / door tops
+    hard: M(0x1d1e21, { map: rep(tPlastic, 6) }),                               // lower hard plastics
+    piano: M(0x0a0b0d, { shine: 90, spec: 0x777777 }),                          // gloss black trim
+    satin: M(0x9aa1a8, { shine: 60, spec: 0x999999 }),                          // satin-silver accents
+    chrome: M(0xd5d9de, { shine: 120, spec: 0xffffff }),
+    leather: M(0x1b1c1e, { shine: 18, spec: 0x2a2a2a }),
+    seat: M(0x45484e, { map: rep(tFabric, 5) }), seatDk: M(0x2c2e33, { map: rep(tFabric, 5) }),
+    head: M(0xbdb8ad, { map: rep(tHead, 4), side: T.DoubleSide }), pillar: M(0x7d7a74, { map: rep(tHead, 4) }),
+    carpet: M(0x1c1d20, { map: rep(tCarpet, 10) }), rubber: M(0x141516), vent: M(0x0d0e10),
+    lens: new T.MeshLambertMaterial({ color: 0xe8e4da }), led: new T.MeshBasicMaterial({ color: 0x30ff70 }),
+  };
+})();
+const cab = new T.Group(); inter.add(cab);
+function cp(geo, mat, x, y, z, rx, ry, rz, parent) { const o = new T.Mesh(geo, mat); o.position.set(x, y, z); o.rotation.set(rx || 0, ry || 0, rz || 0); (parent || cab).add(o); return o; }
+const cbox = (w, h, d, m, x, y, z, rx, ry, rz, par) => cp(new T.BoxGeometry(w, h, d), m, x, y, z, rx, ry, rz, par);
+function rrShape(w, h, r) { const s = new T.Shape(), x0 = -w / 2, y0 = -h / 2; s.moveTo(x0 + r, y0); s.lineTo(x0 + w - r, y0); s.quadraticCurveTo(x0 + w, y0, x0 + w, y0 + r); s.lineTo(x0 + w, y0 + h - r); s.quadraticCurveTo(x0 + w, y0 + h, x0 + w - r, y0 + h); s.lineTo(x0 + r, y0 + h); s.quadraticCurveTo(x0, y0 + h, x0, y0 + h - r); s.lineTo(x0, y0 + r); s.quadraticCurveTo(x0, y0, x0 + r, y0); return s; }
+// rounded box: w (x) by h (y) by d (z), corner radius r, soft edge bevel
+const rrBox = (w, h, d, r, bev) => { const g = new T.ExtrudeGeometry(rrShape(w - bev * 2, h - bev * 2, Math.max(0.001, Math.min(r, w / 2 - bev - 0.001, h / 2 - bev - 0.001) - bev * 0.5)), { depth: Math.max(0.001, d - bev * 2), bevelEnabled: bev > 0, bevelThickness: bev, bevelSize: bev, bevelSegments: 3, curveSegments: 6 }); g.translate(0, 0, -d / 2 + bev); return g; };
+{ // dashboard: a soft upper pad (smooth side profile extruded across the cabin) with the bonnet beyond the glass
   const sh = new T.Shape(); sh.moveTo(0.7, 0.3); sh.lineTo(0.7, 0.62); sh.quadraticCurveTo(0.71, 0.88, 0.96, 0.9); sh.quadraticCurveTo(1.12, 0.91, 1.28, 0.84); sh.lineTo(1.28, 0.3); sh.closePath();
   const g = new T.ExtrudeGeometry(sh, { depth: 1.7, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.035, bevelSegments: 4, curveSegments: 12 });
-  g.rotateY(Math.PI / 2); g.translate(-0.85, 0, 0); g.computeVertexNormals(); inter.add(new T.Mesh(g, mDash));
-  // the bonnet seen through the windscreen: gently crowned and falling away
+  g.rotateY(Math.PI / 2); g.translate(-0.85, 0, 0); g.computeVertexNormals(); cp(g, CABM.pad, 0, 0, 0);
   const hg = new T.PlaneGeometry(1.72, 0.95, 16, 8); hg.rotateX(-Math.PI / 2); const hp = hg.attributes.position;
   for (let k = 0; k < hp.count; k++) { const x = hp.getX(k), t = (hp.getZ(k) + 0.475) / 0.95; hp.setY(k, 0.9 - 0.16 * Math.pow(1 - t, 1.6) - 0.07 * Math.pow(x / 0.86, 2)); }
   hg.translate(0, 0, -1.72); hg.computeVertexNormals();
-  const hood = new T.Mesh(hg, new T.MeshPhongMaterial({ color: 0xe9ecef, specular: 0x666666, shininess: 50, side: T.DoubleSide })); inter.add(hood);
+  inter.add(new T.Mesh(hg, new T.MeshPhongMaterial({ color: 0xe9ecef, specular: 0x666666, shininess: 50, side: T.DoubleSide })));
+  // face of the dash: satin strip over a gloss-black band, knee bolster below
+  cbox(1.74, 0.026, 0.014, CABM.satin, 0, 0.598, -0.662); cbox(1.74, 0.03, 0.012, CABM.piano, 0, 0.57, -0.664);
+  cbox(1.8, 0.3, 0.1, CABM.hard, 0, 0.2, -0.7); cbox(0.62, 0.14, 0.12, CABM.hard, 0.38, 0.38, -0.66, 0.35); // knee panel under the column
+  // defroster grille along the base of the windscreen + tweeters in the corners
+  for (let q = -0.6; q <= 0.6; q += 0.06) cbox(0.045, 0.004, 0.035, CABM.vent, q, 0.913, -1.07);
+  for (const sx of [-1, 1]) cp(new T.CylinderGeometry(0.045, 0.045, 0.006, 18), CABM.vent, sx * 0.7, 0.905, -1.0);
+  // air vents: two at the outer corners, two in the centre; each a framed opening with horizontal louvres
+  const vent = (x, y, w, h) => { cp(rrBox(w + 0.02, h + 0.02, 0.02, 0.012, 0.004), CABM.piano, x, y, -0.66); cbox(w, h, 0.012, CABM.vent, x, y, -0.652);
+    for (let k = 1; k < 4; k++) cbox(w - 0.01, 0.005, 0.016, CABM.satin, x, y - h / 2 + h * k / 4, -0.648, -0.25); cbox(0.012, 0.022, 0.012, CABM.chrome, x + w * 0.2, y, -0.642); };
+  vent(0.73, 0.52, 0.15, 0.07); vent(-0.73, 0.52, 0.15, 0.07); vent(-0.1, 0.565, 0.11, 0.055); vent(0.06, 0.565, 0.11, 0.055);
+  // glovebox seam + handle on the passenger side
+  for (const [w, h, x, y] of [[0.52, 0.006, -0.5, 0.56], [0.52, 0.006, -0.5, 0.36], [0.006, 0.2, -0.76, 0.46], [0.006, 0.2, -0.24, 0.46]]) cbox(w, h, 0.006, CABM.vent, x, y, -0.652);
+  cbox(0.1, 0.016, 0.014, CABM.satin, -0.5, 0.53, -0.648);
+  // ETC on-board unit (Japan): a little box under the dash by the driver's right knee, with its green "card OK" lamp
+  cbox(0.11, 0.035, 0.08, CABM.hard, 0.68, 0.33, -0.62); cbox(0.07, 0.006, 0.004, CABM.vent, 0.67, 0.335, -0.579); cbox(0.008, 0.008, 0.004, CABM.led, 0.72, 0.335, -0.579);
 }
-bx(0.09, 0.09, 0.4, 0.38, 0.84, -0.62, mDark);
-// slim, rounded A-pillars that start at the base of the windscreen (far from the eye, so they block less)
-beam([-0.84, 0.95, -1.18], [-0.72, 1.58, -0.3], 0.03, mTrim); beam([0.84, 0.95, -1.18], [0.72, 1.58, -0.3], 0.03, mTrim);
-bx(1.8, 0.05, 1.65, 0, 1.6, 0.525, mRoof);
-for (const sx of [-1, 1]) { // doors run forward to the A-pillar base and overlap the dashboard ends, with a sill trim on top
-  // the front of the door (by the dashboard) sits lower, so it never hides the door mirror
-  bx(0.08, 0.98, 1.95, sx * 0.9, 0.49, 0.375, mDark); bx(0.1, 0.05, 1.95, sx * 0.87, 0.99, 0.375, mTrim);
-  bx(0.08, 0.84, 0.68, sx * 0.9, 0.42, -0.94, mDark); bx(0.1, 0.05, 0.68, sx * 0.87, 0.85, -0.94, mTrim);
-  bx(0.07, 0.12, 0.9, sx * 0.83, 0.62, 0.15, mDash); }
-bx(1.84, 0.05, 2.4, 0, 0.1, 0.2, mDark); bx(1.8, 0.4, 0.08, 0, 0.2, -0.72, mDash); bx(1.8, 1.1, 0.06, 0, 0.55, 1.35, mDark);
-bx(0.1, 0.5, 0.12, 0.86, 1.25, 0.9, mTrim); bx(0.1, 0.5, 0.12, -0.86, 1.25, 0.9, mTrim);
-bx(0.5, 0.72, 0.12, -0.42, 0.85, 0.85, mDark);
+{ // centre stack: climate panel (two knobs + display), buttons, a cubby with USB at the bottom
+  cp(rrBox(0.34, 0.42, 0.2, 0.03, 0.01), CABM.hard, -0.02, 0.43, -0.58); cp(rrBox(0.3, 0.33, 0.01, 0.02, 0.003), CABM.piano, -0.02, 0.43, -0.476);
+  for (const sx of [-1, 1]) { cp(new T.CylinderGeometry(0.03, 0.032, 0.026, 24), CABM.chrome, -0.02 + sx * 0.095, 0.47, -0.462, Math.PI / 2); cp(new T.CylinderGeometry(0.024, 0.024, 0.028, 20), CABM.leather, -0.02 + sx * 0.095, 0.47, -0.46, Math.PI / 2); }
+  for (let k = 0; k < 5; k++) cbox(0.04, 0.018, 0.008, k === 2 ? CABM.satin : CABM.hard, -0.02 + (k - 2) * 0.05, 0.39, -0.469);
+  cbox(0.24, 0.05, 0.05, CABM.vent, -0.02, 0.3, -0.48); cbox(0.02, 0.01, 0.004, CABM.satin, 0.04, 0.3, -0.455);
+}
+{ const c = mkCanvas(128, 48), x = c.getContext('2d'); x.fillStyle = '#020306'; x.fillRect(0, 0, 128, 48); x.fillStyle = '#7fd4ff'; x.font = 'bold 26px Arial'; x.textBaseline = 'middle'; x.fillText('22.0', 6, 25); x.font = 'bold 14px Arial'; x.fillText('AUTO', 76, 16); x.fillText('A/C', 80, 34);
+  cp(new T.PlaneGeometry(0.1, 0.038), new T.MeshBasicMaterial({ map: new T.CanvasTexture(c) }), -0.02, 0.47, -0.469, 0, 0, 0, inter); }
+const hazBtn = cbox(0.034, 0.024, 0.012, new T.MeshBasicMaterial({ color: 0x5a1010 }), -0.02, 0.565, -0.655, 0, 0, 0, inter);
+{ const t = new T.Mesh(new T.RingGeometry(0.004, 0.0075, 3), new T.MeshBasicMaterial({ color: 0xffffff })); t.position.z = 0.0065; t.rotation.z = Math.PI / 2; hazBtn.add(t); }
+{ // centre console between the seats: shifter gate, cup holders, parking-brake switch, padded armrest
+  cp(rrBox(0.26, 0.32, 1.0, 0.04, 0.01), CABM.hard, -0.02, 0.26, 0.04);
+  cbox(0.2, 0.006, 0.26, CABM.piano, -0.02, 0.423, -0.3); cbox(0.2, 0.006, 0.2, CABM.piano, -0.02, 0.423, -0.03);
+  for (const sx of [-1, 1]) { cp(new T.CylinderGeometry(0.042, 0.042, 0.004, 22), CABM.vent, -0.02 + sx * 0.05, 0.427, -0.03); cp(new T.TorusGeometry(0.043, 0.004, 6, 22), CABM.satin, -0.02 + sx * 0.05, 0.428, -0.03, Math.PI / 2); }
+  cbox(0.03, 0.012, 0.045, CABM.satin, 0.06, 0.43, -0.2); // electric parking brake
+  cp(rrBox(0.26, 0.12, 0.42, 0.04, 0.02), CABM.leather, -0.02, 0.56, 0.36); cbox(0.27, 0.1, 0.4, CABM.hard, -0.02, 0.47, 0.36);
+}
+const shifter = new T.Group(); shifter.position.set(-0.02, 0.425, -0.3); inter.add(shifter);
+{ cp(new T.CylinderGeometry(0.022, 0.04, 0.05, 16), CABM.rubber, 0, 0.025, 0, 0, 0, 0, shifter); cp(new T.CylinderGeometry(0.01, 0.012, 0.12, 10), CABM.satin, 0, 0.1, 0, 0, 0, 0, shifter);
+  const kn = cp(new T.SphereGeometry(1, 20, 14), CABM.leather, 0, 0.18, 0.005, -0.15, 0, 0, shifter); kn.scale.set(0.034, 0.048, 0.042); cp(new T.TorusGeometry(0.026, 0.004, 6, 20), CABM.chrome, 0, 0.152, 0, Math.PI / 2, 0, 0, shifter); }
+const gearC = mkCanvas(64, 160), gearTex = new T.CanvasTexture(gearC); let gearKey = '';
+cp(new T.PlaneGeometry(0.03, 0.075), new T.MeshBasicMaterial({ map: gearTex }), 0.06, 0.4275, -0.3, -Math.PI / 2, 0, 0, inter);
+function drawGear() { const k = P.rev ? 'R' : 'D'; if (k === gearKey) return; gearKey = k; const x = gearC.getContext('2d'); x.fillStyle = '#050505'; x.fillRect(0, 0, 64, 160); x.font = 'bold 28px Arial'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  ['P', 'R', 'N', 'D', 'B'].forEach((g, i) => { x.fillStyle = g === k ? '#fff' : '#555'; x.fillText(g, 32, 18 + i * 31); }); gearTex.needsUpdate = true; }
+drawGear();
+{ // doors: panels meeting the dash, plus an upper pad, fabric insert, chrome pull handle, padded armrest, window switches, pocket and speaker
+  for (const sx of [-1, 1]) {
+    cbox(0.08, 0.98, 1.95, CABM.hard, sx * 0.9, 0.49, 0.375); cbox(0.1, 0.05, 1.95, CABM.pad, sx * 0.87, 0.99, 0.375);
+    cbox(0.08, 0.84, 0.68, CABM.hard, sx * 0.9, 0.42, -0.94); cbox(0.1, 0.05, 0.68, CABM.pad, sx * 0.87, 0.85, -0.94);
+    cbox(0.03, 0.17, 1.55, CABM.pad, sx * 0.852, 0.89, 0.3); cbox(0.02, 0.15, 0.75, CABM.seat, sx * 0.85, 0.74, 0.38);
+    cbox(0.02, 0.05, 0.13, CABM.vent, sx * 0.85, 0.83, -0.16); cbox(0.022, 0.016, 0.11, CABM.chrome, sx * 0.84, 0.83, -0.16);
+    cp(rrBox(0.09, 0.05, 0.6, 0.02, 0.012), CABM.leather, sx * 0.815, 0.655, 0.2); cbox(0.05, 0.12, 0.45, CABM.hard, sx * 0.84, 0.58, 0.22);
+    cbox(0.07, 0.15, 0.62, CABM.hard, sx * 0.82, 0.25, 0.12); cbox(0.075, 0.02, 0.62, CABM.pad, sx * 0.815, 0.33, 0.12);
+    cp(new T.CylinderGeometry(0.075, 0.075, 0.012, 24), CABM.vent, sx * 0.855, 0.38, -0.45, 0, 0, Math.PI / 2); cp(new T.TorusGeometry(0.077, 0.006, 6, 24), CABM.satin, sx * 0.85, 0.38, -0.45, 0, Math.PI / 2, 0);
+    cbox(0.1, 0.5, 0.12, CABM.pillar, sx * 0.86, 1.25, 0.9); // B-pillar
+    cbox(0.04, 0.035, 0.16, CABM.pillar, sx * 0.85, 1.47, 0.25); // grab handle
+  }
+  cbox(0.07, 0.012, 0.15, CABM.piano, 0.815, 0.687, 0.0); for (let k = 0; k < 4; k++) cbox(0.022, 0.01, 0.026, CABM.satin, 0.8 + (k & 1) * 0.03, 0.695, -0.04 + (k >> 1) * 0.06); // window switches
+}
+{ // headliner, header rail, sun visors, overhead console with map lamps, dash camera behind the mirror, A-pillars wrapped in trim
+  cbox(1.8, 0.05, 1.65, CABM.head, 0, 1.6, 0.525); cbox(1.7, 0.04, 0.07, CABM.pillar, 0, 1.575, -0.3);
+  for (const [x, w] of [[0.4, 0.46], [-0.42, 0.46]]) { cp(rrBox(w, 0.17, 0.028, 0.04, 0.01), CABM.head, x, 1.563, -0.17, Math.PI / 2 - 0.04); cp(new T.CylinderGeometry(0.006, 0.006, w * 0.9, 8), CABM.pillar, x, 1.566, -0.25, 0, 0, Math.PI / 2); }
+  cp(rrBox(0.26, 0.14, 0.04, 0.03, 0.012), CABM.pillar, 0.05, 1.57, -0.37, Math.PI / 2); for (const sx of [-1, 1]) cp(rrBox(0.05, 0.035, 0.01, 0.01, 0.003), CABM.lens, 0.05 + sx * 0.07, 1.548, -0.37, Math.PI / 2);
+  cbox(0.07, 0.05, 0.05, CABM.hard, 0.12, 1.5, -0.66); cp(new T.CylinderGeometry(0.012, 0.012, 0.02, 12), CABM.piano, 0.12, 1.49, -0.69, Math.PI / 2);
+  for (const sx of [-1, 1]) { const a = new T.Vector3(sx * 0.84, 0.95, -1.18), b = new T.Vector3(sx * 0.72, 1.58, -0.3), g = new T.CylinderGeometry(0.034, 0.044, a.distanceTo(b), 14); g.rotateX(Math.PI / 2);
+    const o = cp(g, CABM.pillar, (a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2); o.lookAt(b); o.scale.set(1.1, 0.62, 1); }
+}
+{ // floor, footwell, seats (driver, passenger, rear bench)
+  cbox(1.84, 0.05, 2.4, CABM.carpet, 0, 0.1, 0.2); cbox(1.8, 0.35, 0.08, CABM.carpet, 0, 0.25, -0.76, -0.6);
+  cbox(0.12, 0.03, 0.2, CABM.rubber, 0.7, 0.2, -0.58, -0.5); // footrest
+  const seat = (x, z) => { const g = new T.Group(); g.position.set(x, 0, z); cab.add(g);
+    cbox(0.4, 0.2, 0.42, CABM.hard, 0, 0.32, 0, 0, 0, 0, g); cp(rrBox(0.5, 0.12, 0.5, 0.05, 0.03), CABM.seat, 0, 0.5, 0, 0, 0, 0, g);
+    for (const s of [-1, 1]) cp(rrBox(0.08, 0.08, 0.46, 0.03, 0.02), CABM.seatDk, s * 0.22, 0.56, 0.01, 0, 0, 0, g);
+    const bk = new T.Group(); bk.position.set(0, 0.55, 0.24); bk.rotation.x = 0.16; g.add(bk);
+    cp(rrBox(0.5, 0.7, 0.13, 0.06, 0.035), CABM.seat, 0, 0.36, 0, 0, 0, 0, bk); for (const s of [-1, 1]) cp(rrBox(0.08, 0.62, 0.12, 0.03, 0.025), CABM.seatDk, s * 0.225, 0.34, -0.04, 0, 0, s * 0.04, bk);
+    cp(rrBox(0.28, 0.19, 0.1, 0.05, 0.03), CABM.seat, 0, 0.86, 0.01, 0, 0, 0, bk); for (const s of [-1, 1]) cp(new T.CylinderGeometry(0.006, 0.006, 0.12, 8), CABM.satin, s * 0.07, 0.73, 0.01, 0, 0, 0, bk); };
+  seat(0.38, 0.25); seat(-0.42, 0.25);
+  cp(rrBox(1.5, 0.14, 0.5, 0.05, 0.03), CABM.seat, 0, 0.5, 1.02); cp(rrBox(1.5, 0.62, 0.13, 0.06, 0.03), CABM.seat, 0, 0.88, 1.28, 0.12); cbox(1.8, 1.1, 0.06, CABM.hard, 0, 0.55, 1.38);
+  for (const sx of [-0.5, 0, 0.5]) cp(rrBox(0.26, 0.16, 0.09, 0.04, 0.025), CABM.seat, sx, 1.27, 1.33, 0.12);
+}
+// pedals (move with the throttle / brake)
+const pedBrk = new T.Group(); pedBrk.position.set(0.32, 0.5, -0.55); inter.add(pedBrk); cbox(0.02, 0.24, 0.02, CABM.satin, 0, -0.12, 0, 0, 0, 0, pedBrk); cp(rrBox(0.11, 0.075, 0.02, 0.012, 0.004), CABM.rubber, 0, -0.24, -0.01, -0.35, 0, 0, pedBrk);
+const pedGas = new T.Group(); pedGas.position.set(0.5, 0.12, -0.68); inter.add(pedGas); cp(rrBox(0.065, 0.2, 0.018, 0.012, 0.004), CABM.rubber, 0, 0.1, 0, 0, 0, 0, pedGas); pedGas.rotation.x = -0.65;
+// steering wheel: leather rim, airbag pad, three spokes with switches, column + shroud; stalks on both sides (indicator on the right in a Japanese car, wipers on the left)
 const wheelRig = new T.Group(); wheelRig.position.set(0.38, 0.9, -0.4); wheelRig.rotation.x = -0.5; inter.add(wheelRig);
 const wheelSpin = new T.Group(); wheelRig.add(wheelSpin);
-wheelSpin.add(new T.Mesh(new T.TorusGeometry(0.19, 0.022, 8, 28), mDark));
-const hub = new T.Mesh(new T.BoxGeometry(0.11, 0.09, 0.05), mTrim); wheelSpin.add(hub);
-const sp1 = new T.Mesh(new T.BoxGeometry(0.36, 0.03, 0.025), mDark); wheelSpin.add(sp1);
-const sp2 = new T.Mesh(new T.BoxGeometry(0.03, 0.18, 0.025), mDark); sp2.position.y = -0.09; wheelSpin.add(sp2);
-const mark = new T.Mesh(new T.BoxGeometry(0.02, 0.04, 0.02), new T.MeshBasicMaterial({ color: 0xff7a30 })); mark.position.y = 0.19; wheelSpin.add(mark);
-const stalk = new T.Group(); stalk.position.set(0.56, 0.92, -0.4); inter.add(stalk);
-const st1 = new T.Mesh(new T.BoxGeometry(0.13, 0.014, 0.014), mDark); st1.position.x = 0.065; stalk.add(st1);
+cp(new T.CylinderGeometry(0.036, 0.042, 0.34, 16), CABM.hard, 0, 0, -0.2, Math.PI / 2, 0, 0, wheelRig); cp(rrBox(0.15, 0.11, 0.24, 0.04, 0.015), CABM.hard, 0, -0.035, -0.17, 0, 0, 0, wheelRig);
+cp(new T.TorusGeometry(0.186, 0.024, 12, 48), CABM.leather, 0, 0, 0, 0, 0, 0, wheelSpin);
+cp(rrBox(0.16, 0.12, 0.05, 0.04, 0.016), CABM.leather, 0, -0.01, 0.012, 0, 0, 0, wheelSpin);
+{ const e = cp(new T.TorusGeometry(0.016, 0.003, 6, 20), CABM.chrome, 0, 0, 0.038, 0, 0, 0, wheelSpin); e.scale.set(1.4, 1, 1); }
+for (const sx of [-1, 1]) { cbox(0.12, 0.045, 0.022, CABM.leather, sx * 0.135, -0.018, 0, 0, 0, 0, wheelSpin); cbox(0.1, 0.007, 0.024, CABM.satin, sx * 0.13, -0.042, 0, 0, 0, 0, wheelSpin);
+  for (let k = 0; k < 3; k++) cbox(0.016, 0.012, 0.006, CABM.satin, sx * (0.105 + k * 0.022), -0.008, 0.012, 0, 0, 0, wheelSpin);
+  cbox(0.032, 0.11, 0.02, CABM.leather, sx * 0.04, -0.115, -0.002, 0, 0, sx * 0.38, wheelSpin); }
+const stalk = new T.Group(); stalk.position.set(0.455, 0.845, -0.5); inter.add(stalk);
+cp(new T.CylinderGeometry(0.009, 0.007, 0.17, 10), CABM.hard, 0.085, 0, 0, 0, 0, Math.PI / 2, stalk); cp(new T.CylinderGeometry(0.013, 0.013, 0.045, 14), CABM.hard, 0.15, 0, 0, 0, 0, Math.PI / 2, stalk); cp(new T.CylinderGeometry(0.0135, 0.0135, 0.006, 14), CABM.satin, 0.135, 0, 0, 0, 0, Math.PI / 2, stalk);
+cp(new T.CylinderGeometry(0.009, 0.007, 0.17, 10), CABM.hard, 0.22, 0.845, -0.5, 0, 0, Math.PI / 2, inter); cp(new T.CylinderGeometry(0.012, 0.012, 0.04, 14), CABM.hard, 0.155, 0.845, -0.5, 0, 0, Math.PI / 2, inter); // wiper stalk
+// merge the static cabin (and each moving assembly) into one mesh per material
+function mergeGroup(root, skip) {
+  root.updateMatrixWorld(true); const inv = new T.Matrix4().copy(root.matrixWorld).invert(), groups = new Map(), m4 = new T.Matrix4(), olds = [];
+  const walk = o => { for (const c of o.children.slice()) { if (skip && skip.includes(c)) continue; if (c.isMesh) { const g = c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone(); m4.multiplyMatrices(inv, c.matrixWorld); g.applyMatrix4(m4);
+      if (!g.attributes.uv) g.setAttribute('uv', new T.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      if (!groups.has(c.material)) groups.set(c.material, []); groups.get(c.material).push(g); olds.push(c); }
+      walk(c); } };
+  walk(root); for (const c of olds) c.parent.remove(c);
+  for (const [mat, gs] of groups) { let n = 0; for (const g of gs) n += g.attributes.position.count; const P_ = new Float32Array(n * 3), N_ = new Float32Array(n * 3), U_ = new Float32Array(n * 2); let o = 0;
+    for (const g of gs) { P_.set(g.attributes.position.array, o * 3); N_.set(g.attributes.normal.array, o * 3); if (g.attributes.uv) U_.set(g.attributes.uv.array, o * 2); o += g.attributes.position.count; g.dispose(); }
+    const bg = new T.BufferGeometry(); bg.setAttribute('position', new T.BufferAttribute(P_, 3)); bg.setAttribute('normal', new T.BufferAttribute(N_, 3)); bg.setAttribute('uv', new T.BufferAttribute(U_, 2));
+    const mesh = new T.Mesh(bg, mat); mesh.frustumCulled = false; root.add(mesh); }
+  // drop now-empty helper groups
+  const prune = o => { for (const c of o.children.slice()) { prune(c); if (c.type === 'Group' && !c.children.length) o.remove(c); } }; prune(root);
+}
+mergeGroup(cab); mergeGroup(wheelSpin); mergeGroup(wheelRig, [wheelSpin]); mergeGroup(stalk); mergeGroup(shifter); mergeGroup(pedBrk); mergeGroup(pedGas);
+
 // cluster
 const clC = mkCanvas(512, 256), clX = clC.getContext('2d'), clTex = new T.CanvasTexture(clC);
 const cluster = new T.Mesh(new T.PlaneGeometry(0.46, 0.23), new T.MeshBasicMaterial({ map: clTex }));
 cluster.position.set(0.38, 1.05, -0.82); cluster.lookAt(EYE); inter.add(cluster); // sits above the wheel rim from the driver's eye
+{ const hood = new T.Group(); hood.position.copy(cluster.position); hood.quaternion.copy(cluster.quaternion); inter.add(hood);
+  const vg = new T.CylinderGeometry(0.28, 0.28, 0.17, 28, 1, true, Math.PI / 2, Math.PI); vg.rotateX(Math.PI / 2); const v = new T.Mesh(vg, new T.MeshLambertMaterial({ color: 0x24262a, side: T.DoubleSide })); v.scale.set(1, 0.55, 1); v.position.set(0, 0, 0.03); hood.add(v);
+  const bk = new T.Mesh(rrBox(0.56, 0.3, 0.14, 0.05, 0.02), CABM.pad); bk.position.set(0, -0.05, -0.08); hood.add(bk);
+  const fr = new T.Mesh(rrBox(0.5, 0.26, 0.012, 0.03, 0.004), CABM.piano); fr.position.z = -0.008; hood.add(fr); }
 // mirrors
 // mirror outline: a soft super-ellipse; side mirrors taper towards the car like a teardrop
 function mirPts(w, h, side, grow, a0, a1) {
@@ -2751,8 +2871,6 @@ const paxSeat = new T.Group(); paxSeat.position.set(-0.42, 0, 0.25); inter.add(p
   const head = new T.Mesh(new T.SphereGeometry(0.11, 12, 10), skin); head.position.set(0, 1.27, -0.02); paxSeat.add(head);
   const hr = new T.Mesh(new T.SphereGeometry(0.115, 12, 10), hair); hr.scale.set(1, 0.85, 1); hr.position.set(0, 1.31, 0.02); paxSeat.add(hr);
   for (const sx of [-1, 1]) { const arm = new T.Mesh(unitBox, sm); arm.scale.set(0.09, 0.09, 0.36); arm.position.set(sx * 0.22, 0.78, -0.14); paxSeat.add(arm); const lg = new T.Mesh(unitBox, new T.MeshLambertMaterial({ color: 0x2c3040 })); lg.scale.set(0.13, 0.12, 0.5); lg.position.set(sx * 0.1, 0.6, -0.3); paxSeat.add(lg); }
-  const seat = new T.Mesh(unitBox, new T.MeshLambertMaterial({ color: 0x2a2c30 })); seat.scale.set(0.5, 0.12, 0.5); seat.position.set(0, 0.55, 0.02); paxSeat.add(seat);
-  const back = new T.Mesh(unitBox, new T.MeshLambertMaterial({ color: 0x2a2c30 })); back.scale.set(0.5, 0.7, 0.1); back.position.set(0, 0.95, 0.22); paxSeat.add(back);
 }
 
 // ============ sea, ships, bridge pylons, clouds & weather ============
@@ -3829,7 +3947,8 @@ const phC = mkCanvas(512, 300), phX = phC.getContext('2d'), phTex = new T.Canvas
   const ph = new T.Group(); ph.position.set(-0.14, 0.9, -0.58); ph.lookAt(EYE); inter.add(ph);
   ph.add(new T.Mesh(new T.BoxGeometry(0.37, 0.22, 0.012), mDark));
   const scr = new T.Mesh(new T.PlaneGeometry(0.355, 0.208), new T.MeshBasicMaterial({ map: phTex, fog: false })); scr.position.z = 0.007; ph.add(scr);
-  const hold = new T.Mesh(new T.BoxGeometry(0.03, 0.08, 0.03), mDark); hold.position.set(0, -0.15, -0.01); ph.add(hold);
+  const hold = new T.Mesh(rrBox(0.22, 0.07, 0.06, 0.02, 0.01), CABM.pad); hold.position.set(0, -0.13, -0.03); ph.add(hold);
+  const bez = new T.Mesh(rrBox(0.39, 0.24, 0.02, 0.02, 0.005), CABM.piano); bez.position.z = -0.006; ph.add(bez);
 }
 const mtC = mkCanvas(256, 96), mtX = mtC.getContext('2d'), mtTex = new T.CanvasTexture(mtC);
 { const mt = new T.Group(); mt.position.set(-0.5, 0.95, -0.86); mt.lookAt(EYE); inter.add(mt); mt.add(new T.Mesh(new T.BoxGeometry(0.22, 0.09, 0.05), mDark)); const sc_ = new T.Mesh(new T.PlaneGeometry(0.2, 0.075), new T.MeshBasicMaterial({ map: mtTex, fog: false })); sc_.position.z = 0.026; mt.add(sc_); }
@@ -3955,7 +4074,10 @@ function animateCar(dt, inp) {
   paxSeat.visible = fare.on;
   P.wheelAng += ((-P.steer / 0.62) * 7.85 - P.wheelAng) * Math.min(1, dt * 30); // up to ±450°
   wheelSpin.rotation.z = P.wheelAng;
-  stalk.rotation.z = P.sigR ? 0.4 : P.sigL ? -0.4 : 0;
+  stalk.rotation.z = P.sigR ? -0.3 : P.sigL ? 0.3 : 0;
+  pedGas.rotation.x = -0.65 + clamp(inp.thr, 0, 1) * 0.28; pedBrk.rotation.x = clamp(inp.brk, 0, 1) * 0.35; drawGear();
+  shifter.rotation.x += ((P.rev ? -0.28 : 0.12) - shifter.rotation.x) * Math.min(1, dt * 12);
+  hazBtn.material.color.setHex(P.haz && blinkOn() ? 0xff3020 : 0x5a1010);
   { const bo = blinkOn(), lL = mirrors[1].lamp, lR = mirrors[2].lamp; lL.visible = lL.userData.dot.visible = (P.sigL || P.haz) && bo; lR.visible = lR.userData.dot.visible = (P.sigR || P.haz) && bo; }
   const lk = Math.min(1, dt * 10); look.yaw += (look.ty - look.yaw) * lk; look.pitch += (look.tp - look.pitch) * lk;
   const spd = Math.abs(P.v), vib = Math.min(spd, 25) * 0.00028;
