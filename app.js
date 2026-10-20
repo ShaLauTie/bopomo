@@ -200,7 +200,7 @@ function speak(text, onEnd) {
   // 預先產生的語音檔（最穩定，不需要網路語音服務）
   const key = text.trim();
   if (typeof TTS_FILES !== "undefined" && TTS_FILES.has(ttsHash(key))) {
-    playAudioUrl(`sounds/tts/${ttsHash(key)}.mp3`, onEnd, 0.9);
+    playAudioUrl(`sounds/tts/${ttsHash(key)}.mp3?v=yiyi1`, onEnd, 1);
     return;
   }
   // 沒有音檔的文字 → 線上語音，再不行用裝置內建語音

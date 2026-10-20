@@ -2,6 +2,8 @@
 // 讀 data.js 裡所有會念到的字詞，下載成 sounds/tts/<雜湊>.mp3，
 // 並寫出 tts-manifest.js 讓網頁知道哪些字詞有音檔。
 // 已存在的檔案會略過，所以新增詞語後重跑即可。
+// 注意：現有音檔是姨姨的聲音（F5-TTS 複製），這支程式補的新字詞是 Google 語音，
+// 要換成姨姨的聲音得另外用 F5-TTS 做。
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
