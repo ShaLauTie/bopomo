@@ -59,10 +59,6 @@
       <span class="icon">🌱</span>
       <span>入門區</span>
     </button>
-    <button class="menu-card card-3" onclick="showScreen('pinyin')">
-      <span class="icon">🧩</span>
-      <span>拼音練習</span>
-    </button>
     <button class="menu-card card-4" onclick="showScreen('quiz')">
       <span class="icon">🏆</span>
       <span>小測驗</span>
@@ -157,10 +153,6 @@
       <span class="icon">🎧</span>
       <span>聽音找符號</span>
     </button>
-    <button class="menu-card card-5" onclick="showScreen('mole')">
-      <span class="icon">🔨</span>
-      <span>打地鼠</span>
-    </button>
     <button class="menu-card card-7" onclick="showScreen('memory')">
       <span class="icon">🃏</span>
       <span>記憶配對</span>
@@ -197,23 +189,6 @@
   <div class="choices-grid" id="matchChoices"></div>
 </div>
 
-<!-- 拼音練習 -->
-<div class="screen" id="screen-pinyin">
-  <h2>拼音練習</h2>
-  <div class="pinyin-row">
-    <div class="pinyin-slot" id="pinyinInitial" onclick="speakPart('initial')">ㄅ</div>
-    <span class="plus-sign">➕</span>
-    <div class="pinyin-slot" id="pinyinFinal" onclick="speakPart('final')">ㄚˋ</div>
-  </div>
-  <button class="big-btn combine-btn" onclick="combinePinyin()">拼起來！</button>
-  <div class="result-box" id="pinyinResult"></div>
-  <div class="card-nav">
-    <button class="nav-arrow" onclick="prevPinyin()">⬅️</button>
-    <span class="progress-text" id="pinyinProgress"></span>
-    <button class="nav-arrow" onclick="nextPinyin()">➡️</button>
-  </div>
-</div>
-
 <!-- 小測驗 -->
 <div class="screen" id="screen-quiz">
   <h2>小測驗</h2>
@@ -222,30 +197,6 @@
     <span class="stars" id="quizStars">⭐️ 0</span>
   </div>
   <div id="quizQuestionArea"></div>
-</div>
-
-<!-- 打地鼠 -->
-<div class="screen" id="screen-mole">
-  <h2>打地鼠 🔨</h2>
-  <div class="mole-header">
-    <div class="mole-target-box">
-      <button class="mole-mini-speaker" onclick="replayMoleSound()">🔊</button>
-      <span style="font-size:1rem;color:#5b4636;font-weight:bold">聽音打牠！</span>
-    </div>
-    <div class="mole-stats">
-      <span>⭐ <span id="moleScore">0</span></span>
-      <span>⏱ <span id="moleTimer">60</span>s</span>
-    </div>
-  </div>
-  <div class="mole-grid" id="moleGrid"></div>
-  <div class="mole-gameover" id="moleGameover" style="display:none">
-    <div class="gameover-box">
-      <div style="font-size:3.5rem">🎉</div>
-      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">時間到！</div>
-      <div class="big-score">⭐ <span id="moleFinalScore">0</span></div>
-      <button class="big-btn combine-btn" onclick="startMoleGame()">再玩一次！</button>
-    </div>
-  </div>
 </div>
 
 <!-- 記憶配對 -->

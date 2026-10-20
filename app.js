@@ -247,9 +247,7 @@ function showScreen(name) {
 
   if (name === "flashcards") renderFlashcard();
   if (name === "match") startMatchGame();
-  if (name === "pinyin") renderPinyin();
   if (name === "quiz") startQuiz();
-  if (name === "mole") startMoleGame();
   if (name === "picture") startPictureGame();
   if (name === "train") startTrainGame();
   if (name === "monster") startMonsterGame();
@@ -262,12 +260,11 @@ function showScreen(name) {
 }
 
 // 入門區裡的遊戲，返回時先回入門區
-const BASICS_SCREENS = ["flashcards", "match", "mole", "memory"];
+const BASICS_SCREENS = ["flashcards", "match", "memory"];
 
 function goHome() {
   const current = document.querySelector(".screen.active");
   const currentName = current ? current.id.replace("screen-", "") : "home";
-  stopMoleGame();
   stopClawGame();
   stopSpellGame();
   stopPictureGame();
@@ -576,9 +573,7 @@ function animateScreenEntrance(screen, name) {
     home: ["ㄅ", "ㄆ", "ㄇ", "✨", "🎈"],
     flashcards: ["ㄅ", "ㄆ", "ㄇ", "🌟"],
     match: ["🔊", "ㄚ", "ㄧ", "✨"],
-    pinyin: ["ㄅ", "ㄚ", "➕", "✨"],
     quiz: ["🏆", "⭐", "ㄇ", "✨"],
-    mole: ["🔨", "⭐", "ㄉ", "💥"],
     basics: ["ㄅ", "ㄆ", "ㄇ", "🌱"],
     memory: ["🃏", "⭐", "?", "✨"],
     tone: ["ˊ", "ˇ", "ˋ", "🎵"],
@@ -809,53 +804,9 @@ function handleMatchChoice(choice, btn) {
   }
 }
 
-// ========== 拼音練習 ==========
+// ========== 拼音顯示 ==========
 
-let pinyinIndex = 0;
-
-function renderPinyin() {
-  const combo = SPLIT_COMBOS[pinyinIndex];
-  document.getElementById("pinyinInitial").textContent = combo.initial;
-
-  // 把音調符號從韻母拆開，各自顯示
-  const TONE = /[ˊˇˋ˙]/;
-  const toneChar = (combo.final.match(TONE) || [''])[0];
-  const bodyChars = combo.final.replace(TONE, '');
-  const bodySize  = bodyChars.length >= 2 ? '50px' : '76px';
-  document.getElementById("pinyinFinal").innerHTML =
-    `<span class="slot-body" style="font-size:${bodySize}">${bodyChars}</span>` +
-    (toneChar ? `<span class="slot-tone">${toneSvg(toneChar)}</span>` : '');
-
-  document.getElementById("pinyinProgress").textContent =
-    (pinyinIndex + 1) + " / " + SPLIT_COMBOS.length;
-  document.getElementById("pinyinResult").innerHTML = "";
-  replayAnimation(document.querySelector("#screen-pinyin .pinyin-row"), "pinyin-row-swap", 760);
-}
-
-function speakPart(which) {
-  const combo = SPLIT_COMBOS[pinyinIndex];
-  speak(which === "initial" ? combo.initial : combo.final);
-}
-
-function combinePinyin() {
-  const combo = SPLIT_COMBOS[pinyinIndex];
-  speak(combo.word);
-  document.getElementById("pinyinResult").innerHTML =
-    '<div class="word-emoji">' + combo.emoji + '</div>' +
-    '<div class="word-text">' + combo.word + '</div>';
-  burstAtElement(document.getElementById("pinyinResult"), true, 18);
-  replayAnimation(document.querySelector("#screen-pinyin .combine-btn"), "button-launch", 620);
-}
-
-function nextPinyin() {
-  pinyinIndex = (pinyinIndex + 1) % SPLIT_COMBOS.length;
-  renderPinyin();
-}
-
-function prevPinyin() {
-  pinyinIndex = (pinyinIndex - 1 + SPLIT_COMBOS.length) % SPLIT_COMBOS.length;
-  renderPinyin();
-}
+// 拼音顯示共用工具
 
 // 聲調畫成粗線圖示：字型裡的 ˊˇˋ 太細，小朋友看不清楚
 const TONE_SVG_SHAPES = {
@@ -1171,213 +1122,6 @@ function finishQuiz() {
     '</div>';
   document.getElementById("quizProgress").textContent = "完成！";
   speak("恭喜你，完成小測驗！");
-}
-
-// ========== 打地鼠遊戲 ==========
-
-const MOLE_COUNT = 9;
-const MOLE_COLORS = [
-  '#ff6b9d','#ffa552','#ffd166','#06d6a0','#4cc9f0',
-  '#7b5ea7','#f72585','#4361ee','#3a86ff'
-];
-
-let moleScore = 0;
-let moleTimeLeft = 60;
-let moleTimerInt = null;
-let molePopTimeout = null;
-let moleTarget = null;
-let moleRunning = false;
-
-function startMoleGame() {
-  moleScore = 0;
-  moleTimeLeft = 60;
-  moleRunning = true;
-
-  document.getElementById('moleScore').textContent = '0';
-  document.getElementById('moleTimer').textContent = '60';
-  document.getElementById('moleGameover').style.display = 'none';
-
-  // 建立 9 個地洞
-  const grid = document.getElementById('moleGrid');
-  grid.innerHTML = '';
-  for (let i = 0; i < MOLE_COUNT; i++) {
-    const hole = document.createElement('div');
-    hole.className = 'mole-hole';
-
-    const cup = document.createElement('div');
-    cup.className = 'hole-cup';
-
-    const body = document.createElement('div');
-    body.className = 'mole-body';
-    body.style.background = MOLE_COLORS[i];
-
-    const ground = document.createElement('div');
-    ground.className = 'hole-ground';
-
-    cup.appendChild(body);
-    cup.appendChild(ground);
-    hole.appendChild(cup);
-    hole.addEventListener('click', () => handleMoleClick(i));
-    grid.appendChild(hole);
-  }
-
-  pickMoleTarget();
-
-  // 倒數計時
-  clearInterval(moleTimerInt);
-  moleTimerInt = setInterval(() => {
-    moleTimeLeft--;
-    document.getElementById('moleTimer').textContent = moleTimeLeft;
-    if (moleTimeLeft <= 0) endMoleGame();
-  }, 1000);
-
-  scheduleMoleBatch();
-}
-
-function pickMoleTarget() {
-  const prev = moleTarget;
-  do {
-    moleTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
-  } while (prev && moleTarget.symbol === prev.symbol);
-}
-
-function replayMoleSound() {
-  if (moleTarget) speak(moleTarget.symbol);
-}
-
-function scheduleMoleBatch() {
-  if (!moleRunning) return;
-  clearTimeout(molePopTimeout);
-
-  // 先讓全部地鼠下去
-  document.querySelectorAll('.mole-hole').forEach(h =>
-    h.classList.remove('up', 'wrong-shake', 'whacked'));
-
-  // 短暫停頓後彈出新一批
-  molePopTimeout = setTimeout(() => {
-    if (!moleRunning) return;
-    popMoleBatch();
-    // 每次新一批地鼠出現就重播目標音
-    setTimeout(() => { if (moleRunning) speak(moleTarget.symbol); }, 100);
-    // 打得越多，地鼠越快縮回去（最快 2.2 秒）
-    const stay = Math.max(2200, 3600 - moleScore * 90);
-    molePopTimeout = setTimeout(() => scheduleMoleBatch(), stay);
-  }, 350);
-}
-
-function popMoleBatch() {
-  const holes = document.querySelectorAll('.mole-hole');
-  // 分數越高，冒出來的地鼠越多（3 → 5 隻）
-  const count = Math.min(5, 3 + Math.floor(moleScore / 6) + randomInt(2));
-  const indices = shuffle([...Array(MOLE_COUNT).keys()]).slice(0, count);
-
-  const others = pickDistractorSymbols(moleTarget.symbol, count - 1);
-
-  const symbols = shuffle([moleTarget.symbol, ...others]);
-
-  indices.forEach((idx, i) => {
-    const hole = holes[idx];
-    hole.querySelector('.mole-body').textContent = symbols[i];
-    setTimeout(() => {
-      if (moleRunning) hole.classList.add('up');
-    }, i * 80);
-  });
-}
-
-function handleMoleClick(idx) {
-  if (!moleRunning) return;
-  const hole = document.querySelectorAll('.mole-hole')[idx];
-  if (!hole.classList.contains('up')) return;
-
-  const symbol = hole.querySelector('.mole-body').textContent;
-
-  if (symbol === moleTarget.symbol) {
-    // 打中！
-    moleScore++;
-    document.getElementById('moleScore').textContent = moleScore;
-    hole.classList.remove('up');
-    hole.classList.add('whacked');
-    setTimeout(() => hole.classList.remove('whacked'), 300);
-    showMoleReward(hole);
-    playCorrectDingDing();
-    rewardCorrect();
-    pickMoleTarget();
-    scheduleMoleBatch();
-  } else {
-    // 打錯：顯示懲罰 + 暫停 3 秒（地鼠全部下去，停止新出現）
-    breakStreak();
-    showMolePenalty(hole);
-    hole.classList.add('wrong-shake');
-    setTimeout(() => hole.classList.remove('wrong-shake'), 400);
-    clearTimeout(molePopTimeout);
-    document.querySelectorAll('.mole-hole').forEach(h =>
-      h.classList.remove('up', 'wrong-shake', 'whacked'));
-    molePopTimeout = setTimeout(() => {
-      if (moleRunning) scheduleMoleBatch();
-    }, 3000);
-  }
-}
-
-function endMoleGame() {
-  moleRunning = false;
-  clearInterval(moleTimerInt);
-  clearTimeout(molePopTimeout);
-  document.querySelectorAll('.mole-hole').forEach(h => h.classList.remove('up'));
-
-  document.getElementById('moleFinalScore').textContent = moleScore;
-  document.getElementById('moleGameover').style.display = 'flex';
-
-  const msg = moleScore >= 15 ? '哇！你超厲害！' :
-              moleScore >= 8  ? '很棒！繼續加油！' : '再試一次！';
-  speak(msg);
-}
-
-function stopMoleGame() {
-  moleRunning = false;
-  clearInterval(moleTimerInt);
-  clearTimeout(molePopTimeout);
-}
-
-function showMoleReward(holeEl) {
-  const rect = holeEl.getBoundingClientRect();
-  const emojis = ['⭐', '🌟', '✨', '🎉'];
-  const el = document.createElement('div');
-  el.className = 'mole-reward';
-  el.textContent = emojis[randomInt(emojis.length)];
-  el.style.left = (rect.left + rect.width / 2 - 18) + 'px';
-  el.style.top  = (rect.top  + 10) + 'px';
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 750);
-
-  // 分數彈跳
-  const scoreEl = document.getElementById('moleScore');
-  scoreEl.classList.remove('score-bounce');
-  void scoreEl.offsetWidth;
-  scoreEl.classList.add('score-bounce');
-  setTimeout(() => scoreEl.classList.remove('score-bounce'), 400);
-}
-
-function showMolePenalty(holeEl) {
-  // 浮出 ❌
-  const rect = holeEl.getBoundingClientRect();
-  const el = document.createElement('div');
-  el.className = 'mole-reward';
-  el.textContent = '❌';
-  el.style.left = (rect.left + rect.width / 2 - 18) + 'px';
-  el.style.top  = (rect.top  + 10) + 'px';
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 750);
-
-  // 紅色閃屏
-  const flash = document.createElement('div');
-  flash.className = 'mole-wrong-flash';
-  document.body.appendChild(flash);
-  setTimeout(() => flash.remove(), 400);
-
-  // 少 3 秒
-  moleTimeLeft = Math.max(0, moleTimeLeft - 3);
-  document.getElementById('moleTimer').textContent = moleTimeLeft;
-  if (moleTimeLeft <= 0) endMoleGame();
 }
 
 // ========== 看圖選注音 ==========

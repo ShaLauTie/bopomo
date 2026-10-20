@@ -5339,7 +5339,7 @@ h1, h2 {
 .basics-grid { grid-template-columns: repeat(2, 1fr); max-width: 420px; }
 
 @media (orientation: landscape) and (min-width: 900px) {
-  .basics-grid { grid-template-columns: repeat(4, 1fr); max-width: 820px; }
+  .basics-grid { grid-template-columns: repeat(3, 1fr); max-width: 640px; }
 }
 /* 拼音旁的聲調不要縮到看不見 */
 .bopomofo-tone .tone-svg { min-width: 22px; min-height: 22px; }
