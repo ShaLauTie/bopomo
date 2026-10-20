@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=45">
+<link rel="stylesheet" href="style.css?v=46">
 </head>
 <body>
 
 <button class="home-btn" id="homeBtn" onclick="goHome()">🏠</button>
 
 <div class="feedback-banner" id="feedbackBanner"></div>
+<div class="answer-lock" id="answerLock"><div class="answer-lock-box">⏳ 想一想… <span class="answer-lock-count">5</span></div></div>
 <div class="streak-badge" id="streakBadge"></div>
 
 <!-- 10 題一輪的成績（聽音找符號、聲調辨識） -->
@@ -89,10 +90,6 @@
     <button class="menu-card card-8" onclick="showScreen('tone')">
       <span class="icon">🎵</span>
       <span>聲調辨識</span>
-    </button>
-    <button class="menu-card card-9" onclick="showScreen('balloon')">
-      <span class="icon">🎯</span>
-      <span>射氣球</span>
     </button>
     <button class="menu-card card-10" onclick="showScreen('claw')" style="background: linear-gradient(135deg, #a2d2ff, #ffafcc);">
       <span class="icon">🕹️</span>
@@ -275,35 +272,6 @@
     </div>
   </div>
   <div class="choices-grid" id="toneChoices"></div>
-</div>
-
-<!-- 射氣球 -->
-<div class="screen" id="screen-balloon">
-  <h2>射氣球 🎯</h2>
-  <div class="mole-header">
-    <div class="mole-target-box">
-      <button class="mole-mini-speaker" onclick="replayBalloonSound()">🔊</button>
-      <span style="font-size:1rem;color:#5b4636;font-weight:bold" id="balloonModeHint">聽音射氣球！</span>
-    </div>
-    <div class="balloon-modes">
-      <button type="button" id="balloonModeSingle" onclick="setBalloonMode('single')">單注音</button>
-      <button type="button" id="balloonModeMulti" onclick="setBalloonMode('multi')">拼音</button>
-    </div>
-    <div class="mole-stats">
-      <span>⭐ <span id="balloonScore">0</span></span>
-      <span>⏱ <span id="balloonTimer">45</span>s</span>
-    </div>
-  </div>
-  <div class="balloon-container" id="balloonContainer"></div>
-
-  <div class="mole-gameover" id="balloonGameover" style="display:none">
-    <div class="gameover-box">
-      <div style="font-size:3.5rem">🎉</div>
-      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">時間到！</div>
-      <div class="big-score">⭐ <span id="balloonFinalScore">0</span></div>
-      <button class="big-btn combine-btn" onclick="startBalloonGame()">再玩一次！</button>
-    </div>
-  </div>
 </div>
 
 <!-- 夾娃娃機 -->
@@ -542,8 +510,8 @@
   </div>
 </div>
 
-<script src="data.js?v=45"></script>
-<script src="tts-manifest.js?v=45"></script>
-<script src="app.js?v=45"></script>
+<script src="data.js?v=46"></script>
+<script src="tts-manifest.js?v=46"></script>
+<script src="app.js?v=46"></script>
 </body>
 </html>

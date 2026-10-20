@@ -5345,3 +5345,34 @@ h1, h2 {
 .bopomofo-tone .tone-svg { min-width: 22px; min-height: 22px; }
 .tone-option .tone-badge .tone-svg { width: 46px; height: 46px; }
 #toneChoices .choice-card, #quizChoices .choice-card:has(.tone-option) { min-height: 150px; }
+
+/* ---------- 答錯後鎖 5 秒 ---------- */
+.answer-lock {
+  position: fixed;
+  inset: 0;
+  z-index: 45;              /* 在遊戲上面，🏠 (50) 和提示 (100) 下面 */
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6vh;
+  background: rgba(255, 255, 255, 0.35);
+  touch-action: none;
+}
+.answer-lock.show { display: flex; }
+.answer-lock-box {
+  font-size: 34px;
+  font-weight: bold;
+  color: #7c5e48;
+  background: #fff7e6;
+  border: 5px solid #ffb74d;
+  border-radius: 999px;
+  padding: 12px 32px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+}
+.answer-lock-count {
+  display: inline-block;
+  min-width: 1.2em;
+  text-align: center;
+  font-size: 44px;
+  color: #e65100;
+}

@@ -229,11 +229,11 @@ function speakSequence(texts, gapMs = 350, onDone) {
 
 function showScreen(name) {
   // 切換畫面時，停止所有進行中的音訊（防止跨畫面干擾）
-  _screenGen++;  // 讓所有舊的語音 callback 自動作廢
+  _screenGen++;
+  unlockAnswers();  // 讓所有舊的語音 callback 自動作廢
   _fcGen++;      // 閃卡專用
   if (_currentAudio)  { _currentAudio.pause();  _currentAudio  = null; }
   if (_toneAudio)     { _toneAudio.pause();     _toneAudio     = null; }
-  if (_balloonAudio)  { _balloonAudio.pause(); }
   if ('speechSynthesis' in window) speechSynthesis.cancel();
   setFcLocked(false); // 解鎖閃卡箭頭
   breakStreak();      // 換遊戲，連對重新計算
@@ -257,7 +257,6 @@ function showScreen(name) {
   if (name === "rhythm") startRhythmGame();
   if (name === "memory") startMemoryGame();
   if (name === "tone") startToneGame();
-  if (name === "balloon") startBalloonGame();
   if (name === "claw") startClawGame();
   if (name === "spell") startSpellGame();
 }
@@ -269,7 +268,6 @@ function goHome() {
   const current = document.querySelector(".screen.active");
   const currentName = current ? current.id.replace("screen-", "") : "home";
   stopMoleGame();
-  stopBalloonGame();
   stopClawGame();
   stopSpellGame();
   stopPictureGame();
@@ -399,7 +397,33 @@ function closeStickerBook() {
   document.getElementById("stickerBook").classList.remove("show");
 }
 
-function showFeedback(good) {
+// 答錯後鎖住選項 5 秒，避免亂點就過關
+const ANSWER_LOCK_MS = 5000;
+let _answerLockTimer = null;
+
+function lockAnswers(ms = ANSWER_LOCK_MS) {
+  const el = document.getElementById("answerLock");
+  if (!el) return;
+  clearInterval(_answerLockTimer);
+  let left = Math.ceil(ms / 1000);
+  const count = el.querySelector(".answer-lock-count");
+  count.textContent = left;
+  el.classList.add("show");
+  _answerLockTimer = setInterval(() => {
+    left--;
+    if (left <= 0) unlockAnswers();
+    else count.textContent = left;
+  }, 1000);
+}
+
+function unlockAnswers() {
+  clearInterval(_answerLockTimer);
+  _answerLockTimer = null;
+  const el = document.getElementById("answerLock");
+  if (el) el.classList.remove("show");
+}
+
+function showFeedback(good, lock = true) {
   const banner = document.getElementById("feedbackBanner");
   banner.textContent = good ? PRAISES_TEXT[randomInt(PRAISES_TEXT.length)] : "再試一次 😊";
   banner.className = "feedback-banner show " + (good ? "good" : "bad");
@@ -410,6 +434,7 @@ function showFeedback(good) {
   } else {
     breakStreak();
     speak("再試一次");
+    if (lock) lockAnswers();
   }
   setTimeout(() => {
     banner.classList.remove("show");
@@ -557,7 +582,6 @@ function animateScreenEntrance(screen, name) {
     basics: ["ㄅ", "ㄆ", "ㄇ", "🌱"],
     memory: ["🃏", "⭐", "?", "✨"],
     tone: ["ˊ", "ˇ", "ˋ", "🎵"],
-    balloon: ["🎈", "🎯", "⭐", "✨"],
     claw: ["🕹️", "🎁", "⭐", "✨"],
     spell: ["🏭", "⚙️", "ㄅ", "✨"],
     picture: ["🖼️", "⭐", "ㄚ", "✨"],
@@ -602,6 +626,7 @@ function roundHud(key) {
 // 答錯過的題目，答對時不算星星
 function roundWrong(key) {
   if (rounds[key]) rounds[key].missed = true;
+  lockAnswers();
 }
 
 // 答對：前進一題；滿 10 題顯示成績
@@ -2470,7 +2495,7 @@ function handleRhythmTap(index, lane) {
     rhythmStreak = 0;
     lane.classList.add("wrong");
     document.getElementById("rhythmStatus").textContent = "注音不對，再聽一次";
-    showFeedback(false);
+    showFeedback(false, false);
     updateRhythmHud();
     if (rhythmLives <= 0) {
       clearTimeout(rhythmMissTimer);
@@ -2509,7 +2534,7 @@ function missRhythmBeat() {
   document.getElementById("rhythmStatus").textContent = "漏拍了";
   document.querySelectorAll("#rhythmLanes .rhythm-lane").forEach(lane => lane.classList.add("missed"));
   updateRhythmHud();
-  showFeedback(false);
+  showFeedback(false, false);
   rhythmNextTimer = setTimeout(() => {
     rhythmBeatNum++;
     nextRhythmBeat();
@@ -2711,332 +2736,6 @@ function handleToneChoice(tone, btn) {
     setTimeout(() => banner.classList.remove("show"), 900);
     setTimeout(() => btn.classList.remove('wrong'), 1200);
   }
-}
-
-// ========== 射氣球 ==========
-
-let balloonScore = 0;
-let balloonTimeLeft = 45;
-let balloonTimerInt = null;
-let balloonRunning = false;
-let balloonTarget = null;
-let balloonCreateTimeout = null;
-let _balloonAudio = null;  // 重複使用的 Audio 元素（避免 Android 上限）
-const BALLOON_COLORS = ['#ff6b9d','#ffa552','#ffd166','#06d6a0','#4cc9f0','#7b5ea7'];
-
-// 射氣球專用播音：每次新建 Audio（確保 MISS 後的 setTimeout 也能播）
-function playBalloonSymbol(symbol) {
-  const bare = symbol.replace(TONE_MARKS, '');
-  const wav  = BPMF_TO_WAV[bare];
-  if (!wav) return;
-
-  // 釋放舊的 Audio 資源
-  if (_balloonAudio) {
-    _balloonAudio.pause();
-    _balloonAudio.onended = null;
-    _balloonAudio.onerror = null;
-    try { _balloonAudio.src = ''; _balloonAudio.load(); } catch(e) {}
-    _balloonAudio = null;
-  }
-
-  // 每次建新的 Audio，避免 Android 同 src 重播靜音問題
-  const audio = new Audio();
-  _balloonAudio = audio;
-  audio.src = MOE_BASE + wav;
-  audio.load();
-
-  // 嘗試播放
-  const playPromise = audio.play();
-
-  // 安全網：500ms 內如果 play 失敗或沒聲音，用 speechSynthesis 補
-  let played = false;
-  audio.onplaying = () => { played = true; };
-
-  if (playPromise && playPromise.catch) {
-    playPromise.catch(() => {
-      if (played) return;
-      played = true;
-      _speakFallbackBalloon(bare);
-    });
-  }
-
-  setTimeout(() => {
-    if (!played && _balloonAudio === audio) {
-      played = true;
-      _speakFallbackBalloon(bare);
-    }
-  }, 500);
-}
-
-function _speakFallbackBalloon(bare) {
-  if ('speechSynthesis' in window) {
-    speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(BPMF_TO_CHAR[bare] || bare);
-    utter.lang = 'zh-TW';
-    if (_zhVoice) utter.voice = _zhVoice;
-    utter.rate = 0.85;
-    speechSynthesis.speak(utter);
-  }
-}
-
-function startBalloonGame() {
-  updateBalloonModeButtons();
-  balloonScore = 0;
-  balloonTimeLeft = 45;
-  balloonRunning = true;
-
-  document.getElementById('balloonScore').textContent = '0';
-  document.getElementById('balloonTimer').textContent = '45';
-  document.getElementById('balloonGameover').style.display = 'none';
-  document.getElementById('balloonContainer').innerHTML = '';
-
-  clearInterval(balloonTimerInt);
-  balloonTimerInt = setInterval(() => {
-    balloonTimeLeft--;
-    document.getElementById('balloonTimer').textContent = balloonTimeLeft;
-    if (balloonTimeLeft <= 0) endBalloonGame();
-  }, 1000);
-
-  pickBalloonTarget();
-  launchBalloons();
-}
-
-// 模式：single = 氣球上是一個注音符號；multi = 氣球上是整個拼音
-const BALLOON_MODE_KEY = "bpmf_balloon_mode";
-let balloonMode = "single";
-try { balloonMode = localStorage.getItem(BALLOON_MODE_KEY) === "multi" ? "multi" : "single"; } catch (e) {}
-let balloonTargetValue = null;  // 要射的那顆氣球上的內容
-
-function setBalloonMode(mode) {
-  balloonMode = mode;
-  try { localStorage.setItem(BALLOON_MODE_KEY, mode); } catch (e) {}
-  updateBalloonModeButtons();
-  stopBalloonGame();
-  balloonTarget = null;
-  startBalloonGame();
-}
-
-function updateBalloonModeButtons() {
-  document.getElementById("balloonModeSingle").classList.toggle("active", balloonMode === "single");
-  document.getElementById("balloonModeMulti").classList.toggle("active", balloonMode === "multi");
-  document.getElementById("balloonModeHint").textContent =
-    balloonMode === "single" ? "聽音射氣球！" : "聽字射拼音！";
-}
-
-function pickBalloonTarget() {
-  const prev = balloonTarget;
-  if (balloonMode === "multi") {
-    do {
-      balloonTarget = SYLLABLE_QUESTIONS[randomInt(SYLLABLE_QUESTIONS.length)];
-    } while (prev && balloonTarget.char === prev.char);
-    balloonTargetValue = comboSpelling(balloonTarget);
-    return;
-  }
-  do {
-    balloonTarget = BOPOMOFO_SYMBOLS[randomInt(BOPOMOFO_SYMBOLS.length)];
-  } while (prev && balloonTarget.symbol === prev.symbol);
-  balloonTargetValue = balloonTarget.symbol;
-}
-
-function replayBalloonSound() {
-  if (!balloonTarget) return;
-  if (balloonMode === "multi") speak(promptText(balloonTarget));
-  else playBalloonSymbol(balloonTarget.symbol);
-}
-
-function launchBalloons() {
-  if (!balloonRunning) return;
-  const container = document.getElementById('balloonContainer');
-  container.innerHTML = '';
-
-  let others;
-  if (balloonMode === "multi") {
-    // 一顆「聽起來很像」的錯音 + 一顆不同的音
-    const near = nearMissSpellings(balloonTarget, 1);
-    const far = pickOtherCombos(balloonTarget, 3, SYLLABLE_QUESTIONS)
-      .map(comboSpelling).filter(v => !near.includes(v)).slice(0, 1);
-    others = [...near, ...far];
-  } else {
-    others = pickDistractorSymbols(balloonTarget.symbol, 2);
-  }
-
-  const symbols = shuffle([balloonTargetValue, ...others]);
-
-  symbols.forEach((sym, i) => {
-    const balloon = document.createElement('div');
-    balloon.className = balloonMode === "multi" ? 'balloon balloon-multi' : 'balloon';
-    balloon.style.background = BALLOON_COLORS[randomInt(BALLOON_COLORS.length)];
-    // 三顆氣球平均分在三等分的中間，寬氣球也不會超出邊界
-    balloon.style.left = balloonMode === "multi"
-      ? `calc(${i * 33.3 + 16.6}% - 52px)`
-      : (15 + i * 30) + '%';
-    if (balloonMode === "multi") {
-      balloon.innerHTML = renderPinyinHtml(sym, 40, 'balloon-bopomofo');
-    } else {
-      balloon.textContent = sym;
-    }
-
-    const string = document.createElement('div');
-    string.className = 'balloon-string';
-    balloon.appendChild(string);
-
-    balloon.onclick = () => handleBalloonClick(sym, balloon);
-
-    // Auto remove and relaunch
-    balloon.addEventListener('animationend', (e) => {
-      if (e.animationName === 'floatUp' && balloonRunning) {
-        if (container.contains(balloon)) {
-          // If the correct one flew away, just relaunch
-          if (sym === balloonTargetValue && !document.querySelector('.balloon-penalty')) {
-             clearTimeout(balloonCreateTimeout);
-             balloonCreateTimeout = setTimeout(launchBalloons, 500);
-          }
-        }
-      }
-    });
-
-    container.appendChild(balloon);
-  });
-
-  // 氣球出現後立刻念題目
-  replayBalloonSound();
-}
-
-function handleBalloonClick(sym, balloonEl) {
-  if (!balloonRunning || balloonEl.dataset.hit) return;
-  balloonEl.dataset.hit = '1';  // 防止重複點擊
-
-  const container = document.getElementById('balloonContainer');
-  const bRect = balloonEl.getBoundingClientRect();
-  const cRect = container.getBoundingClientRect();
-
-  // 氣球中心（相對於 container）
-  const bx = bRect.left - cRect.left + bRect.width / 2;
-  const by = bRect.top - cRect.top + bRect.height / 2;
-
-  // ── 飛鏢從底部中央飛向氣球 ──
-  const dart = document.createElement('div');
-  dart.className = 'dart';
-  dart.textContent = '🎯';
-  // 起點：底部中央
-  const startX = cRect.width / 2;
-  const startY = cRect.height;
-  dart.style.left = startX + 'px';
-  dart.style.top = startY + 'px';
-  // 用 transition 飛到氣球位置
-  dart.style.transition = 'left 0.3s ease-in, top 0.3s ease-in';
-  container.appendChild(dart);
-
-  requestAnimationFrame(() => {
-    dart.style.left = bx + 'px';
-    dart.style.top = by + 'px';
-  });
-
-  // 飛鏢到達後的效果
-  setTimeout(() => {
-    dart.remove();
-
-    if (sym === balloonTargetValue) {
-      // ── 射中！氣球爆 + 彩帶 ──
-      balloonScore++;
-      document.getElementById('balloonScore').textContent = balloonScore;
-      playCorrectDingDing();
-      rewardCorrect();
-
-      // 分數彈跳
-      const scoreEl = document.getElementById('balloonScore');
-      scoreEl.classList.remove('score-bounce');
-      void scoreEl.offsetWidth;
-      scoreEl.classList.add('score-bounce');
-
-      balloonEl.classList.add('balloon-pop');
-
-      // 彩帶粒子從氣球位置噴射
-      spawnConfetti(container, bx, by);
-
-      const myScreen = _screenGen;
-      setTimeout(() => {
-        if (myScreen !== _screenGen) return;
-        pickBalloonTarget();
-        launchBalloons();
-      }, 600);
-
-    } else {
-      // ── 射不中！MISS ──
-      balloonEl.dataset.hit = '';  // 允許再點
-      breakStreak();
-
-      // MISS 文字
-      const miss = document.createElement('div');
-      miss.className = 'miss-text';
-      miss.textContent = 'MISS!';
-      miss.style.left = (bx - 45) + 'px';
-      miss.style.top = (by - 20) + 'px';
-      container.appendChild(miss);
-      setTimeout(() => miss.remove(), 1000);
-
-      // 懲罰遮罩
-      const penalty = document.createElement('div');
-      penalty.className = 'balloon-penalty';
-      penalty.textContent = '😵';
-      container.appendChild(penalty);
-
-      // 凍結氣球
-      document.querySelectorAll('.balloon').forEach(b => {
-        b.style.animationPlayState = 'paused';
-        b.onclick = null;
-      });
-
-      setTimeout(() => {
-        if (!balloonRunning) return;
-        penalty.remove();
-        launchBalloons();
-      }, 3000);
-    }
-  }, 320);  // 飛鏢飛行時間
-}
-
-// 彩帶粒子噴射
-function spawnConfetti(container, cx, cy) {
-  const colors = ['#ff6b9d','#ffd166','#06d6a0','#4cc9f0','#7b5ea7','#ff5252','#ffab40'];
-  for (let i = 0; i < 18; i++) {
-    const c = document.createElement('div');
-    c.className = 'confetti';
-    c.style.left = cx + 'px';
-    c.style.top = cy + 'px';
-    c.style.background = colors[i % colors.length];
-    c.style.width = (6 + Math.random() * 8) + 'px';
-    c.style.height = (6 + Math.random() * 8) + 'px';
-    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-    // 隨機方向
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 40 + Math.random() * 80;
-    c.style.setProperty('--cx', Math.cos(angle) * dist + 'px');
-    c.style.setProperty('--cy', Math.sin(angle) * dist - 30 + 'px');
-    container.appendChild(c);
-    setTimeout(() => c.remove(), 950);
-  }
-}
-
-function endBalloonGame() {
-  balloonRunning = false;
-  clearInterval(balloonTimerInt);
-  clearTimeout(balloonCreateTimeout);
-  document.getElementById('balloonContainer').innerHTML = '';
-
-  document.getElementById('balloonFinalScore').textContent = balloonScore;
-  document.getElementById('balloonGameover').style.display = 'flex';
-
-  const msg = balloonScore >= 15 ? '哇！你超厲害！' :
-              balloonScore >= 8  ? '很棒！繼續加油！' : '再試一次！';
-  speak(msg);
-}
-
-function stopBalloonGame() {
-  balloonRunning = false;
-  clearInterval(balloonTimerInt);
-  clearTimeout(balloonCreateTimeout);
-  if (_balloonAudio) { _balloonAudio.pause(); }
 }
 
 // ========== 夾娃娃機 ==========
