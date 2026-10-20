@@ -843,7 +843,8 @@ function buildCell(i, j) {
     const mx0 = ox + (isRound(i, j) ? RB_O + 4 : 11), mx1 = ox + S - (isRound(i + 1, j) ? RB_O + 4 : 11), mlen = mx1 - mx0, mcx = (mx0 + mx1) / 2;
     if (four) { // 4 lanes: double yellow centre line (or a planted median), white lane lines; the inner lane becomes 右折専用 before signals
       if (hasMedian(j)) {
-        const mw = avenue(j) ? 2.0 : 1.4, m0 = ox + 10, m1 = ox + S - 10; // grass median (中央分離帯) with kerbs
+        const hotelN = LANDMARKS.some(L => L.hotel && L.i === i && L.j === j - 1); // a hotel car park just north: open the median so you can turn right into its driveway
+        const mw = avenue(j) ? 2.0 : 1.4, m0 = ox + (hotelN ? 24 : 10), m1 = ox + S - 10; // grass median (中央分離帯) with kerbs
         B.box('col', (m0 + m1) / 2, 0.12, oz, m1 - m0, 0.24, mw, [0.74, 0.74, 0.7]); B.box('col', (m0 + m1) / 2, 0.245, oz, m1 - m0 - 0.4, 0.02, mw - 0.3, [0.36, 0.56, 0.28]);
         rects.push([m0, oz - mw / 2, m1, oz + mw / 2]);
         for (let q = m0 + 4; q < m1 - 4; q += 5 + rnd() * 4) if (rnd() < 0.6) B.ball('col', q, 0.45, oz, 0.7, 0.3, mw * 0.32, [0.2 + rnd() * 0.06, 0.42 + rnd() * 0.1, 0.18], 4);
@@ -1740,7 +1741,11 @@ function hornReact() {
         else { pedFace(m, 'shock', 1.5); pedGest(m, 'bow', 1.3); showReact(E(['🙇', '💦']), get, 2.1); } }, 150 + Math.random() * 450); } }
   for (const a of aiCars) { const [x, z] = aiPos(a); if (!!a.hw !== (P.lay === 1) || !seen(x, z, 40) || n > 10) continue; n++;
     const r = Math.random(), get = () => aiCars.includes(a) ? [a.mesh.position.x, a.mesh.position.y, a.mesh.position.z] : null, h = (a.mesh.userData.kind === 'bus' || a.mesh.userData.kind === 'truck') ? 3.8 : 2.3;
-    setTimeout(() => { if (r < 0.4) { a.boostT = simT; showReact('💨', get, h); } else if (r < 0.65) { aiHorn(0.18); showReact('😠', get, h); } else if (r < 0.85) showReact('🖕', get, h); else showReact('💢', get, h); }, 250 + Math.random() * 500); }
+    setTimeout(() => { if (!aiCars.includes(a)) return; const E = q => q[Math.floor(Math.random() * q.length)];
+      if (r < 0.38 && carDodge(a)) { showReact(E(['😰', '💦', '😨']), get, h); }
+      else if (r < 0.56) { a.boostT = simT; showReact('💨', get, h); }
+      else if (r < 0.68 && !a.hw) { a.scareT = simT; aiSkid(a); showReact(E(['😱', '❗', '⁉️']), get, h); }
+      else if (r < 0.82) { aiHorn(0.18); showReact('😠', get, h); } else if (r < 0.93) showReact('🖕', get, h); else showReact('💢', get, h); }, 180 + Math.random() * 380); }
   for (const b of bikes) { if (!b.live || b.down > 0 || P.lay || !seen(b.g.position.x, b.g.position.z, 30)) continue;
     const r = Math.random(), get = () => b.live && b.down <= 0 ? [b.g.position.x, b.g.position.y, b.g.position.z] : null;
     setTimeout(() => { if (r < 0.45) { b.hurryT = simT; showReact('💦', get, 2.2); } else if (r < 0.7) { bikeBell(); showReact('😠', get, 2.2); } else showReact('🖕', get, 2.2); }, 200 + Math.random() * 400); }
@@ -2004,6 +2009,7 @@ function spawnAI() {
   { const px = axis === 'x' ? s : line * S + lat, pz = axis === 'x' ? line * S + lat : s; if (hw ? (s < HW_X0 + 40 || s > HW_X1 - 40) : !isleAt(px, pz)) return; if (!hw && (axis === 'x' ? !xRoadAt(Math.floor(s / S), line) : !zRoadAt(line, Math.floor(s / S)))) return; }
   if (!hw) {
     const m = ((s % S) + S) % S; if (m < 14 || m > S - 14) return;
+    { const k = dir > 0 ? Math.floor(s / S) + 1 : Math.ceil(s / S) - 1, d = (k * S - dir * (axis === 'z' ? rxOf(k) + 4.6 : 8.6) - s) * dir; if (d < 14) return; } // never appear too close to a stop line to brake for it
     if (axis === 'z') { const sj = Math.floor(s / S); if (noZ(line, sj) || (dir > 0 ? noZ(line, sj + 1) && s > (sj + 1) * S - 40 : noZ(line, sj - 1) && s < sj * S + 40)) return; }
   }
   for (const o of aiCars) if (o.axis === axis && o.line === line && o.dir === dir && Math.abs(o.lat - lat) < 1.5 && Math.abs(o.s - s) < 14) return;
@@ -2012,6 +2018,16 @@ function spawnAI() {
 }
 let lastHonk = -99;
 function honkSound() { aiHorn(0.22); }
+// a honked-at car gets out of the way: into the next lane if it is free, otherwise hard over to the kerb and slow right down
+function carDodge(a) {
+  if (a.v < 3) return false; // a car waiting at the lights doesn't jump sideways
+  const out = Math.sign(a.lanes[0]) || 1, lat = a.axis === 'x' ? P.z - (a.line * S + a.lat) : P.x - (a.line * S + a.lat);
+  if (a.lanes.length > 1) { const want = a.li > 0 && (a.li === a.lanes.length - 1 || Math.sign(lat) === out) ? a.li - 1 : a.li < a.lanes.length - 1 ? a.li + 1 : a.li - 1;
+    let free = true; for (const b of aiCars) if (b !== a && b.axis === a.axis && b.line === a.line && b.dir === a.dir && Math.abs(b.lat - a.lanes[want]) < 1.7 && Math.abs(b.s - a.s) < (a.L + b.L) / 2 + 5) free = false;
+    if (free) { a.li = want; a.lcT = simT; a.dodge = { t0: simT, dur: 2.2, off: 0, v: 99 }; a.boostT = simT - 1.5; return true; } }
+  a.dodge = { t0: simT, dur: 2.6 + Math.random(), off: out * (a.lanes.length > 1 ? 0.7 : 1.15), v: 2.2 }; return true;
+}
+function aiSkid(a) { if (a.v > 4) noise(0.35, 'bandpass', 1400, 0.05); }
 function updateAI(dt) {
   if (aiCars.length < 14 && Math.random() < dt * 2) spawnAI();
   for (let n = aiCars.length - 1; n >= 0; n--) {
@@ -2024,9 +2040,12 @@ function updateAI(dt) {
       const sj = Math.floor(a.s / S), ahead = a.dir > 0 ? noZ(a.line, sj + 1) : noZ(a.line, sj - 1), dEnd = a.dir > 0 ? (sj + 1) * S - a.s : a.s - sj * S;
       if (noZ(a.line, sj) || (ahead && dEnd < 30)) { kill(); continue; }
     }
-    let vd = a.vmax * (simT - (a.boostT || -99) < 4 ? 1.35 : 1);
+    const boosting = simT - (a.boostT || -99) < 4; let vd = a.vmax * (boosting ? 1.55 : 1);
+    if (a.dodge && simT - a.dodge.t0 > a.dodge.dur) a.dodge = null;
+    if (a.dodge) vd = Math.min(vd, a.dodge.v);
+    if (simT - (a.scareT || -99) < 1.3) vd = 0;
     // next stop line
-    const k = a.dir > 0 ? Math.floor((a.s + 9.9) / S) + 1 : Math.ceil((a.s - 9.9) / S) - 1, sd_ = a.axis === 'z' ? rxOf(k) + 4.6 : 8.6, sl = k * S - a.dir * sd_, d = (sl - a.s) * a.dir;
+    const k = a.dir > 0 ? Math.floor(a.s / S) + 1 : Math.ceil(a.s / S) - 1, sd_ = a.axis === 'z' ? rxOf(k) + 4.6 : 8.6, sl = k * S - a.dir * sd_, d = (sl - a.s) * a.dir;
     const ii = a.axis === 'x' ? k : a.line, jj = a.axis === 'x' ? a.line : k;
     const sg_ = sigState(ii, jj, simT), st = sg_[a.axis];
     if (sg_.minor) { // unsignalised: minor (z) road obeys 止まれ
@@ -2072,10 +2091,10 @@ function updateAI(dt) {
         else if (a.li > 0 && a.tail === 0 && simT - a.lcT > 7 && clear(a.lanes[a.li - 1])) { a.li--; a.lcT = simT; }
       }
       { const nd = a.dir > 0 ? Math.ceil(a.s / S) * S - a.s : a.s - Math.floor(a.s / S) * S; if (!a.hw && nd < 45 && a.li === a.lanes.length - 1 && a.li > 0 && a.tail < 1) a.li--; }
-      a.lat += clamp(a.lanes[a.li] - a.lat, -2.2 * dt, 2.2 * dt);
     }
+    { const tl = a.lanes[a.li] + (a.dodge ? a.dodge.off : 0), r_ = a.dodge ? Math.min(4.5, 0.6 + a.v * 0.45) : 2.2, l0 = a.lat; a.lat += clamp(tl - a.lat, -r_ * dt, r_ * dt); a.latV = (a.lat - l0) / dt; }
     if (a.honked && (along - a.s) * a.dir < -3) { a.honked = false; score += 1; $('scoreV').textContent = score; notify('✔ 讓行成功,後車超車通過 +1', 'good'); }
-    const dv = vd - a.v; a.v += clamp(dv, -7 * dt, 2.2 * dt); if (a.v < 0) a.v = 0;
+    const dv = vd - a.v; a.v += clamp(dv, -(simT - (a.scareT || -99) < 1.3 ? 9 : 7) * dt, (boosting ? 4 : 2.2) * dt); if (a.v < 0) a.v = 0;
     a.s += a.dir * a.v * dt;
     const br = dv < -0.3; if (br !== a.braking) { a.braking = br; a.mesh.userData.tails.forEach(t => t.material = br ? tailOn : tailOff); }
     let [nx, nz] = aiPos(a); let yawOff = 0;
@@ -2088,7 +2107,8 @@ function updateAI(dt) {
       } }
     a.mesh.position.set(nx, a.hw ? DECK_Y : terrainH(nx, nz), nz);
     if (!a.hw) { const ry = a.mesh.rotation.y, hx = -Math.sin(ry), hz = -Math.cos(ry), dh = terrainH(nx + hx, nz + hz) - terrainH(nx - hx, nz - hz); a.mesh.rotation.x = dh ? Math.atan(dh / 2) : 0; }
-    a.mesh.rotation.y = (a.axis === 'x' ? (a.dir > 0 ? -Math.PI / 2 : Math.PI / 2) : (a.dir > 0 ? Math.PI : 0)) + yawOff;
+    { const lv = a.latV || 0, sw = Math.abs(lv) > 0.05 ? clamp(Math.atan2(lv, Math.max(a.v, 3)), -0.4, 0.4) : 0; a.swY = (a.swY || 0) + (sw - (a.swY || 0)) * Math.min(1, dt * 8); }
+    a.mesh.rotation.y = (a.axis === 'x' ? (a.dir > 0 ? -Math.PI / 2 : Math.PI / 2) : (a.dir > 0 ? Math.PI : 0)) + yawOff + (a.axis === 'x' ? -a.dir : a.dir) * a.swY;
     // collision with player (two circles each)
     const af = a.axis === 'x' ? [a.dir, 0] : [0, a.dir], pf = [-Math.sin(P.th), -Math.cos(P.th)];
     let hit = false;
