@@ -77,7 +77,7 @@ body.touch .msg{font-size:15px;padding:4px 10px}body.touch #msgs{top:30%;width:5
 
 <div id="touch">
   <div id="tTop"><div class="tb" data-a="KeyQ">◀</div><div class="tb" data-a="KeyX">⚠</div><div class="tb" data-a="KeyE">▶</div></div>
-  <div id="tSide"><div class="tb" data-a="KeyR" id="tRev">D/R</div><div class="tb" data-k="KeyH">📢</div><div class="tb" data-a="KeyM">🗺</div><div class="tb" data-a="KeyN">🌙</div></div>
+  <div id="tSide"><div class="tb" data-a="KeyR" id="tRev">D/R</div><div class="tb" data-k="KeyH">📢</div><div class="tb" data-a="KeyM">🗺</div><div class="tb" data-a="KeyN">🌙</div><div class="tb" id="tGyro">📱</div><div class="tb" id="tCenter">🎯</div></div>
   <div class="tb" id="tSteer"><div id="tWheel"></div></div>
   <div class="tb" id="tHand" data-k="Space">手煞車</div>
   <div class="tb" id="tBrk" data-k="KeyS">煞車</div>
@@ -95,7 +95,7 @@ body.touch .msg{font-size:15px;padding:4px 10px}body.touch #msgs{top:30%;width:5
   </div>
   <div class="touchOnly">
     <h2>手機操作</h2>
-    <div>左下 <b>方向盤</b>:按住左右拖曳轉向<br>右下 <b style="color:#5d8">油門</b>・<b style="color:#f77">煞車</b>・手煞車(甩尾)<br>上方 ◀ ▶ 方向燈・⚠ 警示燈<br>右側 D/R 倒車・📢 喇叭・🗺 地圖・🌙 日夜<br>在畫面空白處拖曳可以看四周</div>
+    <div>左下 <b>方向盤</b>:按住左右拖曳轉向<br>右下 <b style="color:#5d8">油門</b>・<b style="color:#f77">煞車</b>・手煞車(甩尾)<br>上方 ◀ ▶ 方向燈・⚠ 警示燈<br>右側 D/R 倒車・📢 喇叭・🗺 地圖・🌙 日夜<br>轉動手機(陀螺儀)或在畫面空白處拖曳可以看四周,📱 開關陀螺儀、🎯 視角歸正</div>
   </div>
   <div class="kbOnly">
     <h2>鍵盤</h2>
@@ -1340,6 +1340,10 @@ function updateBikes(dt) {
     const legs = [0, 1].map(q => { const l = new T.Mesh(pedGeo.leg, legM); l.position.set(q ? 0.1 : -0.1, 0.98, 0.16); g.add(l); return l; }); scene.add(g); bikes.push({ g, legs, ph: Math.random() * 6, bell: -9, live: false }); }
   const fx = -Math.sin(P.th), fz = -Math.cos(P.th);
   for (const b of bikes) {
+    if (b.fly) { const f = b.fly, g = b.g; // knocked flying: ballistic arc + tumble, then it lies on the road for a while
+      if (!f.landed) { g.position.x += f.vx * dt; g.position.z += f.vz * dt; g.position.y += f.vy * dt; f.vy -= 9.8 * dt; g.rotation.x += f.sx * dt; g.rotation.z += f.sz * dt;
+        if (g.position.y <= 0.3 && f.vy < 0) { g.position.y = 0.3; if (f.bounce-- > 0 && Math.abs(f.vy) > 2.5) { f.vy *= -0.35; f.vx *= 0.55; f.vz *= 0.55; thud(); } else { f.landed = true; g.rotation.set(0, g.rotation.y, Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1)); thud(); } } }
+      b.down -= dt; if (b.down <= 0) { b.fly = null; spawnBike(b); } continue; }
     if (!b.live || b.down > 0) { if (b.down > 0) { b.down -= dt; if (b.down <= 0) spawnBike(b); } else if (Math.random() < dt * 2) spawnBike(b); continue; }
     let next = b.pos + b.dir * b.v * (simT - (b.hurryT || -99) < 4 ? 1.6 : 1) * dt;
     // at a corner (sidewalk riders only) sometimes turn onto the cross street, away from the road they were on
@@ -1354,7 +1358,9 @@ function updateBikes(dt) {
     b.g.rotation.y += normAng(ty - b.g.rotation.y) * Math.min(1, dt * 6); b.g.position.set(x, b.road ? 0.02 : 0.15, z);
     b.ph += dt * b.v * 2.2; b.legs[0].rotation.x = -0.9 + Math.sin(b.ph) * 0.55; b.legs[1].rotation.x = -0.9 - Math.sin(b.ph) * 0.55;
     if (P.lay) continue;
-    if (d < 1.35 && Math.abs(P.v) > 0.6) { violation('撞到腳踏車!', 50); thud(); yelp(); P.v *= 0.6; b.down = 6; b.g.rotation.z = Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1); b.g.position.y = 0.35; continue; }
+    if (d < 1.35 && Math.abs(P.v) > 0.6) { violation('撞到腳踏車!', 50); thud(); yelp(); crash(); const sp = Math.abs(P.v), dd = d || 1;
+      b.fly = { vx: fx * P.v * 1.15 + dx / dd * 1.5, vz: fz * P.v * 1.15 + dz / dd * 1.5, vy: 2.5 + sp * 0.4, sx: (Math.random() - 0.5) * 12, sz: (Math.random() < 0.5 ? -1 : 1) * (5 + sp * 0.4), bounce: 2, landed: false };
+      b.down = 7; P.v *= 0.7; continue; }
     if (d < 7 && Math.abs(P.v) > 2 && simT - b.bell > 5 && dx * fx + dz * fz > 0) { b.bell = simT; bikeBell(); }
   }
 }
@@ -1441,7 +1447,10 @@ bx(0.09, 0.09, 0.4, 0.38, 0.84, -0.62, mDark);
 beam([-0.84, 0.95, -1.18], [-0.72, 1.58, -0.3], 0.03, mTrim); beam([0.84, 0.95, -1.18], [0.72, 1.58, -0.3], 0.03, mTrim);
 bx(1.8, 0.05, 1.65, 0, 1.6, 0.525, mRoof);
 for (const sx of [-1, 1]) { // doors run forward to the A-pillar base and overlap the dashboard ends, with a sill trim on top
-  bx(0.08, 0.98, 2.62, sx * 0.9, 0.49, 0.04, mDark); bx(0.1, 0.05, 2.62, sx * 0.87, 0.99, 0.04, mTrim); bx(0.07, 0.12, 0.9, sx * 0.83, 0.62, 0.15, mDash); }
+  // the front of the door (by the dashboard) sits lower, so it never hides the door mirror
+  bx(0.08, 0.98, 1.95, sx * 0.9, 0.49, 0.375, mDark); bx(0.1, 0.05, 1.95, sx * 0.87, 0.99, 0.375, mTrim);
+  bx(0.08, 0.84, 0.68, sx * 0.9, 0.42, -0.94, mDark); bx(0.1, 0.05, 0.68, sx * 0.87, 0.85, -0.94, mTrim);
+  bx(0.07, 0.12, 0.9, sx * 0.83, 0.62, 0.15, mDash); }
 bx(1.84, 0.05, 2.4, 0, 0.1, 0.2, mDark); bx(1.8, 0.4, 0.08, 0, 0.2, -0.72, mDash); bx(1.8, 1.1, 0.06, 0, 0.55, 1.35, mDark);
 bx(0.1, 0.5, 0.12, 0.86, 1.25, 0.9, mTrim); bx(0.1, 0.5, 0.12, -0.86, 1.25, 0.9, mTrim);
 bx(0.5, 0.72, 0.12, -0.42, 0.85, 0.85, mDark);
@@ -2622,6 +2631,7 @@ function adaptPerf(dt) { // dynamic resolution: keep the frame rate up on integr
 addEventListener('mousemove', e => { if (!started || wz.active) return; look.ty = mouseLook ? -(e.clientX / innerWidth - 0.5) * 2 * 1.7 : 0; look.tp = mouseLook ? -(e.clientY / innerHeight - 0.5) * 2 * 0.6 : 0; });
 // ---- touch controls (phones / tablets) ----
 let touchSteer = null;
+const gyro = { on: false, has: false, ref: null, drag: false, q: new T.Quaternion(), rel: new T.Quaternion(), tmp: new T.Quaternion(), q0: new T.Quaternion(), q1: new T.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)), zee: new T.Vector3(0, 0, 1), eu: new T.Euler(), eu2: new T.Euler() };
 if (isTouch) {
   mouseLook = false; qi = 0;
   const tap = code => { dispatchEvent(new KeyboardEvent('keydown', { code })); dispatchEvent(new KeyboardEvent('keyup', { code })); };
@@ -2638,11 +2648,29 @@ if (isTouch) {
   sp.addEventListener('pointerup', sUp); sp.addEventListener('pointercancel', sUp);
   // drag on empty screen to look around; it springs back on release
   const tl = $('touch'); let lid = null, lx0 = 0, ly0 = 0;
-  tl.addEventListener('pointerdown', e => { if (e.target !== tl) return; lid = e.pointerId; lx0 = e.clientX; ly0 = e.clientY; tl.setPointerCapture(e.pointerId); });
+  tl.addEventListener('pointerdown', e => { if (e.target !== tl) return; lid = e.pointerId; gyro.drag = true; lx0 = e.clientX; ly0 = e.clientY; tl.setPointerCapture(e.pointerId); });
   tl.addEventListener('pointermove', e => { if (e.pointerId !== lid) return; look.ty = clamp(-(e.clientX - lx0) / innerWidth * 4, -1.7, 1.7); look.tp = clamp(-(e.clientY - ly0) / innerHeight * 1.5, -0.6, 0.6); });
-  const lUp = e => { if (e.pointerId !== lid) return; lid = null; look.ty = look.tp = 0; };
+  const lUp = e => { if (e.pointerId !== lid) return; lid = null; gyro.drag = false; look.ty = look.tp = 0; if (gyro.has) gyro.ref = gyro.q.clone().invert(); };
   tl.addEventListener('pointerup', lUp); tl.addEventListener('pointercancel', lUp);
   setInterval(() => { const r = $('tRev'); if (r) r.textContent = P.rev ? 'R' : 'D'; }, 300);
+  // gyroscope look-around: the view follows how the phone is turned, relative to where it was when centred
+  addEventListener('deviceorientation', e => { if (e.alpha === null || e.beta === null) return;
+    const d = T.MathUtils.degToRad, orient = d((screen.orientation && screen.orientation.angle) || window.orientation || 0);
+    gyro.eu.set(d(e.beta), d(e.alpha), -d(e.gamma), 'YXZ'); gyro.q.setFromEuler(gyro.eu).multiply(gyro.q1).multiply(gyro.q0.setFromAxisAngle(gyro.zee, -orient)); gyro.has = true; if (!gyro.ref) gyro.ref = gyro.q.clone().invert(); });
+  const gb_ = $('tGyro'), setG = on => { gyro.on = on; gb_.classList.toggle('on', on); if (!on) look.ty = look.tp = 0; };
+  gb_.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); askGyro(); setG(!gyro.on); notify(gyro.on ? '📱 陀螺儀視角:開(轉動手機看四周)' : '📱 陀螺儀視角:關', ''); });
+  $('tCenter').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); if (gyro.has) gyro.ref = gyro.q.clone().invert(); look.ty = look.tp = 0; notify('🎯 視角已歸正', ''); });
+  setTimeout(() => setG(true), 0);
+}
+function askGyro() { // iOS asks for permission, and only inside a tap
+  try { if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission && !gyro.asked) { gyro.asked = true; DeviceOrientationEvent.requestPermission().then(r => { if (r !== 'granted') notify('沒有取得陀螺儀權限,可用拖曳畫面看四周', 'bad'); }).catch(() => { }); } } catch (e) { }
+}
+function gyroLook(dt) {
+  if (!gyro.on || !gyro.has || !gyro.ref || gyro.drag) return;
+  gyro.rel.copy(gyro.ref).multiply(gyro.q); gyro.eu2.setFromQuaternion(gyro.rel, 'YXZ');
+  const dz = (v, z) => Math.abs(v) < z ? 0 : v - Math.sign(v) * z;
+  look.ty = clamp(dz(gyro.eu2.y, 0.04) * 1.4, -1.7, 1.7); look.tp = clamp(dz(gyro.eu2.x, 0.05) * 1.1, -0.6, 0.6);
+  gyro.ref.slerp(gyro.tmp.copy(gyro.q).invert(), Math.min(1, dt * 0.06)); // slowly re-centres, so the view does not stay off to one side
 }
 function toggleRev() { if (Math.abs(P.v) > 0.8) { notify('請先完全停車再切換 D / R', ''); return; } P.rev = !P.rev; $('gear').textContent = P.rev ? 'R' : 'D'; }
 
@@ -2781,8 +2809,14 @@ let beepT = 0, screechT = -9, roadG = null;
 let hornO = null;
 function horn(on) {
   if (!actx) return;
-  if (on && !hornO) { hornO = [actx.createOscillator(), actx.createOscillator()]; const g = actx.createGain(); g.gain.value = 0.08; hornO.forEach((o, i) => { o.type = 'square'; o.frequency.value = i ? 440 : 349; o.connect(g); o.start(); }); g.connect(actx.destination); hornO.g = g; }
-  else if (!on && hornO) { hornO.forEach(o => o.stop()); hornO.g.disconnect(); hornO = null; }
+  // dual disc horn (low ~410 Hz + high ~510 Hz): buzzy sawtooth, overdriven, with the metal diaphragm's resonance
+  if (on && !hornO) { const t = actx.currentTime, g = actx.createGain(), ws = actx.createWaveShaper(), bp = actx.createBiquadFilter(), pk = actx.createBiquadFilter(), lp = actx.createBiquadFilter();
+    const curve = new Float32Array(512); for (let k = 0; k < 512; k++) { const x = k / 255.5 - 1; curve[k] = Math.tanh(x * 3.2); } ws.curve = curve;
+    bp.type = 'highpass'; bp.frequency.value = 280; pk.type = 'peaking'; pk.frequency.value = 2300; pk.Q.value = 2.5; pk.gain.value = 9; lp.type = 'lowpass'; lp.frequency.value = 5200;
+    hornO = [410, 512].map((f, i) => { const o = actx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f * 0.96, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.04); o.detune.value = i ? 6 : -4; const og = actx.createGain(); og.gain.value = i ? 0.42 : 0.5; o.connect(og); og.connect(ws); o.start(t); return o; });
+    ws.connect(bp); bp.connect(pk); pk.connect(lp); lp.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.11, t + 0.015); hornO.g = g; }
+  else if (!on && hornO) { const t = actx.currentTime, h = hornO; h.g.gain.cancelScheduledValues(t); h.g.gain.setValueAtTime(h.g.gain.value, t); h.g.gain.linearRampToValueAtTime(0, t + 0.04); h.forEach(o => o.stop(t + 0.06)); setTimeout(() => h.g.disconnect(), 120); hornO = null; }
 }
 
 // ============ day / night ============
@@ -3323,7 +3357,7 @@ function animateCar(dt, inp) {
 setTimeout(() => { const g = $('gpuInfo'); if (g) g.innerHTML = '顯示卡:' + GPU_NAME + (/swiftshader|basic render|llvmpipe|software/i.test(GPU_NAME) ? ' <b style="color:#f66">⚠ 硬體加速沒開!請到 Chrome 設定 → 系統 → 開啟「使用圖形加速功能」</b>' : ' ✔ 硬體加速中'); }, 0);
 function startGame() {
   started = true; paused = false; $('start').style.display = 'none'; initAudio();
-  if (isTouch) { document.body.classList.add('playing'); applyRes(); try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f) Promise.resolve(f.call(d)).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => { }); } catch (e) { } }
+  if (isTouch) { askGyro(); gyro.ref = null; document.body.classList.add('playing'); applyRes(); try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f) Promise.resolve(f.call(d)).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => { }); } catch (e) { } }
   manageCells(true); notify('從北海道・札幌出發!左側通行・限速 40。郊外是被雪蓋住的鄉下路,看紅白箭頭(矢羽根)找路', '');
 }
 let rf = 0;
@@ -3340,7 +3374,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; if (started) adaptPerf(Math.max(dt, 0.001));
   if (wz.active) { wizardStep(now / 1000); }
   else if (started && !paused) {
-    simT += dt; blinkT += dt; updateClock(dt);
+    simT += dt; blinkT += dt; updateClock(dt); if (isTouch) gyroLook(dt);
     const inp = readInput(dt);
     stepPlayer(dt, inp); fadeSkids(dt); updateLimit();
     checkIntersection(dt); checkPeds(); checkCrossing(); checkParking(dt); checkFuel(dt); actuateSignal(); checkHwRules(dt); updateETC(dt); updateDebris(dt); updateFX(dt); updateLandmarks(dt); updateShips(dt); updateWeather(dt); updateSnow(dt); updateCop(dt);
