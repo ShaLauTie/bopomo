@@ -5376,3 +5376,7 @@ h1, h2 {
   font-size: 44px;
   color: #e65100;
 }
+
+/* 夾娃娃機：搖桿往下拉就夾 */
+.joystick-stick.pull-down { transform: scaleY(0.75) translateY(12%) !important; transition: transform 0.12s ease; }
+.control-joystick-area { touch-action: none; }

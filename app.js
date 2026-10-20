@@ -2578,6 +2578,8 @@ function initClawControls() {
   const baseEl = document.querySelector('.joystick-base');
   let isDraggingJoystick = false;
   let currentDragDir = 0; // -1 for left, 1 for right, 0 for neutral
+  let dragStartY = 0;
+  const PULL_DOWN_PX = 40;  // 搖桿往下拉這麼多就直接夾
 
   function updateJoystickPosition(clientX) {
     const baseRect = baseEl.getBoundingClientRect();
@@ -2613,14 +2615,23 @@ function initClawControls() {
     isDraggingJoystick = true;
     stick.style.transition = 'none'; // 讓搖桿即時跟隨
 
-    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-    updateJoystickPosition(clientX);
+    const pt = e.type.includes('touch') ? e.touches[0] : e;
+    dragStartY = pt.clientY;
+    updateJoystickPosition(pt.clientX);
   }
 
   function handleJoystickMove(e) {
     if (!isDraggingJoystick || !clawRunning || isGrabbing) return;
-    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-    updateJoystickPosition(clientX);
+    const pt = e.type.includes('touch') ? e.touches[0] : e;
+    if (pt.clientY - dragStartY > PULL_DOWN_PX) {
+      // 往下拉：搖桿壓下去，夾爪直接夾
+      handleJoystickEnd();
+      stick.classList.add('pull-down');
+      setTimeout(() => stick.classList.remove('pull-down'), 350);
+      dropClaw();
+      return;
+    }
+    updateJoystickPosition(pt.clientX);
   }
 
   function handleJoystickEnd() {
