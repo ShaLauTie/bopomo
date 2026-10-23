@@ -149,20 +149,23 @@ body.touch #sigs{left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:10
 const T = THREE;
 const isTouch = /[?&]touch=1/.test(location.search) || (matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0);
 if (isTouch) document.body.classList.add('touch');
-const S = 80, RW = 4, CYC = 48, HJ = 3; let LIMIT = 40;
+const S = 80, RW = 4, CYC = 48, HJ = 3, HJ2 = 18; let LIMIT = 40;
+// the expressway is a ring: a north row (Hokkaido — Tokyo) and a south row (Osaka — Yokohama), joined at both ends by sea curves
+const MIDJ = (HJ + HJ2) / 2, isHJ = j => j === HJ || j === HJ2, hjOfJ = j => j < MIDJ ? HJ : HJ2, hjZ = z => hjOfJ(z / S) * S;
+let RJ = HJ; // expressway row of the cell being built
 const isIC = i => ((i % 3) + 3) % 3 === 0;
-const fourLane = j => j === HJ || (j !== 0 && j !== HJ - 1 && (hash(j, 5, 61) < 0.7 || ((j % 3) + 3) % 3 === 1));
-const avenue = j => fourLane(j) && j !== HJ && j !== HJ - 1 && j !== HJ + 1 && j !== -1 && (((j % 3) + 3) % 3 === 1 || hash(j, 9, 201) < 0.3); // 6-lane 大通り
+const fourLane = j => isHJ(j) || (j !== 0 && !isHJ(j + 1) && (hash(j, 5, 61) < 0.7 || ((j % 3) + 3) % 3 === 1));
+const avenue = j => fourLane(j) && !isHJ(j) && !isHJ(j + 1) && !isHJ(j - 1) && j !== -1 && (((j % 3) + 3) % 3 === 1 || hash(j, 9, 201) < 0.3); // 6-lane 大通り
 const rxOf = j => avenue(j) ? 10 : fourLane(j) ? 6.5 : 4;
 const laneN = j => avenue(j) ? 3 : fourLane(j) ? 2 : 1;
-const hasMedian = j => fourLane(j) && j !== HJ;
+const hasMedian = j => fourLane(j) && !isHJ(j);
 const oneWay = i => (!isIC(i) && i !== 0 && hash(i, 3, 161) < 0.28) ? (hash(i, 4, 162) < 0.5 ? 1 : -1) : 0;
 const DECK_Y = 7, isRiver = i => i === 4 || i === -5, RIV0 = 24, RIV1 = 56;
-const ISLES = [{ n: '北海道', i0: -22, i1: -12, j0: -4, j1: 7, snow: true }, { n: '東京', i0: -6, i1: 8, j0: -6, j1: 8 }, { n: '横浜', i0: 14, i1: 22, j0: -2, j1: 7 }, { n: '大阪', i0: 28, i1: 37, j0: -3, j1: 6 }];
-const ISLE_KEEP = new Set(['6,-3', '-3,-5', '19,5', '31,0', '34,5', '-17,1', '-16,1', '-18,-1', '-14,-3', '-2,-5', '-4,1', '1,1', '17,5', '20,5', '-13,4', '-16,4', '5,4', '-3,5', '21,4', '18,1', '32,4', '29,1', '-18,-4', '3,8', '-13,1', '30,-3', '34,4',
+const ISLES = [{ n: '北海道', i0: -22, i1: -12, j0: -4, j1: 7, snow: true, hj: HJ }, { n: '東京', i0: -6, i1: 8, j0: -6, j1: 8, hj: HJ }, { n: '横浜', i0: -4, i1: 4, j0: 13, j1: 22, hj: HJ2 }, { n: '大阪', i0: -22, i1: -13, j0: 12, j1: 21, hj: HJ2 }]; // ring order: top-left, top-right, bottom-right, bottom-left
+const ISLE_KEEP = new Set(['6,-3', '-3,-5', '1,20', '-19,15', '-16,20', '-17,1', '-16,1', '-18,-1', '-14,-3', '-2,-5', '-4,1', '1,1', '-1,20', '2,20', '-13,4', '-16,4', '5,4', '-3,5', '3,19', '0,16', '-18,19', '-21,16', '-18,-4', '3,8', '-13,1', '-20,12', '-16,19',
   '-16,1', '-16,2', '-15,1', '-15,2', '3,7', '3,6', '3,5']); // landmarks, hotels and the start stay on land
 const LANDMASK = (() => { const m = new Map();
-  ISLES.forEach((t, ti) => { const cx = (t.i0 + t.i1 + 1) / 2, cz = (t.j0 + t.j1 + 1) / 2, hw = (t.i1 - t.i0 + 1) / 2, hh = (t.j1 - t.j0 + 1) / 2, keep = (i, j) => Math.abs(j - HJ) <= 1 || ISLE_KEEP.has(i + ',' + j) || (ti === 1 && i === 0 && j <= HJ) || (ti === 0 && i >= -16 && i <= -12 && j >= -4 && j <= -1);
+  ISLES.forEach((t, ti) => { const cx = (t.i0 + t.i1 + 1) / 2, cz = (t.j0 + t.j1 + 1) / 2, hw = (t.i1 - t.i0 + 1) / 2, hh = (t.j1 - t.j0 + 1) / 2, keep = (i, j) => Math.abs(j - t.hj) <= 1 || ISLE_KEEP.has(i + ',' + j) || (ti === 1 && i === 0 && j <= HJ) || (ti === 0 && i >= -16 && i <= -12 && j >= -4 && j <= -1);
     const land = new Set(); for (let i = t.i0; i <= t.i1; i++) for (let j = t.j0; j <= t.j1; j++) {
       const u = (i + 0.5 - cx) / hw, v = (j + 0.5 - cz) / hh, a = Math.atan2(v, u), e = Math.pow(Math.pow(Math.abs(u), 2.6) + Math.pow(Math.abs(v), 2.6), 1 / 2.6);
       const coast = 0.97 + 0.24 * Math.sin(a * 2 + ti * 1.7) + 0.17 * Math.sin(a * 5 + ti * 4.1) + 0.09 * Math.sin(a * 9 + ti * 2.3) + (hash(i, j, 77 + ti) - 0.5) * 0.22;
@@ -170,20 +173,20 @@ const LANDMASK = (() => { const m = new Map();
     for (let pass = 0; pass < 3; pass++) for (let i = t.i0; i <= t.i1; i++) for (let j = t.j0; j <= t.j1; j++) { // tidy: no 1-cell spits, no 1-cell notches
       const k = i + ',' + j, n = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([a, b]) => land.has((i + a) + ',' + (j + b))).length;
       if (land.has(k) && n <= 1 && !keep(i, j)) land.delete(k); else if (!land.has(k) && n >= 3) land.add(k); }
-    { const seen = new Set(), st = [t.i0 + Math.floor(hw) + ',' + HJ]; while (st.length) { const k = st.pop(); if (seen.has(k) || !land.has(k)) continue; seen.add(k); const [a, b] = k.split(',').map(Number); st.push((a + 1) + ',' + b, (a - 1) + ',' + b, a + ',' + (b + 1), a + ',' + (b - 1)); }
+    { const seen = new Set(), st = [t.i0 + Math.floor(hw) + ',' + t.hj]; while (st.length) { const k = st.pop(); if (seen.has(k) || !land.has(k)) continue; seen.add(k); const [a, b] = k.split(',').map(Number); st.push((a + 1) + ',' + b, (a - 1) + ',' + b, a + ',' + (b + 1), a + ',' + (b - 1)); }
       for (const k of land) if (seen.has(k)) m.set(k, t); } });
   return m; })();
 const isleOf = (i, j) => LANDMASK.get(i + ',' + j) || null;
 const isLand = (i, j) => !!isleOf(i, j);
 const snowF = i => clamp((-11 - i) / 4, 0, 1); // snow builds up gradually from the Hokkaido coast inland
-const snowAt = x => clamp((-9 * S - x) / (6 * S), 0, 1);
+const snowAt = (x, z) => z !== undefined && z > MIDJ * S ? 0 : clamp((-9 * S - x) / (6 * S), 0, 1); // only Hokkaido (north-west) has snow
 function isleAt(x, z) { // on a land cell, or on the coast road / sea wall strip right next to one
   const i = Math.floor(x / S), j = Math.floor(z / S), t = isleOf(i, j); if (t) return t;
   for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) { const q = isleOf(i + di, j + dj); if (!q) continue; const x0 = (i + di) * S, z0 = (j + dj) * S; if (x > x0 - 13 && x < x0 + S + 13 && z > z0 - 13 && z < z0 + S + 13) return q; }
   return null; }
 const xRoadAt = (i, j) => isLand(i, j) || isLand(i, j - 1); // road along row j between nodes i and i+1
 const zRoadAt = (i, j) => (isLand(i, j) && !noZ(i, j)) || (isLand(i - 1, j) && !isLand(i, j)); // road along column i between rows j and j+1
-const HW_X0 = -22 * S, HW_X1 = 38 * S, BRIDGES = [[-10 * S + 40, -8 * S + 40], [10 * S + 40, 12 * S + 40], [24 * S + 40, 26 * S + 40]];
+const HW_X0 = -22 * S, HW_X1 = 10 * S, BRIDGES = [[-10 * S + 40, -8 * S + 40]];
 // 小樽: hill streets climbing north from the canal (kinks sit mid-block, away from the roads)
 // a hill that comes back to sea level on every side, so no coast is left hanging; all slope changes are mid-block
 const OT_XA = -16 * S + 40, OT_XP = -14 * S + 40, OT_XB = -12 * S + 40, OT_ZA = -1 * S + 40, OT_Z1 = -3 * S + 40, OT_Z2 = -3 * S + 40, OT_ZB = -4 * S + 40, OT_H = 20;
@@ -209,14 +212,14 @@ function liftCell(group, skip) { // move a finished cell onto the hillside: worl
     else ch.position.y += terrainH(ch.position.x, ch.position.z); }
 }
 // 北海道の田舎道: deep-snow countryside outside Sapporo (no signals, no sidewalks, snow banks, forests and lakes)
-const rural = (i, j) => { const t = isleOf(i, j); return !!t && !!t.snow && i <= -15 && j !== HJ && j !== HJ - 1 && !(i >= -19 && j >= -1 && j <= 4); };
-const isMinor = (i, j) => j !== HJ && j !== HJ - 1 && !(i === 0 && j === 0) && (!isLand(i, j) || rural(i, j) || hash(i, j, 71) < 0.4);
-const noZ = (i, j) => isLand(i, j) && isLand(i - 1, j) && !isRiver(i) && (j & 1) === 0 && j !== HJ && j !== HJ - 1 && j !== HJ - 2 && !(i >= -1 && i <= 1 && j >= -2 && j <= 0) && hash(i, j, 131) < 0.3;
-const isRound = (i, j) => isMinor(i, j) && !noZ(i, j) && !noZ(i, j - 1) && !fourLane(j) && i !== 0 && Math.abs(j - HJ) > 1 && isLand(i, j) && isLand(i + 1, j) && isLand(i - 1, j) && isLand(i, j + 1) && isLand(i, j - 1) && !(i * S > OT_XA - RB_O - 8 && i * S < OT_XB + RB_O && j * S > OT_ZB - RB_O && j * S < OT_ZA + RB_O + 8) && hash(i, j, 191) < (isleOf(i, j) && isleOf(i, j).snow ? 0.75 : 0.18);
+const rural = (i, j) => { const t = isleOf(i, j); return !!t && !!t.snow && i <= -15 && !isHJ(j) && !isHJ(j + 1) && !(i >= -19 && j >= -1 && j <= 4); };
+const isMinor = (i, j) => !isHJ(j) && !isHJ(j + 1) && !(i === 0 && j === 0) && (!isLand(i, j) || rural(i, j) || hash(i, j, 71) < 0.4);
+const noZ = (i, j) => isLand(i, j) && isLand(i - 1, j) && !isRiver(i) && (j & 1) === 0 && !isHJ(j) && !isHJ(j + 1) && !isHJ(j + 2) && !(i >= -1 && i <= 1 && j >= -2 && j <= 0) && hash(i, j, 131) < 0.3;
+const isRound = (i, j) => isMinor(i, j) && !noZ(i, j) && !noZ(i, j - 1) && !fourLane(j) && i !== 0 && Math.abs(j - hjOfJ(j)) > 1 && isLand(i, j) && isLand(i + 1, j) && isLand(i - 1, j) && isLand(i, j + 1) && isLand(i, j - 1) && !(i * S > OT_XA - RB_O - 8 && i * S < OT_XB + RB_O && j * S > OT_ZB - RB_O && j * S < OT_ZA + RB_O + 8) && hash(i, j, 191) < (isleOf(i, j) && isleOf(i, j).snow ? 0.75 : 0.18);
 const blockedZ = (i, j) => noZ(i, j) ? 1 : noZ(i, j - 1) ? -1 : 0;
 const RB_R = 6.5, RB_O = 15, RB_LANE = 11.2; // big roundabout: island radius, outer kerb radius, driving circle
 const rbNear = (x, z, pad) => { const ni = Math.round(x / S), nj = Math.round(z / S); return isRound(ni, nj) && Math.hypot(x - ni * S, z - nj * S) < RB_O + (pad || 0); };
-const diagCell = (i, j) => !noZ(i, j) && !isRiver(i) && i !== 0 && !isRound(i, j) && !rural(i, j) && j !== HJ && j !== HJ - 1 && !(i === 0 && (j === 0 || j === -1)) && hash(i, j, 41) < 0.2;
+const diagCell = (i, j) => !noZ(i, j) && !isRiver(i) && i !== 0 && !isRound(i, j) && !rural(i, j) && !isHJ(j) && !isHJ(j + 1) && !(i === 0 && (j === 0 || j === -1)) && hash(i, j, 41) < 0.2;
 function inDiag(x, z) {
   const ci = Math.floor(x / S), cj = Math.floor(z / S); if (!diagCell(ci, cj)) return false;
   const u = x - (ci * S + RW), v = z - (cj * S + rxOf(cj));
@@ -526,9 +529,9 @@ function addSnowCover(m) {
     sh.uniforms.uSnow = snowCoverU; sh.uniforms.uDeck = { value: new T.Vector4(HW_X0, HW_X1, HJ * S, DECK_Y) }; sh.uniforms.uLoops = { value: new T.Vector4(LOOPS[0].cx, LOOPS[0].cz, LOOPS[1].cx, LOOPS[1].cz) };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSnW; varying float vSnUp;').replace('#include <project_vertex>', '#include <project_vertex>\nvSnW = (modelMatrix * vec4(transformed, 1.0)).xyz; vSnUp = normalize(mat3(modelMatrix) * objectNormal).y;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSnW; varying float vSnUp; uniform float uSnow; uniform vec4 uDeck; uniform vec4 uLoops;' + DETAIL_FN).replace('#include <color_fragment>', `#include <color_fragment>${DETAIL}
-      float sn = uSnow * smoothstep(0.55, 0.95, vSnUp) * clamp((-720.0 - vSnW.x) / 240.0, 0.0, 1.0);
+      float sn = uSnow * smoothstep(0.55, 0.95, vSnUp) * clamp((-720.0 - vSnW.x) / 240.0, 0.0, 1.0) * step(vSnW.z, ${(MIDJ * S).toFixed(1)});
       if (vSnW.y < uDeck.w - 1.0) { if (vSnW.x > uDeck.x - 30.0 && vSnW.x < uDeck.y + 30.0 && abs(vSnW.z - uDeck.z) < 9.0) sn = 0.0;
-        float d0 = length(vSnW.xz - uLoops.xy), d1 = length(vSnW.xz - uLoops.zw); if (abs(d0 - ${LOOP_R}.0) < ${LOOP_W}.0 || abs(d1 - ${LOOP_R}.0) < ${LOOP_W}.0) sn = 0.0; }
+        float d0 = length(vSnW.xz - uLoops.xy), d1 = length(vSnW.xz - uLoops.zw); if ((abs(d0 - ${LOOP_R.toFixed(1)}) < ${LOOP_W.toFixed(1)} && vSnW.x > uLoops.x - 2.0) || (abs(d1 - ${LOOP_R.toFixed(1)}) < ${LOOP_W.toFixed(1)} && vSnW.x < uLoops.z + 2.0)) sn = 0.0; }
       vec2 cq = floor(vSnW.xz * 0.9); float nz = fract(sin(dot(cq, vec2(12.9898, 78.233))) * 43758.5453), nz2 = fract(sin(dot(floor(vSnW.xz * 0.23), vec2(39.3, 11.7))) * 24634.63);
       sn = clamp(sn * (0.55 + 0.35 * nz2 + 0.25 * nz) * 1.25 - 0.1, 0.0, 1.0);
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92, 0.94, 0.97), sn);`); };
@@ -856,7 +859,8 @@ const ORG2 = [1, 0.5, 0.1], curveMirM = new T.MeshPhongMaterial({ color: 0xcfe0e
 function buildSeaCell(i, j) {
   const B = new Batch(), ox = i * S, oz = j * S, rectsUp = [], extras = [];
   const addBoard = (rows, green, w, x, y, z, nx, nz) => { const g = guideTex(rows, green); const m = new T.Mesh(new T.PlaneGeometry(w, w / g.aspect), g.mat); m.position.set(x, y, z); m.rotation.y = Math.atan2(nx, nz); extras.push(m); };
-  if (j === HJ && ox >= HW_X0 && ox < HW_X1) { // expressway bridge over the sea
+  RJ = hjOfJ(j);
+  if (isHJ(j) && ox >= HW_X0 && ox < HW_X1) { // expressway bridge over the sea
     const Y = DECK_Y, CON = [0.85, 0.86, 0.85], DECK = [0.27, 0.28, 0.31];
     B.box('col', ox + S / 2, Y - 0.6, oz, S, 1.2, 18.6, [0.86, 0.87, 0.88]);
     B.rect('col', ox, oz - 9.2, ox + S, oz + 9.2, Y + 0.01, DECK);
@@ -873,12 +877,11 @@ function buildSeaCell(i, j) {
     for (const br of BRIDGES) for (const px of br) if (px >= ox && px < ox + S) {
       for (const sg of [-1, 1]) B.box('col', px, 30, oz + sg * 11, 3, 66, 3, [0.95, 0.95, 0.96]);
       for (const y of [Y + 12, 40, 60]) B.box('col', px, y, oz, 2.5, 2.2, 25, [0.95, 0.95, 0.96]);
-      addBoard([{ a: '', n: px < 0 ? '津軽海峡大橋' : px < 20 * S ? 'レインボーブリッジ' : '明石海峡大橋', k: '' }], false, 6, px - 1.6, Y + 9.5, oz - 6, -1, 0);
+      addBoard([{ a: '', n: oz < MIDJ * S ? '津軽海峡大橋' : '明石海峡大橋', k: '' }], false, 6, px - 1.6, Y + 9.5, oz - 6, -1, 0);
     }
     const cab = x => { const br = BRIDGES.reduce((p, q) => Math.abs((q[0] + q[1]) / 2 - x) < Math.abs((p[0] + p[1]) / 2 - x) ? q : p), a = br[0], b = br[1], L = 280; if (x > a - L && x < a) return Y + 2 + (61 - Y - 2) * Math.pow((x - (a - L)) / L, 2); if (x >= a && x <= b) { const u = (x - (a + b) / 2) / ((b - a) / 2); return Y + 4 + (61 - Y - 4) * u * u; } if (x > b && x < b + L) return Y + 2 + (61 - Y - 2) * Math.pow(((b + L) - x) / L, 2); return null; };
     for (let x = ox; x < ox + S; x += 4) { const ya = cab(x), yb = cab(x + 4); if (ya === null || yb === null) continue;
       for (const sg of [-1, 1]) { const z = oz + sg * 11, len = Math.hypot(4, yb - ya), m = new T.Mesh(unitBox, dMat([0.9, 0.9, 0.92])); m.scale.set(len, 0.35, 0.35); m.position.set(x + 2, (ya + yb) / 2, z); m.rotation.z = Math.atan2(yb - ya, 4); extras.push(m); if (((x / 4) & 1) === 0) B.box('col', x, (ya + Y) / 2, z, 0.08, Math.max(0.1, ya - Y), 0.08, [0.8, 0.8, 0.82]); } }
-    if (ox === HW_X0 || ox + S === HW_X1) { const ex = ox === HW_X0 ? ox : ox + S; B.box('col', ex, Y + 0.7, oz, 0.6, 1.4, 18.4, [0.95, 0.4, 0.2]); rectsUp.push([ex - 0.3, oz - 9.2, ex + 0.3, oz + 9.2]); }
   }
   const group = new T.Group(); group.add(B.build(mats)); extras.forEach(m => group.add(m)); scene.add(group);
   return { i, j, group, lamps: {}, peds: [], rects: [], rectsUp, cross: null, slots: [], lots: [], pumps: [], gasPos: null, etc: [], brk: [], brkMesh: null };
@@ -901,7 +904,7 @@ function buildCell(i, j) {
   const ox = i * S, oz = j * S, rects = [], rectsUp = [], peds = [], extras = [], slots = [], lots = [], pumps = [], etc = [], brk = []; let kon = false, gasPos = null; treeLights = []; screenQ = [];
   const river = isRiver(i), land = landCell(i, j);
   const rail = i === 0 && isRailRow(j), stn = rail && j === HJ - 1, avoidR = x => (rail && x > ox + 30 && x < ox + 50) ? x + 20 : (river && x > ox + RIV0 - 2 && x < ox + RIV1 + 2) ? ox + 8 + (x - ox) % 14 : x;
-  const hwRow = j === HJ, preRow = j + 1 === HJ, ic = isIC(i), icN = isIC(i + 1);
+  const hwRow = isHJ(j), preRow = isHJ(j + 1), ic = isIC(i), icN = isIC(i + 1);
   const rx = rxOf(j), rxN = rxOf(j + 1), minor = isMinor(i, j), four = rx > 5, blk = blockedZ(i, j), diag = diagCell(i, j), nz = noZ(i, j);
   const zA = hwRow ? 15.8 : rx, zB = preRow ? S - 15.8 : S - rxN, rur = rural(i, j);
   const addBoard = (rows, green, w, x, y, z, nx, nz) => { const g = guideTex(rows, green); const m = new T.Mesh(new T.PlaneGeometry(w, w / g.aspect), g.mat); m.position.set(x, y, z); m.rotation.y = Math.atan2(nx, nz); extras.push(m); };
@@ -1104,7 +1107,7 @@ function buildCell(i, j) {
     // direction guide sign (blue) toward 首都高 / 東京 / 新宿 ...
     if (hash(i, j, 31) < 0.5 && !(hwRow && az !== 0)) {
       const hx = -ax, hz = -az, arrowFor = (dx, dz) => (dx === hx && dz === hz) ? '↑' : (dx === hz && dz === -hx) ? '←' : (dx === -hz && dz === hx) ? '→' : null, rows = [];
-      const sy = sgn(HJ * S - oz), a0 = j !== HJ ? arrowFor(0, sy) : null; if (a0) rows.push({ a: a0, n: '首都高入口', k: (Math.abs(HJ * S - oz) / 1000).toFixed(1) + 'km' });
+      const sy = sgn(RJ * S - oz), a0 = !isHJ(j) ? arrowFor(0, sy) : null; if (a0) rows.push({ a: a0, n: '首都高入口', k: (Math.abs(RJ * S - oz) / 1000).toFixed(1) + 'km' });
       const c0 = Math.floor(hash(i, j, 32) * 4);
       for (let q = 0; q < 4 && rows.length < 3; q++) { const C = CITIES[(c0 + q) % 4], a1 = arrowFor(C.dx, C.dz); if (a1) rows.push({ a: a1, n: C.n, k: Math.max(1, Math.round(Math.abs(C.t - (C.dx ? ox : oz)) / 150)) + 'km' }); }
       if (rows.length) {
@@ -1181,10 +1184,7 @@ function buildCell(i, j) {
       for (let q = 0; q < S; q += 9) B.orect('col', ox + q + 1.5, oz + sg * 4, 1, 0, 3, 0.15, Y + 0.05, WHITE);
     }
     B.box('col', ox + S / 2, Y + 0.45, oz, S, 0.9, 0.8, CON); rectsUp.push([ox, oz - 0.4, ox + S, oz + 0.4]);
-    if (ox === HW_X0 || ox + S === HW_X1) { // the expressway ends over land here: end wall + warning chevrons
-      const ex = ox === HW_X0 ? ox + 0.3 : ox + S - 0.3, dir = ox === HW_X0 ? 1 : -1;
-      for (const sg of [-1, 1]) addBoard([{ a: '⟲', n: 'この先 ループ橋', k: '' }, { a: '', n: dir < 0 ? '札幌・東京 方面へ折り返し' : '大阪・横浜 方面へ折り返し', k: '' }], true, 5, ex + dir * 60, Y + 3.2, oz + sg * 9.6, -dir, 0);
-    }
+    // (no end wall: the deck runs on into the sea curve that joins the other row)
     // parapets with gaps where ramps merge / diverge
     const mergeZ = x => hasRamp(x) && adOf(x) >= R_TOP;
     for (const sg of [-1, 1]) for (const [a, b] of runs(x => !mergeZ(x))) { B.box('col', (a + b) / 2, Y + 0.55, oz + sg * 9.35, b - a, 1.1, 0.3, CON); rectsUp.push([a, oz + sg * 9.35 - 0.15, b, oz + sg * 9.35 + 0.15]); }
@@ -1248,7 +1248,7 @@ function buildCell(i, j) {
       const piv = new T.Group(); piv.position.set(gxE - hd * 0.5, 1.0, zi + sg * 0.35); const arm = new T.Mesh(armGeo(5.0), carDetailMat); arm.rotation.y = sg < 0 ? Math.PI : 0; piv.add(arm); extras.push(piv);
       etc.push({ x: gxE, z: zc, hd, piv, ang: 0 });
       { // curved slip road: from the side street (heading toward the expressway) bending left into the on-ramp
-        const icx = k * IC_SP, cx = icx + hd * (2 + ARC_R), cz = HJ * S + sg * (12.5 + ARC_R), N = 32;
+        const icx = k * IC_SP, cx = icx + hd * (2 + ARC_R), cz = RJ * S + sg * (12.5 + ARC_R), N = 32;
         const pt = (t, r) => [cx - hd * r * Math.cos(t), cz - sg * r * Math.sin(t)];
         for (let q = 0; q < N; q++) {
           const t0 = q / N * Math.PI / 2, t1 = (q + 1) / N * Math.PI / 2, a0 = pt(t0, ARC_R - 3.1), a1 = pt(t1, ARC_R - 3.1), b0 = pt(t0, ARC_R + 3.1), b1 = pt(t1, ARC_R + 3.1);
@@ -1258,11 +1258,11 @@ function buildCell(i, j) {
           obox(B, pt(t0, ARC_R + 2.75), pt(t1, ARC_R + 2.75), 0.15, 0.17, 0.185, WHITE); obox(B, pt(t0, ARC_R - 2.75), pt(t1, ARC_R - 2.75), 0.15, 0.17, 0.185, WHITE); // edge lines
         }
         const ar = pt(Math.PI / 4, ARC_R); straightArrow(B, ar[0], ar[1], hd * Math.SQRT1_2, -sg * Math.SQRT1_2);
-        { const lx = icx + hd * 2, z0 = HJ * S + sg * (12.5 + ARC_R); // on the side street before the turn-in
+        { const lx = icx + hd * 2, z0 = RJ * S + sg * (12.5 + ARC_R); // on the side street before the turn-in
           txtQuad(B, 7, lx, z0 + sg * 11, 0, -sg, 0.85, 4.6); straightArrow(B, lx, z0 + sg * 4, 0, -sg); txtQuad(B, 7, lx, z0 + sg * 30, 0, -sg, 0.85, 4.6); }
-        txtQuad(B, 8, gxE - hd * 9, HJ * S + sg * 12.5, hd, 0, 0.9, 2.2); // ETC written on the ramp before the gate
+        txtQuad(B, 8, gxE - hd * 9, RJ * S + sg * 12.5, hd, 0, 0.9, 2.2); // ETC written on the ramp before the gate
       }
-      addBoard([{ a: '↖', n: '首都高 入口', k: '' }, { a: '', n: hd > 0 ? '横浜・ベイブリッジ方面' : '新宿・都心方面', k: '' }], true, 4.6, k * IC_SP + hd * (RW + 1.5), 4.0, HJ * S + sg * 33, 0, -sg);
+      addBoard([{ a: '↖', n: '首都高 入口', k: '' }, { a: '', n: (RJ === HJ ? hd > 0 : hd < 0) ? '東京・横浜方面' : '札幌・大阪方面', k: '' }], true, 4.6, k * IC_SP + hd * (RW + 1.5), 4.0, RJ * S + sg * 33, 0, -sg);
     }
   }
   if (river) { // river under the bridges
@@ -1870,8 +1870,8 @@ function bikeLeg(th, sh, fy, fz) {
   sh.position.y = ky; sh.position.z = kz; sh.rotation.x = Math.atan2(-(fz - kz), -(fy - ky));
 }
 function bikeOK(ax, line, pos, road) { // is there a sidewalk (or road edge) to ride on here?
-  if (ax === 'x') { const I = Math.floor(pos / S), J = Math.round(line / S); if (!isLand(I, J) || J === HJ || rural(I, J) || rural(I, J - 1) || diagCell(I, J) || diagCell(I, J - 1)) return false; }
-  else { const I = Math.round(line / S), J = Math.floor(pos / S); if (!isLand(I, J) || noZ(I, J) || J === HJ || J === HJ - 1 || rural(I, J) || rural(I - 1, J) || diagCell(I, J) || diagCell(I - 1, J)) return false; }
+  if (ax === 'x') { const I = Math.floor(pos / S), J = Math.round(line / S); if (!isLand(I, J) || isHJ(J) || rural(I, J) || rural(I, J - 1) || diagCell(I, J) || diagCell(I, J - 1)) return false; }
+  else { const I = Math.round(line / S), J = Math.floor(pos / S); if (!isLand(I, J) || noZ(I, J) || isHJ(J) || isHJ(J + 1) || rural(I, J) || rural(I - 1, J) || diagCell(I, J) || diagCell(I - 1, J)) return false; }
   const x = ax === 'x' ? pos : line, z = ax === 'x' ? line : pos, ni = Math.round(x / S), nj = Math.round(z / S);
   return !(isRound(ni, nj) && Math.hypot(x - ni * S, z - nj * S) < RB_O + 9);
 }
@@ -2272,7 +2272,7 @@ function makeMirror(w, h, px, py, pz, fw, fh, fov, yaw, housing) {
   return { rt, cam, lamp, pod };
 }
 const mirrors = [
-  makeMirror(0.36, 0.11, 0.05, 1.46, -0.58, 512, 160, 44, Math.PI),
+  makeMirror(0.36, 0.11, 0.05, 1.505, -0.52, 512, 160, 44, Math.PI),
   makeMirror(0.29, 0.2, -1.18, 0.95, -1.15, 256, 176, 46, Math.PI - 0.32, -1),
   makeMirror(0.29, 0.2, 1.2, 1.0, -0.95, 256, 176, 46, Math.PI + 0.32, 1),
 ];
@@ -2457,7 +2457,7 @@ function laneSet(axis, line, dir, hw) {
 }
 function spawnAI() {
   let axis = Math.random() < 0.5 ? 'x' : 'z', dir = Math.random() < 0.5 ? 1 : -1, hw = false, line;
-  if (Math.abs(P.z - HJ * S) < 260 && Math.random() < 0.45) { axis = 'x'; hw = true; line = HJ; }
+  if (Math.abs(P.z - hjZ(P.z)) < 260 && Math.random() < 0.45) { axis = 'x'; hw = true; line = hjOfJ(P.z / S); }
   else { const pl = axis === 'x' ? Math.round(P.z / S) : Math.round(P.x / S); line = pl + Math.floor(Math.random() * 3) - 1; }
   if (axis === 'z' && oneWay(line)) dir = oneWay(line);
   const along = axis === 'x' ? P.x : P.z, s = along + (Math.random() < 0.5 ? -1 : 1) * (90 + Math.random() * 90);
@@ -2496,7 +2496,7 @@ function updateAI(dt) {
       const sj = Math.floor(a.s / S), ahead = a.dir > 0 ? noZ(a.line, sj + 1) : noZ(a.line, sj - 1), dEnd = a.dir > 0 ? (sj + 1) * S - a.s : a.s - sj * S;
       if (noZ(a.line, sj) || (ahead && dEnd < 30)) { kill(); continue; }
     }
-    const boosting = simT - (a.boostT || -99) < 4; let vd = a.vmax * (boosting ? 1.55 : 1) * (a.hw ? 1 : 1 - 0.4 * Math.max(snowAt(x), WEATHER[weather].bliz ? 1 : 0));
+    const boosting = simT - (a.boostT || -99) < 4; let vd = a.vmax * (boosting ? 1.55 : 1) * (a.hw ? 1 : 1 - 0.4 * Math.max(snowAt(x, z), WEATHER[weather].bliz ? 1 : 0));
     if (a.dodge && simT - a.dodge.t0 > a.dodge.dur) a.dodge = null;
     if (a.dodge) vd = Math.min(vd, a.dodge.v);
     if (simT - (a.scareT || -99) < 1.3) vd = 0;
@@ -2725,18 +2725,18 @@ function checkFuel(dt) {
 // ============ elevated expressway helpers ============
 const IC_SP = 3 * S, R_IN = 4, R_FLAT = 30, R_TOP = 90, R_END = 118, ARC_R = 14;
 function rampD(x) { return x - Math.round(x / IC_SP) * IC_SP; } // signed distance to the nearest interchange column
-const icValid = k => isLand(3 * k - 2, HJ) && isLand(3 * k + 1, HJ);
-function hasRamp(x) { const ad = Math.abs(rampD(x)); return ad > R_IN && ad < R_END && icValid(Math.round(x / IC_SP)); }
+const icValid = (k, r = RJ) => isLand(3 * k - 2, r) && isLand(3 * k + 1, r);
+function hasRamp(x, z) { const ad = Math.abs(rampD(x)); return ad > R_IN && ad < R_END && icValid(Math.round(x / IC_SP), z === undefined ? RJ : hjOfJ(z / S)); }
 function rampH(x) { // smooth (zero-slope at both ends) rise from street level to the deck
   const ad = Math.abs(rampD(x)); if (ad <= R_FLAT || ad >= R_END) return ad >= R_END ? 0 : 0; if (ad >= R_TOP) return DECK_Y;
   const u = (ad - R_FLAT) / (R_TOP - R_FLAT); return DECK_Y * u * u * (3 - 2 * u);
 }
 function bandOut(x) { const ad = Math.abs(rampD(x)); return ad <= R_TOP ? 15.5 : 9.5 + 6 * clamp((R_END - ad) / (R_END - R_TOP), 0, 1); }
-function inRampBand(x, z) { const az = Math.abs(z - HJ * S); return hasRamp(x) && az >= 9.45 && az <= bandOut(x); }
+function inRampBand(x, z) { const az = Math.abs(z - hjZ(z)); return hasRamp(x, z) && az >= 9.45 && az <= bandOut(x); }
 function elevUpdate() {
-  const inB = inRampBand(P.x, P.z), az = Math.abs(P.z - HJ * S);
+  const inB = inRampBand(P.x, P.z), az = Math.abs(P.z - hjZ(P.z));
   if (!P.lay) { if (inB && rampH(P.x) < 0.3) P.lay = 1; }
-  else if (!inB && !inLoopZone(P.x)) { if (az >= 9.45 || (az > 8.5 && hasRamp(P.x) && rampH(P.x) < 3)) P.lay = 0; }
+  else if (!inB && !inLoopZone(P.x)) { if (az >= 9.45 || (az > 8.5 && hasRamp(P.x, P.z) && rampH(P.x) < 3)) P.lay = 0; }
   P.y = !P.lay ? terrainH(P.x, P.z) : inB ? rampH(P.x) : DECK_Y;
   if (inB) { const fx = -Math.sin(P.th); P.pitch = Math.atan((rampH(P.x + 0.5) - rampH(P.x - 0.5)) * fx); }
   else if (!P.lay) { const fx = -Math.sin(P.th), fz = -Math.cos(P.th); P.pitch = Math.atan((terrainH(P.x + fx, P.z + fz) - terrainH(P.x - fx, P.z - fz)) / 2); } else P.pitch = 0;
@@ -2745,7 +2745,7 @@ function updateETC(dt) {
   for (const c of cells.values()) if (c.etc) for (const g of c.etc) {
     const ahead = (g.x - P.x) * g.hd, near = P.lay === 1 && Math.abs(P.z - g.z) < 2.5 && ahead > -4 && ahead < 16;
     if (near) jpTip('etc'); const tgt = near ? Math.PI / 2 * 0.95 : 0; g.ang += clamp(tgt - g.ang, -dt * 2.5, dt * 2.5);
-    g.piv.rotation.x = (g.z < HJ * S ? 1 : -1) * g.ang;
+    g.piv.rotation.x = (g.z < hjZ(g.z) ? 1 : -1) * g.ang;
     if (near && Math.abs(ahead) < 0.6 && !g.passed) {
       g.passed = true; const kmh = Math.abs(P.v) * 3.6;
       if (kmh > 30) violation('ETC 車道請減速到 20 km/h 以下(' + Math.round(kmh) + ' km/h)', 3); else { const toll = 300 + Math.floor(hash(c.i, 1, 3) * 6) * 100; addMoney(-toll); notify('✔ ETC 通過 — 首都高 料金 ¥' + toll, 'good'); tone(880, 880, 0.12, 'sine', 0.08); setTimeout(() => tone(1175, 1175, 0.15, 'sine', 0.08), 140); }
@@ -2823,16 +2823,16 @@ function aiHorn(vol) {
 // ============ landmarks: 東京タワー (east) / 横浜 Ferris wheel (south) ============
 // landmarks (fog-free so they read on the skyline): Tokyo Tower, Skytree, Yokohama wheel, Osaka Castle, Tsutenkaku, Sapporo TV Tower
 const LANDMARKS = [
-  { k: 'tower', i: 6, j: -3 }, { k: 'skytree', i: -3, j: -5 }, { k: 'wheel', i: 19, j: 5 },
-  { k: 'castle', i: 31, j: 0 }, { k: 'tsutenkaku', i: 34, j: 5 }, { k: 'tvtower', i: -17, j: 1 },
+  { k: 'tower', i: 6, j: -3 }, { k: 'skytree', i: -3, j: -5 }, { k: 'wheel', i: 1, j: 20 },
+  { k: 'castle', i: -19, j: 15 }, { k: 'tsutenkaku', i: -16, j: 20 }, { k: 'tvtower', i: -17, j: 1 },
   { k: 'clock', i: -16, j: 1 }, { k: 'snowfes', i: -18, j: -1 }, { k: 'jump', i: -14, j: -3, fz: 28 },
   { k: 'sensoji', i: -2, j: -5 }, { k: 'tocho', i: -4, j: 1 }, { k: 'station', i: 1, j: 1, fx: 34, fz: 8, oz: 8 },
-  { k: 'lmtower', i: 17, j: 5 }, { k: 'redbrick', i: 20, j: 5, fx: 24, fz: 17 },
+  { k: 'lmtower', i: -1, j: 20 }, { k: 'redbrick', i: 2, j: 20, fx: 24, fz: 17 },
   { k: 'hotel', hotel: true, name: 'ホテル札幌グランデ', i: -13, j: 4, fx: 27, fz: 13, oz: -14 }, { k: 'hotel', hotel: true, name: '定山渓ビューホテル', i: -16, j: 4, fx: 27, fz: 13, oz: -14 },
   { k: 'hotel', hotel: true, name: 'ホテル東京ベイ', i: 5, j: 4, fx: 27, fz: 13, oz: -14 }, { k: 'hotel', hotel: true, name: '浅草ビジネスホテル', i: -3, j: 5, fx: 27, fz: 13, oz: -14 },
-  { k: 'hotel', hotel: true, name: '横浜ハーバーホテル', i: 21, j: 4, fx: 27, fz: 13, oz: -14 }, { k: 'hotel', hotel: true, name: 'みなとみらいイン', i: 18, j: 1, fx: 27, fz: 13, oz: -14 },
-  { k: 'hotel', hotel: true, name: 'ホテル大阪キャッスル', i: 32, j: 4, fx: 27, fz: 13, oz: -14 }, { k: 'hotel', hotel: true, name: '難波シティホテル', i: 29, j: 1, fx: 27, fz: 13, oz: -14 },
-  { k: 'ski', i: -18, j: -4, fx: 30, fz: 20 }, { k: 'otaru', i: -13, j: 1, fx: 31, fz: 29 }, { k: 'airport', i: 3, j: 8, fx: 30, fz: 16 }, { k: 'taiyo', i: 30, j: -3 }, { k: 'dotonbori', i: 34, j: 4, fx: 26, fz: 21 },
+  { k: 'hotel', hotel: true, name: '横浜ハーバーホテル', i: 3, j: 19, fx: 27, fz: 13, oz: -14 }, { k: 'hotel', hotel: true, name: 'みなとみらいイン', i: 0, j: 16, fx: 27, fz: 13, oz: -14 },
+  { k: 'hotel', hotel: true, name: 'ホテル大阪キャッスル', i: -18, j: 19, fx: 27, fz: 13, oz: -14 }, { k: 'hotel', hotel: true, name: '難波シティホテル', i: -21, j: 16, fx: 27, fz: 13, oz: -14 },
+  { k: 'ski', i: -18, j: -4, fx: 30, fz: 20 }, { k: 'otaru', i: -13, j: 1, fx: 31, fz: 29 }, { k: 'airport', i: 3, j: 8, fx: 30, fz: 16 }, { k: 'taiyo', i: -20, j: 12 }, { k: 'dotonbori', i: -16, j: 19, fx: 26, fz: 21 },
   { k: 'shibuya', i: -3, j: 0, fx: 32, fz: 32 }, { k: 'wako', i: 2, j: 1, fx: 30, fz: 30 }, { k: 'meiji', i: -5, j: -1, fx: 32, fz: 32 }, { k: 'odaiba', i: 0, j: 6, fx: 30, fz: 30 },
   { k: 'odori', part: 0, i: -19, j: 1, fx: 32, fz: 32 }, { k: 'odori', part: 1, i: -18, j: 1, fx: 32, fz: 32 }, { k: 'sapporoSt', i: -17, j: -1, fx: 32, fz: 14, oz: 6 },
   { k: 'tanuki', i: -17, j: 2, fx: 32, fz: 32 }, { k: 'susukino', i: -14, j: 2, fx: 32, fz: 32 }, { k: 'goryokaku', i: -14, j: 6, fx: 32, fz: 32 },
@@ -3322,7 +3322,7 @@ function updateLandmarks(dt) { { const o = !P.lay && P.x > OT_XA && P.x < OT_XB 
   updateBgMts(); updateTvClock(); updateSki(dt); updateAirport(dt); if (typeof checkLandmarkVisit === 'function' && Math.floor(simT * 4) !== Math.floor((simT - dt) * 4)) checkLandmarkVisit(); if (wheelRot) { wheelRot.rotation.z += dt * 0.02; wheelRot.children.forEach(c => { if (c.userData.gond) c.rotation.z = -wheelRot.rotation.z; }); } }
 // snowfall (北海道)
 let snowWorld = false, rainWorld = false, snowCover = 0;
-const underDeck = (x, z, y) => y < DECK_Y - 1.2 && ((x > HW_X0 - 2 && x < HW_X1 + 2 && Math.abs(z - HJ * S) < 9.3) || (typeof LOOPS !== 'undefined' && LOOPS.some(L => Math.abs(Math.hypot(x - L.cx, z - L.cz) - LOOP_R) < LOOP_W || ((x - L.x) * L.d > 0 && (x - L.x) * L.d < LOOP_NECK + 4 && Math.abs(z - L.cz) < 9.3))));
+const underDeck = (x, z, y) => y < DECK_Y - 1.2 && ((x > HW_X0 - 2 && x < HW_X1 + 2 && Math.abs(z - hjZ(z)) < 9.3) || (typeof LOOPS !== 'undefined' && LOOPS.some(L => (x - L.cx) * L.d >= -1 && Math.abs(Math.hypot(x - L.cx, z - L.cz) - LOOP_R) < LOOP_W || ((x - L.x) * L.d > 0 && (x - L.x) * L.d < LOOP_NECK + 4 && Math.abs(z - L.cz) < 9.3))));
 const snowN = 1800, snowGeo = new T.BufferGeometry(), snowPos = new Float32Array(snowN * 3);
 for (let k = 0; k < snowN; k++) snowPos.set([(Math.random() - 0.5) * 70, Math.random() * 30, (Math.random() - 0.5) * 70], k * 3);
 snowGeo.setAttribute('position', new T.BufferAttribute(snowPos, 3));
@@ -3335,8 +3335,8 @@ const snowPts = new T.Points(snowGeo, new T.PointsMaterial({ map: flakeTex, colo
 let inSnow = false;
 let snowAmt = 0, lastIsle = null, lastBz = false;
 function updateSnow(dt) {
-  if (WEATHER[weather].bliz && snowAt(P.x) < 0.15) setWeather(1); // out of the snow country: the blizzard is over
-  const isl = isleAt(P.x, P.z), bz = WEATHER[weather].bliz, amt = bz ? 1 : snowAt(P.x), sn = amt > 0.02;
+  if (WEATHER[weather].bliz && snowAt(P.x, P.z) < 0.15) setWeather(1); // out of the snow country: the blizzard is over
+  const isl = isleAt(P.x, P.z), bz = WEATHER[weather].bliz, amt = bz ? 1 : snowAt(P.x, P.z), sn = amt > 0.02;
   if (isl !== lastIsle && isl) { lastIsle = isl; notify(isl.snow ? '❄ 歡迎來到北海道 — 下雪路滑,請慢行' : '🏙 歡迎來到 ' + isl.n, isl.snow ? 'bad' : 'good'); }
   if (Math.abs(amt - snowAmt) > 0.03 || (sn !== inSnow) || bz !== lastBz) { lastBz = bz; snowAmt = amt; inSnow = amt > 0.5; snowPts.visible = sn; snowPts.material.size = bz ? 0.42 : 0.32; applyEnv(); }
   { const cap = sn ? (bz ? 1 : 0.7 * amt) : 0; // builds up while it snows (faster in a blizzard), melts slowly afterwards
@@ -3377,12 +3377,12 @@ const ships = [];
   // small boats (≤ 5 m tall) cross the straits through the middle of each main span, under the 7 m deck;
   // big ships sail east–west in open sea north/south of the islands and never meet a bridge
   const mid = k => (BRIDGES[k][0] + BRIDGES[k][1]) / 2;
-  [['z', mid(1), -2 * S, -1, 18, [0.9, 0.9, 0.85], [0.6, 0.3, 0.2], 8], ['z', mid(2), 1 * S, 1, 22, [0.95, 0.95, 0.95], [0.8, 0.3, 0.2], 6], ['z', mid(0), 5 * S, -1, 20, [0.95, 0.95, 0.95], [0.3, 0.45, 0.7], 7],
-   ['x', 5 * S, 13.6 * S, 1, 120, [0.2, 0.25, 0.35], [0.95, 0.95, 0.95], 5], ['x', 20 * S, -7.6 * S, -1, 110, [0.15, 0.3, 0.25], [0.95, 0.95, 0.95], 5], ['x', -4 * S, -7.8 * S, 1, 70, [0.9, 0.9, 0.9], [0.2, 0.4, 0.7], 6],
-   ['x', 15 * S, 14.2 * S, -1, 60, [0.25, 0.3, 0.32], [0.95, 0.95, 0.95], 4], ['x', 0, 14.8 * S, 1, 40, [0.95, 0.95, 0.95], [0.3, 0.45, 0.7], 7]].forEach(([ax, x, z, dir, len, hc, cc, v]) => {
+  [['z', mid(0), 3 * S, -1, 18, [0.9, 0.9, 0.85], [0.6, 0.3, 0.2], 8], ['z', mid(0), 17 * S, 1, 22, [0.95, 0.95, 0.95], [0.8, 0.3, 0.2], 6], ['z', mid(0), 10 * S, -1, 20, [0.95, 0.95, 0.95], [0.3, 0.45, 0.7], 7],
+   ['x', -6 * S, 10.5 * S, 1, 120, [0.2, 0.25, 0.35], [0.95, 0.95, 0.95], 5], ['x', -6 * S, -7.8 * S, -1, 110, [0.15, 0.3, 0.25], [0.95, 0.95, 0.95], 5], ['x', -6 * S, 24.2 * S, 1, 70, [0.9, 0.9, 0.9], [0.2, 0.4, 0.7], 6],
+   ['x', -6 * S, 9.8 * S, -1, 60, [0.25, 0.3, 0.32], [0.95, 0.95, 0.95], 4], ['x', -6 * S, 24.8 * S, -1, 40, [0.95, 0.95, 0.95], [0.3, 0.45, 0.7], 7]].forEach(([ax, x, z, dir, len, hc, cc, v]) => {
     const g = mk(len, hc, cc); g.position.set(x, -0.3, z);
     g.rotation.y = ax === 'z' ? (dir > 0 ? Math.PI : 0) : (dir > 0 ? -Math.PI / 2 : Math.PI / 2);
-    scene.add(g); ships.push({ g, ax, dir, v, p0: ax === 'z' ? z : x, span: ax === 'z' ? 900 : 1700 });
+    scene.add(g); ships.push({ g, ax, dir, v, p0: ax === 'z' ? z : x, span: ax === 'z' ? 300 : 1050 });
   });
 })();
 function updateShips(dt) {
@@ -3439,7 +3439,7 @@ if (!isTouch) { groundMesh.material.envMap = envRT.texture; groundMesh.material.
 function wetRoads() { if (isTouch || !mats.col.isMeshPhongMaterial) return; const w = WEATHER[weather].rain ? 1 : 0; mats.col.specular.setScalar(0.043 + w * 0.2); mats.col.shininess = 6 + w * 40; }
 function skyTint() { const W = WEATHER[weather]; skyMats.forEach(m => m.color.setScalar(0.45 + 0.55 * W.cl)); skyOvMats.forEach(m => m.color.setScalar(0.45 + 0.55 * W.cl)); }
 function updateWeather(dt) {
-  weatherT -= dt; if (weatherT < 0) { weatherT = 160 + Math.random() * 160; setWeather(snowAt(P.x) > 0.5 && Math.random() < 0.5 ? 3 : (weather === 3 ? 0 : (weather + 1 + Math.floor(Math.random() * 2)) % 3)); }
+  weatherT -= dt; if (weatherT < 0) { weatherT = 160 + Math.random() * 160; setWeather(snowAt(P.x, P.z) > 0.5 && Math.random() < 0.5 ? 3 : (weather === 3 ? 0 : (weather + 1 + Math.floor(Math.random() * 2)) % 3)); }
   for (const c of clouds) { c.userData.off[0] += dt * 3; let x = c.userData.off[0] - P.x, z = c.userData.off[1] - P.z; if (x > 800) c.userData.off[0] -= 1600; if (x < -800) c.userData.off[0] += 1600; if (z > 800) c.userData.off[1] -= 1600; if (z < -800) c.userData.off[1] += 1600; c.position.set(c.userData.off[0], c.position.y, c.userData.off[1]); }
   if (rain.visible) {
     rain.position.set(0, 0, 0); const a = rainGeo.attributes.position.array, f = 22 * dt, W = 70, H = 35, wrap = (v, c) => c + ((((v - c + H) % W) + W) % W) - H;
@@ -3662,10 +3662,10 @@ function actuateSignal() {
 }
 let rightLaneT = 0, revHwT = -99;
 function checkHwRules(dt) {
-  const onDeck = P.lay === 1 && Math.abs(P.z - HJ * S) < 9.4;
+  const onDeck = P.lay === 1 && Math.abs(P.z - hjZ(P.z)) < 9.4;
   if (!onDeck) { rightLaneT = 0; return; }
   if (P.v < -0.5 && simT - revHwT > 5) { revHwT = simT; violation('高速道路禁止倒車', 10); }
-  const dz = P.z - HJ * S, fx = -Math.sin(P.th), inRight = (fx > 0 && dz > -4 && dz < 0) || (fx < 0 && dz < 4 && dz > 0); // 追越車線 = lane next to the median
+  const dz = P.z - hjZ(P.z), fx = -Math.sin(P.th), inRight = (fx > 0 && dz > -4 && dz < 0) || (fx < 0 && dz < 4 && dz > 0); // 追越車線 = lane next to the median
   let passing = false; if (inRight) for (const a of aiCars) if (a.hw && Math.abs(a.lat - (dz)) > 2 && (a.s - P.x) * sgn(fx) > -10 && (a.s - P.x) * sgn(fx) < 40) passing = true;
   rightLaneT = inRight && !passing ? rightLaneT + dt : 0;
   if (rightLaneT > 25) { rightLaneT = 0; violation('通行帶違反:超車完請回到左側車道', 3); }
@@ -4019,32 +4019,37 @@ function normAng(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI)
 
 
 // ============ turn-around loops: the expressway never ends — at both ends it circles out over the sea and comes back the other way ============
-const LOOP_R = 26, LOOP_W = 7, LOOP_NECK = 20, LOOPS = [{ x: HW_X1, d: 1 }, { x: HW_X0, d: -1 }].map(L => ({ ...L, cx: L.x + L.d * (LOOP_NECK + LOOP_R), cz: HJ * S }));
+const LOOP_R = (HJ2 - HJ) * S / 2, LOOP_W = 9.3, LOOP_NECK = 30, LOOP_ZC = (HJ + HJ2) * S / 2, LOOPS = [{ x: HW_X1, d: 1 }, { x: HW_X0, d: -1 }].map(L => ({ ...L, cx: L.x + L.d * LOOP_NECK, cz: LOOP_ZC }));
 const inLoopZone = x => x > HW_X1 - 0.5 || x < HW_X0 + 0.5;
-function loopValid(x, z) { // on the neck (straight deck past the end) or on the ring
+function onCurve(x, z, L, m) { return (x - L.cx) * L.d >= -1 && Math.abs(Math.hypot(x - L.cx, z - L.cz) - LOOP_R) < LOOP_W - (m || 0); }
+function loopValid(x, z) { // the straight necks of both rows, then the half-circle curve; a central barrier splits the two directions
   for (const L of LOOPS) { const along = (x - L.x) * L.d; if (along < -0.5) continue;
-    if (along <= LOOP_NECK + 4 && Math.abs(z - L.cz) < 8.7) return true;
-    const r = Math.hypot(x - L.cx, z - L.cz); if (r > LOOP_R - LOOP_W + 0.7 && r < LOOP_R + LOOP_W - 0.7) return true; }
+    if (along <= LOOP_NECK + 1) for (const zr of [HJ * S, HJ2 * S]) { const dz = Math.abs(z - zr); if (dz < 8.7 && dz > 0.5) return true; }
+    if ((x - L.cx) * L.d >= -1) { const dr = Math.abs(Math.hypot(x - L.cx, z - L.cz) - LOOP_R); if (dr < LOOP_W - 0.6 && dr > 0.5) return true; } }
   return false;
 }
 (() => {
-  const CON = new T.MeshLambertMaterial({ color: 0xd9dbdc }), DK = new T.MeshLambertMaterial({ color: 0x45484d, side: T.DoubleSide }), WH = new T.MeshBasicMaterial({ color: 0xf0f0ea }), Y = DECK_Y;
+  const CON = new T.MeshLambertMaterial({ color: 0xd9dbdc, side: T.DoubleSide }), DK = new T.MeshLambertMaterial({ color: 0x45484d, side: T.DoubleSide }), Y = DECK_Y, R = LOOP_R, W = LOOP_W;
   for (const L of LOOPS) {
     const g = new T.Group(); g.position.set(L.cx, 0, L.cz); scene.add(g);
-    const top = new T.Mesh(new T.RingGeometry(LOOP_R - LOOP_W, LOOP_R + LOOP_W, 72, 1), DK); top.rotation.x = -Math.PI / 2; top.position.y = Y + 0.01; g.add(top);
-    const und = new T.Mesh(new T.RingGeometry(LOOP_R - LOOP_W, LOOP_R + LOOP_W, 72, 1), CON); und.rotation.x = Math.PI / 2; und.position.y = Y - 1.2; g.add(und);
-    for (const r of [LOOP_R - 2, LOOP_R + 2]) for (let k = 0; k < 36; k += 2) { const a0 = k / 36 * Math.PI * 2, m = new T.Mesh(new T.RingGeometry(r - 0.08, r + 0.08, 4, 1, a0, Math.PI / 36), WH); m.rotation.x = -Math.PI / 2; m.position.y = Y + 0.03; g.add(m); }
-    // parapets (the outer one is open where the neck joins), deck edges, piers
-    const gap = Math.asin(9.4 / (LOOP_R + LOOP_W)), joinTh = L.d > 0 ? Math.PI * 1.5 : Math.PI * 0.5;
-    const outer = new T.Mesh(new T.CylinderGeometry(LOOP_R + LOOP_W, LOOP_R + LOOP_W, 1.1, 72, 1, true, joinTh + gap, Math.PI * 2 - gap * 2), CON); outer.material.side = T.DoubleSide; outer.position.y = Y + 0.55; g.add(outer);
-    const inner = new T.Mesh(new T.CylinderGeometry(LOOP_R - LOOP_W, LOOP_R - LOOP_W, 1.1, 72, 1, true), CON); inner.position.y = Y + 0.55; g.add(inner);
-    const skirt = new T.Mesh(new T.CylinderGeometry(LOOP_R + LOOP_W, LOOP_R + LOOP_W, 1.2, 72, 1, true), CON); skirt.position.y = Y - 0.6; g.add(skirt);
-    for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2 + 0.3, pr = new T.Mesh(new T.CylinderGeometry(1.1, 1.4, Y + 1.5, 10), CON); pr.position.set(Math.cos(a) * LOOP_R, (Y - 1.2) / 2 - 0.75, Math.sin(a) * LOOP_R); g.add(pr); }
-    // the neck: straight deck from the end of the expressway to the ring
-    const nx = L.x + L.d * (LOOP_NECK + 4) / 2, neck = new T.Mesh(new T.BoxGeometry(LOOP_NECK + 4, 1.2, 18.6), CON); neck.position.set(nx, Y - 0.6, L.cz); scene.add(neck);
-    const nt = new T.Mesh(new T.PlaneGeometry(LOOP_NECK + 4, 18.4), DK); nt.rotation.x = -Math.PI / 2; nt.position.set(nx, Y + 0.012, L.cz); scene.add(nt);
-    for (const sg of [-1, 1]) { const pp = new T.Mesh(new T.BoxGeometry(LOOP_NECK + 2, 1.1, 0.3), CON); pp.position.set(L.x + L.d * (LOOP_NECK + 2) / 2, Y + 0.55, L.cz + sg * 9.35); scene.add(pp); }
-    { const pr = new T.Mesh(new T.CylinderGeometry(1.2, 1.5, Y, 10), CON); pr.position.set(nx, Y / 2 - 1.2, L.cz); scene.add(pr); }
+    const t0 = L.d > 0 ? -Math.PI / 2 : Math.PI / 2, c0 = L.d > 0 ? 0 : Math.PI; // ring angles (x-z plane) / cylinder angles of the far half
+    const top = new T.Mesh(new T.RingGeometry(R - W, R + W, 160, 1, t0, Math.PI), DK); top.rotation.x = -Math.PI / 2; top.position.y = Y + 0.01; g.add(top);
+    const und = new T.Mesh(new T.RingGeometry(R - W, R + W, 160, 1, t0, Math.PI), CON); und.rotation.x = -Math.PI / 2; und.position.y = Y - 1.2; g.add(und);
+    for (const [r, h, y] of [[R + W, 1.1, Y + 0.55], [R - W, 1.1, Y + 0.55], [R, 0.9, Y + 0.45], [R + W, 1.2, Y - 0.6], [R - W, 1.2, Y - 0.6]]) { const c = new T.Mesh(new T.CylinderGeometry(r, r, h, 200, 1, true, c0, Math.PI), CON); c.position.y = y; g.add(c); }
+    // lane markings + piers, merged
+    const parts = [], N = 220;
+    for (let k = 0; k < N; k++) { const a = c0 + (k + 0.5) / N * Math.PI, sa = Math.sin(a), ca = Math.cos(a), ry = a + Math.PI / 2, seg = R * Math.PI / N;
+      for (const [rr, wd, col, dash] of [[R + 0.9, 0.15, [0.9, 0.75, 0.15], 0], [R - 0.9, 0.15, [0.9, 0.75, 0.15], 0], [R + 7.9, 0.18, [0.94, 0.94, 0.92], 0], [R - 7.9, 0.18, [0.94, 0.94, 0.92], 0], [R + 4, 0.15, [0.94, 0.94, 0.92], 1], [R - 4, 0.15, [0.94, 0.94, 0.92], 1]]) {
+        if (dash && k % 3) continue; const m = new T.Matrix4().makeRotationY(ry).setPosition(sa * rr, Y + 0.05, ca * rr); parts.push({ g: new T.BoxGeometry(seg * (dash ? 1.2 : rr / R * 1.02), 0.02, wd), m, c: col }); }
+      if (k % 14 === 7) for (const rr of [R - 5, R + 5]) parts.push({ g: new T.CylinderGeometry(1.1, 1.4, Y + 1.5, 10), m: new T.Matrix4().makeTranslation(sa * rr, (Y - 1.2) / 2 - 0.75, ca * rr), c: [0.8, 0.81, 0.8] }); }
+    const mk = new T.Mesh(mergeGeos(parts), new T.MeshLambertMaterial({ vertexColors: true })); g.add(mk);
+    // the necks: straight deck past the end of each row to the curve
+    for (const zr of [HJ * S, HJ2 * S]) { const nx = L.x + L.d * (LOOP_NECK + 2) / 2;
+      const neck = new T.Mesh(new T.BoxGeometry(LOOP_NECK + 2, 1.2, 18.6), CON); neck.position.set(nx, Y - 0.6, zr); scene.add(neck);
+      const nt = new T.Mesh(new T.PlaneGeometry(LOOP_NECK + 2, 18.4), DK); nt.rotation.x = -Math.PI / 2; nt.position.set(nx, Y + 0.012, zr); scene.add(nt);
+      for (const sg of [-1, 1]) { const pp = new T.Mesh(new T.BoxGeometry(LOOP_NECK + 2, 1.1, 0.3), CON); pp.position.set(nx, Y + 0.55, zr + sg * 9.35); scene.add(pp); }
+      const md = new T.Mesh(new T.BoxGeometry(LOOP_NECK + 2, 0.9, 0.8), CON); md.position.set(nx, Y + 0.45, zr); scene.add(md);
+      const pr = new T.Mesh(new T.CylinderGeometry(1.2, 1.5, Y, 10), CON); pr.position.set(nx, Y / 2 - 1.2, zr); scene.add(pr); }
   }
 })();
 [mats.col, walkMat, snowWalkMat].forEach(addSnowCover);
@@ -4063,7 +4068,7 @@ const JP_TIPS = {
   yabane: '📘 矢羽根(固定式視線誘導柱):北海道路邊的紅白箭頭桿,積雪後看不到路肩時,箭頭指的位置就是道路邊緣',
   shutoko: '📘 首都高:日本都市高速,速限多為 60 km/h;靠左行駛,右側車道是超車用,超車完要回到左側',
   etc: '📘 ETC:收費站的紫色「ETC」車道不用停車,欄杆會自動抬起;但時速要降到 20 km/h 左右通過',
-  loop: '📘 ループ橋:日本山區或海邊常見的環狀高架,用一圈螺旋讓車子轉向或爬升;這裡用來折返往回開',
+  loop: '📘 環狀線:高速公路是一個「口」字形,兩端用海上大彎道連起來 — 一直開就能繞著北海道、東京、横浜、大阪四座城市巡迴',
   onkyo: '📘 音響式信号:行人綠燈時發出「ピヨピヨ」(南北向)或「カッコー」(東西向)的鳥叫聲,幫助視障者過馬路',
   snowroad: '📘 圧雪路面:北海道冬天路面常被壓實的雪覆蓋,煞車距離會變長好幾倍,要提早減速、避免急轉',
 };
@@ -4082,12 +4087,12 @@ function checkJpTips(dt) {
   }
   if (alongX && isRailRow(Math.round(P.z / S)) && isleOf(0, Math.round(P.z / S)) && (RAIL_X - P.x) * d > 0 && Math.abs(RAIL_X - P.x) < 60) jpTip('fumikiri');
   if (!alongX && oneWay(Math.round(P.x / S)) && Math.abs(P.x - Math.round(P.x / S) * S) < RW) jpTip('oneway');
-  if (!alongX && Math.abs(P.x - ci * S) < RW + 1 && !noZ(ci, cj) && !isRound(ci, cj) && !isRound(ci, cj + 1) && rxOf(cj) <= 5 && hash(ci, cj, 141) < 0.32 && !rural(ci, cj) && cj !== HJ) jpTip('school');
+  if (!alongX && Math.abs(P.x - ci * S) < RW + 1 && !noZ(ci, cj) && !isRound(ci, cj) && !isRound(ci, cj + 1) && rxOf(cj) <= 5 && hash(ci, cj, 141) < 0.32 && !rural(ci, cj) && !isHJ(cj)) jpTip('school');
   if (alongX) { const row = Math.round(P.z / S), rx = rxOf(row); if (rx > 5 && Math.abs(P.z - row * S) < rx) { jpTip('navi'); if (laneN(row) > 1 && dist < 60 && isLand(ni, nj) && !isMinor(ni, nj)) jpTip('rtlane');
       const oc = Math.floor(P.x / S); if (!isMinor(oc, row) && !isRound(oc, row) && !landCell(oc, row) && !landCell(oc, row - 1) && hash(oc, row, 151) < 0.24 && Math.abs(P.x - (oc * S + RW + 9)) < 50) jpTip('hodokyo'); } }
   { const isl = isleOf(ci, cj); if (isl && isl.snow && snowF(ci) > 0.45) { jpTip('yabane'); if (snowCover > 0.4 || inSnow) jpTip('snowroad'); } }
 }
-function onHw() { return P.lay === 1 && (Math.abs(P.z - HJ * S) < 9.4 || inLoopZone(P.x)); }
+function onHw() { return P.lay === 1 && (Math.abs(P.z - hjZ(P.z)) < 9.4 || inLoopZone(P.x)); }
 let hwFlag = false;
 let stopT = -99, stopX = 0, stopZ = 0;
 function updateLimit() {
@@ -4165,9 +4170,9 @@ function pickPoint(nMin, nMax) {
   const pi = Math.round(P.x / S), pj = Math.round(P.z / S);
   for (let k = 0; k < 80; k++) {
     const dx = rint(-nMax, nMax), dy = rint(-nMax, nMax), n = Math.abs(dx) + Math.abs(dy); if (n < nMin || n > nMax) continue;
-    const ti = pi + dx, tj = pj + dy, xr = Math.random() < 0.5; if (isleOf(ti, tj) !== isleAt(P.x, P.z) || !isleOf(ti, tj)) continue; if (xr && (tj === HJ || tj === HJ - 1)) continue;
+    const ti = pi + dx, tj = pj + dy, xr = Math.random() < 0.5; if (isleOf(ti, tj) !== isleAt(P.x, P.z) || !isleOf(ti, tj)) continue; if (xr && (isHJ(tj) || isHJ(tj + 1))) continue;
     const cx_ = xr ? ti * S + 26 : ti * S, cz_ = xr ? tj * S : tj * S + 40;
-    if (!xr && Math.abs(cz_ - HJ * S) < 20) continue;
+    if (!xr && Math.abs(cz_ - hjZ(cz_)) < 20) continue;
     if (!xr && blockedZ(ti, tj) === 1) continue; if (rural(ti, tj)) continue;
     // stop in the kerb-side (leftmost) lane, never next to the median
     const ow = xr ? 0 : oneWay(ti), sd = xr ? (P.x < cx_ ? -1 : 1) : ow ? ow : (P.z < cz_ ? 1 : -1), w = xr ? rxOf(tj) : RW, lane = w - 1.7;
@@ -4189,8 +4194,8 @@ function newMission() {
 }
 function pickPointIn(isl) {
   for (let k = 0; k < 80; k++) {
-    const ti = rint(isl.i0, isl.i1), tj = rint(isl.j0, isl.j1), xr = Math.random() < 0.5; if (!isLand(ti, tj) || (xr && (tj === HJ || tj === HJ - 1))) continue;
-    const cx_ = xr ? ti * S + 26 : ti * S, cz_ = xr ? tj * S : tj * S + 40; if (!xr && (Math.abs(cz_ - HJ * S) < 20 || noZ(ti, tj))) continue; if (rural(ti, tj)) continue;
+    const ti = rint(isl.i0, isl.i1), tj = rint(isl.j0, isl.j1), xr = Math.random() < 0.5; if (!isLand(ti, tj) || (xr && (isHJ(tj) || isHJ(tj + 1)))) continue;
+    const cx_ = xr ? ti * S + 26 : ti * S, cz_ = xr ? tj * S : tj * S + 40; if (!xr && (Math.abs(cz_ - hjZ(cz_)) < 20 || noZ(ti, tj))) continue; if (rural(ti, tj)) continue;
     const sd = 1, w = xr ? rxOf(tj) : RW, lane = w - 1.7;
     return xr ? { x: cx_, z: cz_ + sd * lane, px: cx_, pz: cz_ + sd * (w + 1.3), fy: Math.PI } : { x: cx_ + sd * lane, z: cz_, px: cx_ + sd * (w + 1.3), pz: cz_, fy: -Math.PI / 2 };
   }
@@ -4199,8 +4204,8 @@ function pickPointIn(isl) {
 function startTrip() {
   let p = pickPoint(3, 6), far = false;
   const here = isleAt(P.x, P.z), idx = ISLES.indexOf(here);
-  if (here && Math.random() < 0.35) { const nb = [ISLES[idx - 1], ISLES[idx + 1]].filter(Boolean), dst = nb[rint(0, nb.length - 1)], q = dst && pickPointIn(dst); if (q) { p = q; far = dst; } } nav.phase = 'drop'; nav.T = { x: p.x, z: p.z, lane: true }; nav.drop = p; nav.name = PLACES[rint(0, PLACES.length - 1)]; nav.t0 = simT; nav.stopT = 0;
-  { const isl = far || here, cand = LANDMARKS.filter(L => !L.hotel && isleOf(L.i, L.j) === isl && L.j !== HJ && L.j !== HJ - 1 && !(isl === here && Math.hypot(L.i * S - P.x, L.j * S - P.z) < 200));
+  if (here && Math.random() < 0.35) { const nb = [ISLES[(idx + 3) % 4], ISLES[(idx + 1) % 4]], dst = nb[rint(0, nb.length - 1)], q = dst && pickPointIn(dst); if (q) { p = q; far = dst; } } nav.phase = 'drop'; nav.T = { x: p.x, z: p.z, lane: true }; nav.drop = p; nav.name = PLACES[rint(0, PLACES.length - 1)]; nav.t0 = simT; nav.stopT = 0;
+  { const isl = far || here, cand = LANDMARKS.filter(L => !L.hotel && isleOf(L.i, L.j) === isl && !isHJ(L.j) && !isHJ(L.j + 1) && !(isl === here && Math.hypot(L.i * S - P.x, L.j * S - P.z) < 200));
     if (isl && cand.length && Math.random() < 0.35) { const L = cand[rint(0, cand.length - 1)], w = rxOf(L.j), lane = w - 1.7, cx = L.i * S + 26, cz = L.j * S; p = { x: cx, z: cz + lane, px: cx, pz: cz + w + 1.3, fy: Math.PI }; nav.T = { x: p.x, z: p.z, lane: true }; nav.drop = p; nav.name = LM_NAME[L.k]; } }
   { const hs = nearHotels(far || here, nav.phase === 'drop' && nav.T && nav.T.hotel ? 0 : 200).filter(L => !(nav.from && nav.from === L));
     if (hs.length && Math.random() < 0.3) { const L = hs[rint(0, hs.length - 1)], h = hotelLot(L); nav.T = { x: h.cx, z: h.cz, hotel: L }; nav.drop = { px: L.i * S + 43, pz: L.j * S + 41, fy: 0 }; nav.name = '🏨' + L.name + '(停進停車場)'; } }
@@ -4209,18 +4214,22 @@ function startTrip() {
   if (far) nav.name = far.n + '・' + nav.name;
   notify('🚕 客人:「麻煩到' + nav.name + '」 — 賃走開始' + (far ? '(要走首都高跨海)' : ''), 'good');
 }
-function icsOf(isl) { const out = []; for (let k = Math.ceil(isl.i0 / 3); k * 3 <= isl.i1; k++) if (icValid(k)) out.push(k * IC_SP); return out; }
+function icsOf(isl) { const out = []; for (let k = Math.ceil(isl.i0 / 3); k * 3 <= isl.i1; k++) if (icValid(k, isl.hj)) out.push(k * IC_SP); return out; }
 const nearestOf = (arr, x) => arr.reduce((b, v) => Math.abs(v - x) < Math.abs(b - x) ? v : b, arr[0]);
 const dir_ = G => G.dir;
+// on the ring: same row -> drive toward the target; other row -> drive to the end curve on the target's side, come back the other way
+function ringDirs(fromZ, ti, tx) { const rowNow = hjOfJ(fromZ / S), cross = ti.hj !== rowNow, end = (ti.i0 + ti.i1) / 2 > -10 ? 1 : -1;
+  return cross ? { cross, dNow: end, dT: -end } : { cross, dNow: tx > P.x ? 1 : -1, dT: tx > P.x ? 1 : -1 }; }
 function navGoal() {
-  const T = nav.T, ti = isleAt(T.x, T.z), pi = isleAt(P.x, P.z), dir = T.x > P.x ? 1 : -1;
+  const T = nav.T, ti = isleAt(T.x, T.z), pi = isleAt(P.x, P.z);
   if (!ti) return T;
-  if (P.lay === 1) { // on a ramp or the deck: aim for the exit nearest the destination
-    const icx = nearestOf(icsOf(ti), T.x); return { x: icx - dir * R_IN, z: HJ * S - dir * 12.5, exit: true, icx, dir, isl: ti };
+  if (P.lay === 1) { // on a ramp, the deck or a sea curve: aim for the exit nearest the destination (on the target's row)
+    const onT = !inLoopZone(P.x) && hjOfJ(P.z / S) === ti.hj, rd = onT ? ringDirs(P.z, ti, T.x) : null, dir = rd ? rd.dT : (inLoopZone(P.x) ? -LOOPS.find(L => (P.x - L.x) * L.d > -1).d : ringDirs(P.z, ti, T.x).dT);
+    const icx = nearestOf(icsOf(ti), T.x); return { x: icx - dir * R_IN, z: ti.hj * S - dir * 12.5, exit: true, icx, dir, isl: ti, cross: !onT };
   }
   if (pi && pi !== ti) { // wrong island: go to an on-ramp toward it
-    const icx = nearestOf(icsOf(pi).filter(v => (v - P.x) * dir > -IC_SP * 1.5).concat(icsOf(pi)), P.x);
-    return { x: icx + dir * 2, z: HJ * S - dir * (12.5 + ARC_R + 6), entry: true, icx, dir, isl: ti };
+    const { dNow: dir } = ringDirs(P.z, ti, T.x), icx = nearestOf(icsOf(pi).filter(v => (v - P.x) * dir > -IC_SP * 1.5).concat(icsOf(pi)), P.x);
+    return { x: icx + dir * 2, z: pi.hj * S - dir * (12.5 + ARC_R + 6), entry: true, icx, dir, isl: ti, row: pi.hj };
   }
   return T;
 }
@@ -4256,7 +4265,8 @@ let navRouteCache = null;
 function navInstruction() {
   const G = navGoal();
   if (P.lay === 1 && G.exit) {
-    const along = (G.icx - dir_(G) * R_END - P.x) * G.dir, onDeck = Math.abs(P.z - HJ * S) < 9.4;
+    const along = (G.icx - dir_(G) * R_END - P.x) * G.dir, onDeck = Math.abs(P.z - hjZ(P.z)) < 9.4 || inLoopZone(P.x);
+    if (G.cross) { const L = inLoopZone(P.x) ? null : LOOPS.find(L_ => L_.d === ringDirs(P.z, G.isl, nav.T.x).dNow); return { glyph: '🛣', text: inLoopZone(P.x) ? '海上大彎道 — 繼續沿著彎道開往' + G.isl.n : '首都高 直行,經海上大彎道往' + G.isl.n, dist: L ? Math.abs(L.x - P.x) : Math.hypot(G.x - P.x, G.z - P.z), turn: null }; }
     if (!onDeck) return { glyph: '⬆', text: '匝道行駛中,依指示前進', dist: Math.hypot(G.x - P.x, G.z - P.z), turn: null };
     if (along > 350) return { glyph: '🛣', text: '首都高 往' + G.isl.n + '方面 直行', dist: along, turn: null };
     if (along > -5) return { glyph: '↖', text: '前方出口:靠左從出口下首都高', dist: Math.max(0, along), turn: null };
@@ -4306,7 +4316,7 @@ function drawNav() {
   for (let i = ci - 4; i <= ci + 4; i++) for (let j = cj - 4; j < cj + 4; j++) if (!noZ(i, j)) { x.beginPath(); x.moveTo(i * S, j * S); x.lineTo(i * S, (j + 1) * S); x.stroke(); }
   for (let j = cj - 4; j <= cj + 4; j++) { x.lineWidth = (rxOf(j) > 5 ? 13 : 7) / sc * 0.55; x.beginPath(); x.moveTo(P.x - 260, j * S); x.lineTo(P.x + 260, j * S); x.stroke(); }
   x.strokeStyle = '#9aa0a8'; x.lineWidth = 6 / sc * 0.55; x.setLineDash([12, 12]); x.beginPath(); x.moveTo(RAIL_X, P.z - 260); x.lineTo(RAIL_X, Math.min(P.z + 260, STN_STOP + 3)); x.stroke(); x.setLineDash([]);
-  x.strokeStyle = '#ff9a3a'; x.lineWidth = 14 / sc * 0.55; x.beginPath(); x.moveTo(P.x - 260, HJ * S); x.lineTo(P.x + 260, HJ * S); x.stroke();
+  x.strokeStyle = '#ff9a3a'; x.lineWidth = 14 / sc * 0.55; x.beginPath(); for (const r of [HJ, HJ2]) { x.moveTo(Math.max(P.x - 260, HW_X0), r * S); x.lineTo(Math.min(P.x + 260, HW_X1), r * S); } for (const L of LOOPS) { x.moveTo(L.x, HJ * S); x.lineTo(L.cx, HJ * S); x.arc(L.cx, L.cz, LOOP_R, -Math.PI / 2, Math.PI / 2, L.d < 0); x.lineTo(L.x, HJ2 * S); } x.stroke();
   if (nav.T) { x.fillStyle = '#35b6ff'; x.beginPath(); x.arc(nav.T.x, nav.T.z, 8 / sc, 0, 7); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 2 / sc; x.stroke(); }
   x.restore();
   if (nav.T) {
@@ -4418,7 +4428,7 @@ function stepPlayer(dt, inp) {
   }
   const hitAt = (x, z) => { for (const L of nearR) for (const r of L) { const m = (r[2] - r[0] < 0.7 || r[3] - r[1] < 0.7) ? 0.8 : 1; if (x > r[0] - m && x < r[2] + m && z > r[1] - m && z < r[3] + m) return r; } return null; };
   if (P.lay === 1 && inLoopZone(P.x) && !loopValid(P.x, P.z)) { const nx = P.x, nz = P.z;
-    let slid = false; for (const L of LOOPS) { const along = (nx - L.x) * L.d; if (along < LOOP_NECK - 2) continue; const r = Math.hypot(nx - L.cx, nz - L.cz) || 1, rc = clamp(r, LOOP_R - LOOP_W + 0.8, LOOP_R + LOOP_W - 0.8);
+    let slid = false; for (const L of LOOPS) { const along = (nx - L.x) * L.d; if (along < LOOP_NECK - 2) continue; const r = Math.hypot(nx - L.cx, nz - L.cz) || 1, r0 = Math.hypot(ox - L.cx, oz - L.cz), outerSide = r0 > LOOP_R, rc = clamp(r, outerSide ? LOOP_R + 0.8 : LOOP_R - LOOP_W + 0.8, outerSide ? LOOP_R + LOOP_W - 0.8 : LOOP_R - 0.8);
       const px = L.cx + (nx - L.cx) * rc / r, pz = L.cz + (nz - L.cz) * rc / r; if (loopValid(px, pz)) { P.x = px; P.z = pz; P.v *= 0.985; slid = true; break; } } // slide along the curved parapet
     if (slid) { }
     else if (loopValid(nx, oz)) { P.z = oz; P.v *= 0.97; } else if (loopValid(ox, nz)) { P.x = ox; P.v *= 0.97; } else { P.x = ox; P.z = oz; P.v *= 0.5; }
@@ -4451,7 +4461,7 @@ function stepPlayer(dt, inp) {
     const ci = Math.round(P.x / S), cj = Math.round(P.z / S), dxl = P.x - ci * S, dzl = P.z - cj * S;
     let wrong = false;
     if (onHw() && inLoopZone(P.x)) { }
-    else if (onHw()) { const dz_ = P.z - HJ * S; if (Math.abs(fx) > 0.9) wrong = (fx > 0 && dz_ > 1.2) || (fx < 0 && dz_ < -1.2); } else if (Math.abs(dzl) < rxOf(cj) && Math.abs(dxl) > 6 && Math.abs(fx) > 0.9) wrong = (fx > 0 && dzl > 0.7) || (fx < 0 && dzl < -0.7);
+    else if (onHw() && !inLoopZone(P.x)) { const dz_ = P.z - hjZ(P.z); if (Math.abs(fx) > 0.9) wrong = (fx > 0 && dz_ > 1.2) || (fx < 0 && dz_ < -1.2); } else if (Math.abs(dzl) < rxOf(cj) && Math.abs(dxl) > 6 && Math.abs(fx) > 0.9) wrong = (fx > 0 && dzl > 0.7) || (fx < 0 && dzl < -0.7);
     else if (Math.abs(dxl) < RW && Math.abs(dzl) > 6 && Math.abs(fz) > 0.9 && oneWay(ci)) { if (fz * oneWay(ci) < 0 && simT - (P.owT || -99) > 4) { P.owT = simT; violation('一方通行逆向行駛!', 5); } }
     else if (Math.abs(dxl) < RW && Math.abs(dzl) > 6 && Math.abs(fz) > 0.9) wrong = (fz > 0 && dxl < -0.7) || (fz < 0 && dxl > 0.7);
     if (wrong && P.v > 0) { wrongT += dt; if (wrongT > 2.5) { wrongT = 0; violation('請靠左行駛(日本是左側通行)', 2); } } else wrongT = Math.max(0, wrongT - dt);
@@ -4546,22 +4556,22 @@ function drawBigMap() { // round, heading-up map (rotates with the car, like PUB
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
     if (!isLand(i, j)) continue;
     if (!noZ(i, j)) seg(Math.max(2 * RW, minW), colOf(i, j), i * S, j * S, i * S, (j + 1) * S);
-    seg(Math.max(j === HJ ? 2 * 6.5 : 2 * rxOf(j), minW), colOf(i, j), i * S, j * S, (i + 1) * S, j * S);
+    seg(Math.max(isHJ(j) ? 2 * 6.5 : 2 * rxOf(j), minW), colOf(i, j), i * S, j * S, (i + 1) * S, j * S);
     if (!isLand(i + 1, j)) seg(Math.max(2 * RW, minW), colOf(i, j), (i + 1) * S, j * S, (i + 1) * S, (j + 1) * S);
     if (!isLand(i, j + 1)) seg(Math.max(2 * rxOf(j + 1), minW), colOf(i, j), i * S, (j + 1) * S, (i + 1) * S, (j + 1) * S);
   }
   for (const v of paths.values()) { x.strokeStyle = v.c; x.lineWidth = v.w; x.stroke(v.p); }
-  x.strokeStyle = '#e8902a'; x.lineWidth = Math.max(18, 5 / sc); x.beginPath(); x.moveTo(Math.max(P.x - hw - 50, HW_X0), HJ * S); x.lineTo(Math.min(P.x + hw + 50, HW_X1), HJ * S); x.stroke();
+  x.strokeStyle = '#e8902a'; x.lineWidth = Math.max(18, 5 / sc); x.beginPath(); for (const r of [HJ, HJ2]) { x.moveTo(Math.max(P.x - hw - 50, HW_X0), r * S); x.lineTo(Math.min(P.x + hw + 50, HW_X1), r * S); } x.stroke();
   x.strokeStyle = '#ffd08a'; x.lineWidth = Math.max(6, 1.6 / sc); x.stroke();
-  for (const L of LOOPS) { x.beginPath(); x.moveTo(L.x, HJ * S); x.lineTo(L.cx - L.d * LOOP_R, HJ * S); x.moveTo(L.cx + LOOP_R, HJ * S); x.arc(L.cx, L.cz, LOOP_R, 0, Math.PI * 2); x.strokeStyle = '#e8902a'; x.lineWidth = Math.max(14, 5 / sc); x.stroke(); }
+  for (const L of LOOPS) { x.beginPath(); x.moveTo(L.x, HJ * S); x.lineTo(L.cx, HJ * S); x.arc(L.cx, L.cz, LOOP_R, -Math.PI / 2, Math.PI / 2, L.d < 0); x.lineTo(L.x, HJ2 * S); x.strokeStyle = '#e8902a'; x.lineWidth = Math.max(14, 5 / sc); x.stroke(); }
   x.strokeStyle = '#7d8087'; x.lineWidth = Math.max(8, 3 / sc); x.beginPath(); x.moveTo(RAIL_X, ISLES[1].j0 * S - 8); x.lineTo(RAIL_X, STN_STOP + 3); x.stroke();
   x.setLineDash([12, 12]); x.strokeStyle = '#fff'; x.lineWidth = Math.max(4, 1.4 / sc); x.stroke(); x.setLineDash([]);
   if (nav.T && navRouteCache && P.lay !== 1) { x.strokeStyle = '#2f7bf5'; x.lineWidth = Math.max(10, 4 / sc); x.lineJoin = 'round'; x.beginPath(); x.moveTo(P.x, P.z); navRouteCache.forEach(n => x.lineTo(n[0] * S, n[1] * S)); x.lineTo(nav.T.x, nav.T.z); x.stroke(); }
   x.restore();
   // markers + labels (screen space, text stays upright)
   x.textAlign = 'center'; x.textBaseline = 'middle';
-  if (sc > 0.2) for (let k = Math.floor(HW_X0 / IC_SP); k <= Math.ceil(HW_X1 / IC_SP); k++) if (icValid(k)) { const [sx, sy] = toS(k * IC_SP, HJ * S); if (!inC(sx, sy, 15)) continue; x.fillStyle = '#1f8a4c'; x.fillRect(sx - 15, sy - 9, 30, 18); x.fillStyle = '#fff'; x.font = 'bold 12px Arial'; x.fillText('IC', sx, sy); }
-  for (const br of BRIDGES) { const [sx, sy] = toS((br[0] + br[1]) / 2, HJ * S); if (!inC(sx, sy, 30)) continue; const n = br[0] < 0 ? '津軽海峡大橋' : br[0] < 20 * S ? 'レインボーブリッジ' : '明石海峡大橋'; x.font = 'bold 15px "Yu Gothic","Microsoft JhengHei",sans-serif'; x.fillStyle = '#244a66'; x.fillText(n, sx, sy + 22); }
+  if (sc > 0.2) for (const r of [HJ, HJ2]) for (let k = Math.floor(HW_X0 / IC_SP); k <= Math.ceil(HW_X1 / IC_SP); k++) if (icValid(k, r)) { const [sx, sy] = toS(k * IC_SP, r * S); if (!inC(sx, sy, 15)) continue; x.fillStyle = '#1f8a4c'; x.fillRect(sx - 15, sy - 9, 30, 18); x.fillStyle = '#fff'; x.font = 'bold 12px Arial'; x.fillText('IC', sx, sy); }
+  for (const br of BRIDGES) for (const r of [HJ, HJ2]) { const [sx, sy] = toS((br[0] + br[1]) / 2, r * S); if (!inC(sx, sy, 30)) continue; const n = r === HJ ? '津軽海峡大橋' : '明石海峡大橋'; x.font = 'bold 15px "Yu Gothic","Microsoft JhengHei",sans-serif'; x.fillStyle = '#244a66'; x.fillText(n, sx, sy + 22); }
   for (const t of ISLES) { const [sx, sy] = toS((t.i0 + t.i1 + 1) * S / 2, (t.j0 + t.j1 + 1) * S / 2); if (!inC(sx, sy, 20)) continue; x.font = 'bold 30px "Microsoft JhengHei",sans-serif'; x.fillStyle = 'rgba(30,50,70,.45)'; x.fillText(t.n, sx, sy); }
   for (const L of LANDMARKS) { const [sx, sy] = toS(L.i * S + S / 2, L.j * S + S / 2); if (!inC(sx, sy, 10)) continue; x.fillStyle = '#c0392b'; x.beginPath(); x.arc(sx, sy, 8, 0, 7); x.fill(); x.font = 'bold 15px "Yu Gothic","Microsoft JhengHei",sans-serif'; x.fillStyle = '#222'; x.fillText(L.name || LM_NAME[L.k] || L.k, sx, sy - 18); }
   for (const c of cells.values()) if (c.gasPos) { const [sx, sy] = toS(c.gasPos.tx, c.gasPos.tz); if (!inC(sx, sy, 12)) continue; x.fillStyle = '#e8620c'; x.beginPath(); x.arc(sx, sy, 12, 0, 7); x.fill(); x.font = '15px sans-serif'; x.fillStyle = '#fff'; x.fillText('⛽', sx, sy + 1); }
@@ -4597,7 +4607,7 @@ function drawPhone() {
   x.fillStyle = '#9ccbe8'; x.fillRect(P.x - 400, P.z - 400, 800, 800);
   for (const [k, t] of LANDMASK) { const [a, b] = k.split(',').map(Number); if (Math.abs(a * S - P.x) > 700 || Math.abs(b * S - P.z) > 700) continue; x.fillStyle = t.snow ? '#f0f3f6' : '#cfe8c9'; x.fillRect(a * S - 8, b * S - 8, S + 19, S + 19); }
   for (let i = ci - 6; i <= ci + 6; i++) for (let j = cj - 6; j < cj + 6; j++) if (!noZ(i, j) && isLand(i, j)) road(i * S, j * S, i * S, isLand(i, j + 1) ? (j + 1) * S : (j + 1) * S - 4, 22, '#fff');
-  for (let j = cj - 6; j <= cj + 6; j++) { for (let i = ci - 6; i <= ci + 6; i++) if (isLand(i, j) && j !== HJ) road(i * S, j * S, isLand(i + 1, j) ? (i + 1) * S : (i + 1) * S - 4, j * S, rxOf(j) > 8 ? 44 : rxOf(j) > 5 ? 32 : 22, '#fff'); else if (isLand(i, j) && j === HJ) road(i * S, j * S, (i + 1) * S, j * S, 14, '#fff'); if (j === HJ) road(Math.max(P.x - 400, HW_X0), j * S, Math.min(P.x + 400, HW_X1), j * S, 26, '#ffb84a'); }
+  for (let j = cj - 6; j <= cj + 6; j++) { for (let i = ci - 6; i <= ci + 6; i++) if (isLand(i, j) && !isHJ(j)) road(i * S, j * S, isLand(i + 1, j) ? (i + 1) * S : (i + 1) * S - 4, j * S, rxOf(j) > 8 ? 44 : rxOf(j) > 5 ? 32 : 22, '#fff'); else if (isLand(i, j) && j === HJ) road(i * S, j * S, (i + 1) * S, j * S, 14, '#fff'); if (j === HJ) road(Math.max(P.x - 400, HW_X0), j * S, Math.min(P.x + 400, HW_X1), j * S, 26, '#ffb84a'); }
   for (let i = ci - 6; i <= ci + 6; i++) if (isRiver(i)) { x.fillStyle = '#8ec5ea'; x.fillRect(i * S + RIV0, P.z - 400, RIV1 - RIV0, 800); }
   road(RAIL_X, P.z - 400, RAIL_X, Math.min(P.z + 400, STN_STOP + 3), 9, '#8a8d93'); x.setLineDash([10, 10]); road(RAIL_X, P.z - 400, RAIL_X, Math.min(P.z + 400, STN_STOP + 3), 5, '#fff'); x.setLineDash([]);
   if (Math.abs(P.x - RAIL_X) < 400) { x.fillStyle = '#7b5cd6'; x.fillRect(RAIL_X - 14, STN_STOP - 50, 28, 50); }
@@ -4606,8 +4616,9 @@ function drawPhone() {
     if (onX) { const tx = Math.round(T_.x / S) * S; pts = [[P.x, cj * S], [Math.abs(T_.z - cj * S) < 8 ? T_.x : tx, cj * S], [T_.x, T_.z]]; if (Math.abs(T_.x - tx) > 8 && Math.abs(T_.z - cj * S) >= 8) pts = [[P.x, cj * S], [tx, cj * S], [tx, T_.z], [T_.x, T_.z]]; }
     else { const tz = Math.round(T_.z / S) * S; pts = [[ci * S, P.z], [ci * S, Math.abs(T_.x - ci * S) < 8 ? T_.z : tz], [T_.x, T_.z]]; if (Math.abs(T_.z - tz) > 8 && Math.abs(T_.x - ci * S) >= 8) pts = [[ci * S, P.z], [ci * S, tz], [T_.x, tz], [T_.x, T_.z]]; }
     if (navRouteCache && P.lay !== 1) pts = navRouteCache.map(n => [n[0] * S, n[1] * S]).concat([[T_.x, T_.z]]);
-    if (P.lay === 1) pts = [[G_.icx - G_.dir * 60, HJ * S - G_.dir * 5.75], [G_.x, G_.z]];
-    if (G_.entry || G_.exit) { const ex = nearestOf(icsOf(G_.isl), nav.T.x); if (G_.entry) pts.push([G_.icx + G_.dir * 60, HJ * S - G_.dir * 5.75]); pts.push([ex - G_.dir * 60, HJ * S - G_.dir * 5.75], [ex - G_.dir * R_IN, HJ * S - G_.dir * 12.5], [nav.T.x, nav.T.z]); }
+    const rz_ = (G_.cross ? hjOfJ(P.z / S) : G_.isl ? G_.isl.hj : hjOfJ(P.z / S)) * S, tz_ = (G_.isl ? G_.isl.hj : hjOfJ(P.z / S)) * S, ez_ = (G_.row || hjOfJ(P.z / S)) * S;
+    if (P.lay === 1) pts = G_.cross ? [[G_.x, G_.z]] : [[G_.icx - G_.dir * 60, tz_ - G_.dir * 5.75], [G_.x, G_.z]];
+    if (G_.entry || G_.exit) { const ex = nearestOf(icsOf(G_.isl), nav.T.x); if (G_.entry) pts.push([G_.icx + G_.dir * 60, ez_ - G_.dir * 5.75]); if (G_.cross || (G_.entry && G_.isl.hj * S !== ez_)) pts.push([nav.T.x, nav.T.z]); else pts.push([ex - G_.dir * 60, tz_ - G_.dir * 5.75], [ex - G_.dir * R_IN, tz_ - G_.dir * 12.5], [nav.T.x, nav.T.z]); }
     x.strokeStyle = '#2f7bf5'; x.lineWidth = 12; x.lineJoin = 'round'; x.beginPath(); x.moveTo(P.x, P.z); pts.forEach(p => x.lineTo(p[0], p[1])); x.stroke();
     x.fillStyle = nav.phase === 'pick' ? '#f5a700' : '#e53935'; x.beginPath(); x.arc(nav.T.x, nav.T.z, 14, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(nav.T.x, nav.T.z, 5, 0, 7); x.fill();
   }
