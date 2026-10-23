@@ -310,6 +310,9 @@ const renderer = new T.WebGLRenderer({ canvas, antialias: true, powerPreference:
 const GPU_NAME = (() => { try { const gl = renderer.getContext(), e = gl.getExtension('WEBGL_debug_renderer_info'); return e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); } catch (er) { return '?'; } })();
 renderer.setPixelRatio(1);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+// filmic colour response like a camera (desktop); lamps / screens / sky stay untouched
+if (!isTouch) { renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1; renderer.physicallyCorrectLights = false; }
+{ const MB = T.MeshBasicMaterial; T.MeshBasicMaterial = function (p) { const m = new MB(p); m.toneMapped = false; return m; }; T.MeshBasicMaterial.prototype = MB.prototype; }
 const scene = new T.Scene();
 scene.background = new T.Color(0xd6e8f5);
 scene.fog = new T.Fog(0xd6e8f5, 40, 190);
@@ -505,11 +508,19 @@ const mats = {
 };
 facade.forEach((m, i) => mats['f' + i] = m); mats.dirt = mats.col;
 const snowCoverU = { value: 0 };
+const DETAIL_FN = isTouch ? '' : `
+float hn_(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vn_(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hn_(i), hn_(i + vec2(1.0, 0.0)), f.x), mix(hn_(i + vec2(0.0, 1.0)), hn_(i + vec2(1.0, 1.0)), f.x), f.y); }`;
+const DETAIL = isTouch ? '' : `
+      { vec2 uv_ = vSnUp > 0.7 ? vSnW.xz : vec2(vSnW.x + vSnW.z, vSnW.y * 1.4);
+        float dt_ = 0.17 * vn_(uv_ * 0.27) + 0.1 * vn_(uv_ * 1.7) + 0.08 * vn_(uv_ * 8.5);
+        diffuseColor.rgb *= 0.83 + dt_;
+        if (vSnUp < 0.3) diffuseColor.rgb *= mix(0.8, 1.0, smoothstep(0.0, 1.6, vSnW.y - 0.15)); }`;
 function addSnowCover(m) {
   const prev = m.onBeforeCompile; m.onBeforeCompile = (sh, r) => { if (prev) prev(sh, r);
     sh.uniforms.uSnow = snowCoverU; sh.uniforms.uDeck = { value: new T.Vector4(HW_X0, HW_X1, HJ * S, DECK_Y) }; sh.uniforms.uLoops = { value: new T.Vector4(LOOPS[0].cx, LOOPS[0].cz, LOOPS[1].cx, LOOPS[1].cz) };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSnW; varying float vSnUp;').replace('#include <project_vertex>', '#include <project_vertex>\nvSnW = (modelMatrix * vec4(transformed, 1.0)).xyz; vSnUp = normalize(mat3(modelMatrix) * objectNormal).y;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSnW; varying float vSnUp; uniform float uSnow; uniform vec4 uDeck; uniform vec4 uLoops;').replace('#include <color_fragment>', `#include <color_fragment>
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSnW; varying float vSnUp; uniform float uSnow; uniform vec4 uDeck; uniform vec4 uLoops;' + DETAIL_FN).replace('#include <color_fragment>', `#include <color_fragment>${DETAIL}
       float sn = uSnow * smoothstep(0.55, 0.95, vSnUp) * clamp((-720.0 - vSnW.x) / 240.0, 0.0, 1.0);
       if (vSnW.y < uDeck.w - 1.0) { if (vSnW.x > uDeck.x - 30.0 && vSnW.x < uDeck.y + 30.0 && abs(vSnW.z - uDeck.z) < 9.0) sn = 0.0;
         float d0 = length(vSnW.xz - uLoops.xy), d1 = length(vSnW.xz - uLoops.zw); if (abs(d0 - ${LOOP_R}.0) < ${LOOP_W}.0 || abs(d1 - ${LOOP_R}.0) < ${LOOP_W}.0) sn = 0.0; }
@@ -1671,13 +1682,35 @@ function bikeGeo(ci) {
   const parts = [], fc = [[0.86, 0.86, 0.88], [0.72, 0.16, 0.16], [0.2, 0.35, 0.68], [0.95, 0.95, 0.95], [0.25, 0.25, 0.27], [0.9, 0.72, 0.2]][ci % 6], blk = [0.07, 0.07, 0.07], sil = [0.72, 0.74, 0.77], cl = new T.Color(pedCols[ci % pedCols.length]).toArray(), skin = [0.9, 0.76, 0.63];
   const tube = (a, b, r, c) => { const A = new T.Vector3(...a), B = new T.Vector3(...b), o = new T.Object3D(); o.position.copy(A).add(B).multiplyScalar(0.5); o.lookAt(B); o.updateMatrix(); parts.push({ g: new T.BoxGeometry(r, r, A.distanceTo(B)), m: o.matrix.clone(), c }); };
   const at = (g, x, y, z, rx, ry, c) => { const o = new T.Object3D(); o.position.set(x, y, z); o.rotation.set(rx || 0, ry || 0, 0); o.updateMatrix(); parts.push({ g, m: o.matrix.clone(), c }); };
-  for (const z of [-0.55, 0.55]) at(new T.TorusGeometry(0.33, 0.035, 6, 18), 0, 0.36, z, 0, Math.PI / 2, blk);
   tube([0, 0.38, 0.08], [0, 0.36, 0.55], 0.04, fc); tube([0, 0.36, 0.55], [0, 0.84, 0.18], 0.04, fc); tube([0, 0.38, 0.08], [0, 0.86, 0.2], 0.045, fc);
   tube([0, 0.4, 0.04], [0, 0.82, -0.42], 0.05, fc); tube([0, 0.84, -0.42], [0, 0.36, -0.55], 0.035, sil); tube([0, 0.84, -0.42], [0, 1.05, -0.38], 0.035, sil); tube([-0.28, 1.05, -0.34], [0.28, 1.05, -0.34], 0.03, sil);
   at(new T.BoxGeometry(0.18, 0.06, 0.26), 0, 0.9, 0.2, 0, 0, blk); at(new T.BoxGeometry(0.34, 0.22, 0.28), 0, 0.92, -0.64, 0, 0, [0.45, 0.47, 0.5]); at(new T.BoxGeometry(0.2, 0.03, 0.32), 0, 0.72, 0.52, 0, 0, sil);
   at(pedGeo.body, 0, 1.3, 0.12, -0.28, 0, cl); at(pedGeo.head, 0, 1.78, 0.0, 0, 0, skin); at(new T.SphereGeometry(0.13, 8, 6), 0, 1.83, 0.03, 0, 0, [0.1, 0.08, 0.07]);
   for (const sx of [-1, 1]) tube([sx * 0.2, 1.52, 0.02], [sx * 0.26, 1.06, -0.33], 0.08, cl);
   return bikeGeoC[ci] = mergeGeos(parts);
+}
+// moving parts, shared by every bike: wheel (tyre, rim, spokes, hub), crank (chainring, arms, pedals), thigh, shin + shoe
+const BK = { L1: 0.44, L2: 0.44, LC: 0.17, bbY: 0.38, bbZ: 0.08, hipY: 0.98, hipZ: 0.2, wr: 0.33 };
+const bikeWheelGeo = (() => { const parts = [], blk = [0.06, 0.06, 0.06], sil = [0.75, 0.77, 0.8];
+  const at = (g, rx, ry, rz, c) => { const o = new T.Object3D(); o.rotation.set(rx, ry, rz); o.updateMatrix(); parts.push({ g, m: o.matrix.clone(), c }); };
+  at(new T.TorusGeometry(0.315, 0.032, 6, 22), 0, Math.PI / 2, 0, blk); at(new T.TorusGeometry(0.28, 0.012, 4, 22), 0, Math.PI / 2, 0, sil);
+  for (let k = 0; k < 8; k++) at(new T.BoxGeometry(0.006, 0.56, 0.006), k * Math.PI / 8, 0, 0, sil);
+  at(new T.CylinderGeometry(0.03, 0.03, 0.09, 8), 0, 0, Math.PI / 2, sil);
+  return mergeGeos(parts); })();
+const bikeCrankGeo = (() => { const parts = [], blk = [0.1, 0.1, 0.1], sil = [0.72, 0.74, 0.77], L = BK.LC;
+  const at = (g, x, y, z, rz, c) => { const o = new T.Object3D(); o.position.set(x, y, z); o.rotation.set(0, 0, rz || 0); o.updateMatrix(); parts.push({ g, m: o.matrix.clone(), c }); };
+  at(new T.CylinderGeometry(0.1, 0.1, 0.012, 16), 0.075, 0, 0, Math.PI / 2, sil); at(new T.CylinderGeometry(0.035, 0.035, 0.2, 8), 0, 0, 0, Math.PI / 2, sil);
+  at(new T.BoxGeometry(0.02, L, 0.03), 0.095, L / 2, 0, 0, sil); at(new T.BoxGeometry(0.02, L, 0.03), -0.095, -L / 2, 0, 0, sil);
+  at(new T.BoxGeometry(0.1, 0.022, 0.075), 0.15, L, 0, 0, blk); at(new T.BoxGeometry(0.1, 0.022, 0.075), -0.15, -L, 0, 0, blk);
+  return mergeGeos(parts); })();
+const bikeThighGeo = new T.CylinderGeometry(0.075, 0.062, BK.L1, 7).translate(0, -BK.L1 / 2, 0);
+const bikeShinGeo = (() => { const sh = new T.CylinderGeometry(0.058, 0.045, BK.L2, 7).translate(0, -BK.L2 / 2, 0), shoe = new T.BoxGeometry(0.1, 0.07, 0.24).translate(0, -BK.L2 - 0.01, -0.05); return mergeGeos([{ g: sh, m: new T.Matrix4(), c: [0.17, 0.19, 0.25] }, { g: shoe, m: new T.Matrix4(), c: [0.12, 0.1, 0.09] }]); })();
+// two-bone leg: hip fixed above the saddle, foot on the pedal, knee bends forward (-z)
+function bikeLeg(th, sh, fy, fz) {
+  const hy = BK.hipY, hz = BK.hipZ, dy = fy - hy, dz = fz - hz, d = Math.min(Math.hypot(dy, dz), BK.L1 + BK.L2 - 0.002);
+  const t1 = Math.atan2(-dz, -dy) + Math.acos(clamp((BK.L1 * BK.L1 + d * d - BK.L2 * BK.L2) / (2 * BK.L1 * d), -1, 1));
+  th.rotation.x = t1; const ky = hy - BK.L1 * Math.cos(t1), kz = hz - BK.L1 * Math.sin(t1);
+  sh.position.y = ky; sh.position.z = kz; sh.rotation.x = Math.atan2(-(fz - kz), -(fy - ky));
 }
 function bikeOK(ax, line, pos, road) { // is there a sidewalk (or road edge) to ride on here?
   if (ax === 'x') { const I = Math.floor(pos / S), J = Math.round(line / S); if (!isLand(I, J) || J === HJ || rural(I, J) || rural(I, J - 1) || diagCell(I, J) || diagCell(I, J - 1)) return false; }
@@ -1699,7 +1732,10 @@ function spawnBike(b) {
 function bikeBell() { for (let k = 0; k < 2; k++) { tone(3150, 3100, 0.28, 'sine', 0.05, k * 0.17); tone(4700, 4650, 0.18, 'sine', 0.02, k * 0.17); } }
 function updateBikes(dt) {
   if (!bikes.length) for (let k = 0; k < BIKE_N; k++) { const g = new T.Group(), body = new T.Mesh(bikeGeo(k % 8), bikeMat); body.castShadow = true; g.add(body);
-    const legs = [0, 1].map(q => { const l = new T.Mesh(pedGeo.leg, legM); l.position.set(q ? 0.1 : -0.1, 0.98, 0.16); g.add(l); return l; }); scene.add(g); bikes.push({ g, legs, ph: Math.random() * 6, bell: -9, live: false }); }
+    const wheels = [-0.55, 0.55].map(z => { const w = new T.Mesh(bikeWheelGeo, bikeMat); w.position.set(0, 0.36, z); g.add(w); return w; });
+    const crank = new T.Mesh(bikeCrankGeo, bikeMat); crank.position.set(0, BK.bbY, BK.bbZ); g.add(crank);
+    const legs = [1, -1].map(sx => { const th = new T.Mesh(bikeThighGeo, legM), sh = new T.Mesh(bikeShinGeo, bikeMat); th.position.set(sx * 0.11, BK.hipY, BK.hipZ); sh.position.x = sx * 0.12; th.castShadow = sh.castShadow = true; g.add(th, sh); return { th, sh }; });
+    scene.add(g); bikes.push({ g, legs, wheels, crank, ph: Math.random() * 6, bell: -9, live: false, lean: 0, yaw0: 0 }); }
   const fx = -Math.sin(P.th), fz = -Math.cos(P.th);
   for (const b of bikes) {
     if (b.fly) { const f = b.fly, g = b.g; // knocked flying: ballistic arc + tumble, then it lies on the road for a while
@@ -1707,7 +1743,7 @@ function updateBikes(dt) {
         const gy_ = terrainH(g.position.x, g.position.z) + 0.3; if (g.position.y <= gy_ && f.vy < 0) { g.position.y = gy_; if (f.bounce-- > 0 && Math.abs(f.vy) > 2.5) { f.vy *= -0.35; f.vx *= 0.55; f.vz *= 0.55; thud(); } else { f.landed = true; g.rotation.set(0, g.rotation.y, Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1)); thud(); } } }
       b.down -= dt; if (b.down <= 0) { b.fly = null; spawnBike(b); } continue; }
     if (!b.live || b.down > 0) { if (b.down > 0) { b.down -= dt; if (b.down <= 0) spawnBike(b); } else if (Math.random() < dt * 2) spawnBike(b); continue; }
-    let next = b.pos + b.dir * b.v * (simT - (b.hurryT || -99) < 4 ? 1.6 : 1) * dt;
+    const bv = b.v * (simT - (b.hurryT || -99) < 4 ? 1.6 : 1); let next = b.pos + b.dir * bv * dt;
     // at a corner (sidewalk riders only) sometimes turn onto the cross street, away from the road they were on
     if (!b.road) { const n = Math.round(next / S) * S, rx_ = b.ax === 'x' ? RW + BIKE_SW : rxOf(Math.round(next / S)) + BIKE_SW, c = n - b.dir * rx_;
       if ((b.pos - c) * (next - c) <= 0 && Math.random() < 0.35) { const base = b.ax === 'x' ? Math.round(b.line / S) * S : Math.round(b.line / S) * S, sd = Math.sign(b.line - base) || 1, nax = b.ax === 'x' ? 'z' : 'x';
@@ -1717,8 +1753,12 @@ function updateBikes(dt) {
     const x = b.ax === 'x' ? b.pos : b.line, z = b.ax === 'x' ? b.line : b.pos, dx = x - P.x, dz = z - P.z, d = Math.hypot(dx, dz);
     if (d > 175) { spawnBike(b); continue; }
     const hx = b.ax === 'x' ? b.dir : 0, hz = b.ax === 'z' ? b.dir : 0, ty = Math.atan2(-hx, -hz);
-    b.g.rotation.y += normAng(ty - b.g.rotation.y) * Math.min(1, dt * 6); b.g.position.set(x, (b.road ? 0.02 : 0.15) + terrainH(x, z), z);
-    b.ph += dt * b.v * 2.2; b.legs[0].rotation.x = -0.9 + Math.sin(b.ph) * 0.55; b.legs[1].rotation.x = -0.9 - Math.sin(b.ph) * 0.55;
+    const yr = normAng(ty - b.g.rotation.y) * Math.min(1, dt * 4); b.g.rotation.y += yr; b.g.position.set(x, (b.road ? 0.02 : 0.15) + terrainH(x, z), z);
+    // lean into turns, a little sway with each pedal stroke
+    b.lean += (clamp(yr / Math.max(dt, 1e-3) * bv * 0.05, -0.35, 0.35) - b.lean) * Math.min(1, dt * 5); b.g.rotation.z = b.lean + Math.sin(b.ph) * 0.025;
+    b.ph += dt * bv / BK.wr * 0.5; for (const w of b.wheels) w.rotation.x = -b.ph * 2;
+    const c = -b.ph; b.crank.rotation.x = c; const py = BK.LC * Math.cos(c), pz = BK.LC * Math.sin(c);
+    bikeLeg(b.legs[0].th, b.legs[0].sh, BK.bbY + py, BK.bbZ + pz); bikeLeg(b.legs[1].th, b.legs[1].sh, BK.bbY - py, BK.bbZ - pz);
     if (P.lay) continue;
     if (d < 1.35 && Math.abs(P.v) > 0.6) { violation('撞到腳踏車!', 50); thud(); yelp(); crash(); const sp = Math.abs(P.v), dd = d || 1;
       b.fly = { vx: fx * P.v * 1.15 + dx / dd * 1.5, vz: fz * P.v * 1.15 + dz / dd * 1.5, vy: 2.5 + sp * 0.4, sx: (Math.random() - 0.5) * 12, sz: (Math.random() < 0.5 ? -1 : 1) * (5 + sp * 0.4), bounce: 2, landed: false };
@@ -1771,15 +1811,16 @@ function hornReact() {
 // ============ cell manager ============
 const cells = new Map(), buildQ = [];
 function removeCell(k, c) { scene.remove(c.group); c.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); cells.delete(k); }
+let CR = 2, FAR = 1;
 function manageCells(force) {
   const pi = Math.floor(P.x / S), pj = Math.floor(P.z / S);
-  for (let i = pi - 2; i <= pi + 2; i++) for (let j = pj - 2; j <= pj + 2; j++) {
+  for (let i = pi - CR; i <= pi + CR; i++) for (let j = pj - CR; j <= pj + CR; j++) {
     if (!cells.has(i + ',' + j) && !buildQ.some(q => q[0] === i && q[1] === j)) buildQ.push([i, j]);
   }
-  for (const [k, c] of cells) if (Math.abs(c.i - pi) > 3 || Math.abs(c.j - pj) > 3) removeCell(k, c);
+  for (const [k, c] of cells) if (Math.abs(c.i - pi) > CR + 1 || Math.abs(c.j - pj) > CR + 1) removeCell(k, c);
   buildQ.sort((a, b) => (Math.abs(a[0] - pi) + Math.abs(a[1] - pj)) - (Math.abs(b[0] - pi) + Math.abs(b[1] - pj)));
   let n = force ? 9999 : 1;
-  while (n-- > 0 && buildQ.length) { const [i, j] = buildQ.shift(); if (Math.abs(i - pi) <= 2 && Math.abs(j - pj) <= 2 && !cells.has(i + ',' + j)) cells.set(i + ',' + j, buildCell(i, j)); }
+  while (n-- > 0 && buildQ.length) { const [i, j] = buildQ.shift(); if (Math.abs(i - pi) <= CR && Math.abs(j - pj) <= CR && !cells.has(i + ',' + j)) cells.set(i + ',' + j, buildCell(i, j)); }
 }
 function updateSignals(t) {
   const bl = Math.floor(t * 2) % 2 === 0;
@@ -2937,7 +2978,20 @@ function applyEnv() {
   if (typeof snowAmt !== 'undefined' && snowAmt > 0) { const a = snowAmt; scene.fog.near *= 1 - 0.5 * a; scene.fog.far *= 1 - 0.3 * a; if (W.bliz) { scene.fog.near = 4; scene.fog.far = 55; } if (!n) { scene.background.lerp(new T.Color(0xe4e8ee), a); scene.fog.color.copy(scene.background); } }
   hemi.intensity = (n ? 0.32 : 0.8) * (0.6 + 0.4 * W.sun); sun.intensity = (n ? 0.1 : 1.0) * W.sun;
   cloudMat.color.setScalar(n ? 0.3 : W.cl); skyTint();
+  if (FAR > 1) { if (!(typeof snowAmt !== 'undefined' && snowAmt > 0 && W.bliz)) { scene.fog.near *= 1.35; scene.fog.far *= FAR; } }
+  wetRoads(); updateEnvMap();
 }
+const envRT = new T.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: T.LinearMipmapLinearFilter }), envCam = new T.CubeCamera(1, 2000, envRT), envScene = new T.Scene();
+function updateEnvMap() {
+  if (isTouch) return; envScene.background = scene.background; const sk = new T.Mesh(sky.geometry, sky.material); sk.position.y = 64; envScene.add(sk);
+  const gr = new T.Mesh(new T.PlaneGeometry(4000, 4000).rotateX(-Math.PI / 2), envGroundMat()); gr.position.y = -2; envScene.add(gr);
+  envCam.update(renderer, envScene); envScene.remove(sk, gr); gr.geometry.dispose();
+}
+function envGroundMat() { return new T.MeshBasicMaterial({ color: night ? 0x0c0e12 : 0x55585a }); }
+if (!isTouch) { for (const m of [carPaintMat]) { m.envMap = envRT.texture; m.combine = T.MixOperation; m.reflectivity = 0.32; }
+  groundMesh.material.envMap = envRT.texture; groundMesh.material.combine = T.MixOperation; groundMesh.material.reflectivity = 0.45; }
+// wet asphalt shines in the rain
+function wetRoads() { if (isTouch || !mats.col.isMeshPhongMaterial) return; const w = WEATHER[weather].rain ? 1 : 0; mats.col.specular.setScalar(0.043 + w * 0.2); mats.col.shininess = 6 + w * 40; }
 function skyTint() { const W = WEATHER[weather]; skyMats.forEach(m => m.color.setScalar(0.45 + 0.55 * W.cl)); }
 function updateWeather(dt) {
   weatherT -= dt; if (weatherT < 0) { weatherT = 160 + Math.random() * 160; setWeather(snowAt(P.x) > 0.5 && Math.random() < 0.5 ? 3 : (weather === 3 ? 0 : (weather + 1 + Math.floor(Math.random() * 2)) % 3)); }
@@ -3216,7 +3270,7 @@ addEventListener('keydown', e => {
     case 'KeyR': toggleRev(); break;
     case 'KeyN': gameHour = night ? 7 : 19; setNight(!night); break;
     case 'KeyT': setWeather((weather + 1) % 4); weatherT = 240; break;
-    case 'KeyG': qi = (qi + 1) % 3; renderScale = 1; applyRes(); notify('畫質 ' + ['標準(無陰影)', '高(即時陰影)', '最高(高解析陰影)'][qi] + '(越高越吃顯卡)', ''); break;
+    case 'KeyG': qi = (qi + 1) % 3; renderScale = 1; applyRes(); notify('畫質 ' + ['標準(無陰影)', '高(即時陰影)', '最高(寫實:遠景、高解析陰影、反光)'][qi] + '(越高越吃顯卡)', ''); break;
     case 'KeyM': toggleBigMap(); break;
     case 'KeyF': $('faceFile').click(); break;
     case 'KeyV': mouseLook = !mouseLook; if (!mouseLook) look.ty = look.tp = 0; notify(mouseLook ? '滑鼠視角:開' : '滑鼠視角:關', ''); break;
@@ -3244,8 +3298,10 @@ addEventListener('visibilitychange', () => { if (document.hidden && started && !
 addEventListener('mousedown', e => { if (!isTouch && started && !wz.active && e.button === 0 && e.target.tagName === 'CANVAS') keys.Mouse = true; });
 addEventListener('mouseup', e => { if (e.button === 0) keys.Mouse = false; });
 addEventListener('blur', () => { keys.Mouse = false; });
-let mouseLook = true, qi = 1, renderScale = 1, fpsAcc = 0, fpsN = 0, fpsShow = 60, perfT = 0;
-function applyRes() { renderer.setPixelRatio([1, 1, 1.5][qi] * renderScale); resize(); const sh = qi > 0; if (renderer.shadowMap.enabled !== sh) { renderer.shadowMap.enabled = sh; scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); }); } const ms = qi === 2 ? 4096 : 2048; if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } } }
+let mouseLook = true, qi = isTouch ? 1 : 2, renderScale = 1, fpsAcc = 0, fpsN = 0, fpsShow = 60, perfT = 0;
+function applyRes() { renderer.setPixelRatio([1, 1, Math.max(1.25, Math.min(2, devicePixelRatio || 1))][qi] * renderScale); resize();
+  { const far = qi === 2 && !isTouch; if ((CR === 3) !== far) { CR = far ? 3 : 2; FAR = far ? 1.5 : 1; if (typeof applyEnv === 'function' && typeof weather !== 'undefined') applyEnv(); }
+    const e = far ? 110 : 75; if (sun.shadow.camera.right !== e) { Object.assign(sun.shadow.camera, { left: -e, right: e, top: e, bottom: -e }); sun.shadow.camera.updateProjectionMatrix(); } } const sh = qi > 0; if (renderer.shadowMap.enabled !== sh) { renderer.shadowMap.enabled = sh; scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); }); } const ms = qi === 2 ? 4096 : 2048; if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } } }
 function adaptPerf(dt) { // dynamic resolution: keep the frame rate up on integrated GPUs
   fpsAcc += dt; fpsN++; perfT += dt;
   if (perfT > 1.5) { const fps = fpsN / fpsAcc; fpsShow = Math.round(fps); fpsAcc = 0; fpsN = 0; perfT = 0;
@@ -3494,7 +3550,7 @@ function updateClock(dt) {
 const clockStr = () => { const h = Math.floor(gameHour), m = Math.floor((gameHour - h) * 60); return (night ? '🌙 ' : '☀ ') + h + ':' + (m < 10 ? '0' : '') + m; };
 function setNight(n) {
   night = n; const bg = n ? 0x27324e : 0xd6e8f5;
-  scene.background.setHex(bg); scene.fog.color.setHex(bg); scene.fog.near = n ? 30 : 40; scene.fog.far = n ? 150 : 190;
+  scene.background.setHex(bg); scene.fog.color.setHex(bg); scene.fog.near = n ? 30 : 40; scene.fog.far = (n ? 150 : 190) * FAR;
   hemi.intensity = n ? 0.32 : 0.95; hemi.color.setHex(n ? 0x6a7aa8 : 0xdfeeff); sun.intensity = n ? 0.1 : 0.85;
   facade.forEach(m => m.emissive.setHex(n ? 0xffffff : 0x000000));
   sky.material = skyMats[n ? 1 : 0]; headL.intensity = n && !isTouch ? 2.6 : 0; cabinL.intensity = n ? 0.9 : 0;
@@ -4123,7 +4179,7 @@ setTimeout(() => { const g = $('gpuInfo'); if (g) g.innerHTML = '顯示卡:' + G
 function startGame() {
   started = true; paused = false; $('start').style.display = 'none'; initAudio();
   if (isTouch) { askGyro(); gyro.ref = null; document.body.classList.add('playing'); applyRes(); try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f) Promise.resolve(f.call(d)).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => { }); } catch (e) { } }
-  manageCells(true); notify('從北海道・札幌出發!左側通行・限速 40。郊外是被雪蓋住的鄉下路,看紅白箭頭(矢羽根)找路', '');
+  if (!isTouch) applyRes(); manageCells(true); notify('從北海道・札幌出發!左側通行・限速 40。郊外是被雪蓋住的鄉下路,看紅白箭頭(矢羽根)找路', '');
 }
 let rf = 0;
 function render() {
