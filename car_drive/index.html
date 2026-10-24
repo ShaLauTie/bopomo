@@ -2022,6 +2022,7 @@ const inKR = (x, z) => !!KRG && x > KR_B[0] && x < KR_B[2] && z > KR_B[1] && z <
       if (SK.onRun(x, z, 4)) mh -= 1.2 * Math.min(1, t * 4); // groomed runs sit a little lower than the forest
       const wM = clamp((SK.zb + 40 - z) / 60, 0, 1) * clamp(1 - (Math.abs(x - SK.px) - 250) / 80, 0, 1); hh = Math.max(hh * (1 - wM) + mh * wM, z < SK.zb ? 0 : hh * 0.0); } } // the ski mountain replaces the valley walls behind the resort
     hh = Math.min(hh, -2 + Math.min((x - X0) * 0.85, (X1 - x) * 0.85, (z - Z0) * 1.6)); // slopes down into the sea, no cliffs
+    hh = Math.min(hh, -1 + (Z1 - z) * 0.6); // the south side meets the Otaru coast and the open sea: a gentle slope, no hanging plateau or cliff
     hg[iz * NX + ix] = hh; dg[iz * NX + ix] = dG; }
   const bil = (g, x, z) => { const fx = clamp((x - X0) / ST, 0, NX - 1.001), fz = clamp((z - Z0) / ST, 0, NZ - 1.001), ix = Math.floor(fx), iz = Math.floor(fz), u = fx - ix, v = fz - iz, i0 = iz * NX + ix;
     return (g[i0] * (1 - u) + g[i0 + 1] * u) * (1 - v) + (g[i0 + NX] * (1 - u) + g[i0 + NX + 1] * u) * v; };
@@ -2103,7 +2104,7 @@ function buildKiroro() {
   // forest on the valley walls (snowy firs), never on the road, the lake or the resort
   { const rnd = rng(4242), spots = []; for (let iz = 2; iz < NZ - 2; iz++) for (let ix = 2; ix < NX - 2; ix++) { const k = iz * NX + ix; if (dg[k] < 11 || hg[k] < 1 || rnd() > (Z0 + iz * ST < KR.ski.zb - 10 ? 0.62 : 0.22)) continue; const x = X0 + ix * ST + (rnd() - 0.5) * 4, z = Z0 + iz * ST + (rnd() - 0.5) * 4;
       if (Math.hypot((x - lk.x) / lk.rx, (z - lk.z) / lk.rz) < 1.15 || Math.hypot(x - KR.top[0], z - KR.top[1]) < 105) continue;
-      { const [dr, kr] = KR.near(x, z); if (kr >= 0 && dr < (pts[kr].ty === 'b' ? 20 : 13)) continue; } if (KR.ski.onRun(x, z, 3) || KR.ski.nearLift(x, z)) continue; spots.push([x, z, 6 + rnd() * 8]); }
+      { const [dr, kr] = KR.near(x, z); if (kr >= 0 && dr < (pts[kr].ty === 'b' ? 20 : 13)) continue; } if (KR.h(x, z) < 2) continue; if (KR.ski.onRun(x, z, 3) || KR.ski.nearLift(x, z)) continue; spots.push([x, z, 6 + rnd() * 8]); }
     const dark = new T.InstancedMesh(new T.ConeGeometry(1, 1, 7).translate(0, 0.5, 0), new T.MeshLambertMaterial({ color: 0x23432e }), spots.length), snow = new T.InstancedMesh(new T.ConeGeometry(1, 1, 7).translate(0, 0.5, 0), new T.MeshLambertMaterial({ color: 0xeef2f6 }), spots.length), o = new T.Object3D();
     spots.forEach(([x, z, h], k) => { const y = KR.h(x, z); o.position.set(x, y, z); o.scale.set(h * 0.3, h, h * 0.3); o.updateMatrix(); dark.setMatrixAt(k, o.matrix); o.position.set(x, y + h * 0.42, z); o.scale.set(h * 0.24, h * 0.6, h * 0.24); o.updateMatrix(); snow.setMatrixAt(k, o.matrix); });
     dark.castShadow = true; scene.add(dark, snow); }
@@ -2360,7 +2361,7 @@ const texId = () => new T.Texture().id; // textures get increasing ids; everythi
 let PERM_T = -1; // ids below this are the game's global textures (facades, roads, ads), never freed
 function removeCell(k, c) { scene.remove(c.group); const own = id => id >= PERM_T, done = new Set();
   c.group.traverse(o => { if (o.geometry) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
-    for (const m of ms) { if (done.has(m)) continue; done.add(m); let mine = false; for (const key in m) { const t = m[key]; if (t && t.isTexture && own(t.id)) { t.dispose(); mine = true; } } if (mine) m.dispose(); } });
+    for (const m of ms) { if (done.has(m)) continue; done.add(m); let mine = false; if (PAINT.includes(m)) continue; for (const key in m) { if (key === 'envMap') continue; const t = m[key]; if (t && t.isTexture && own(t.id)) { t.dispose(); mine = true; } } if (mine) m.dispose(); } }); // the shared reflection map (rebuilt every few seconds) is never the cell's own
   cells.delete(k); }
 let CR = 2, FAR = 1;
 function manageCells(force) {
@@ -2499,7 +2500,7 @@ drawGear();
   cbox(0.07, 0.05, 0.05, CABM.hard, 0.12, 1.5, -0.66); cp(new T.CylinderGeometry(0.012, 0.012, 0.02, 12), CABM.piano, 0.12, 1.49, -0.69, Math.PI / 2);
   for (const sx of [-1, 1]) { const b = new T.Vector3(sx * 0.72, 1.58, -0.3), a = new T.Vector3(sx * 0.84, 0.95, -1.18).sub(b).multiplyScalar(1.12).add(b), g = new T.CylinderGeometry(0.034, 0.05, a.distanceTo(b), 14); g.rotateX(Math.PI / 2); // runs down into the dash
     const o = new T.Mesh(g, CABM.pillar); o.position.set((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2); o.quaternion.setFromUnitVectors(new T.Vector3(0, 0, 1), b.clone().sub(a).normalize()); o.scale.set(1.1, 0.62, 1); cab.add(o);
-    cbox(0.08, 0.2, 0.46, CABM.pillar, sx * 0.86, 0.9, -1.0); // mirror sail: fills the corner between the pillar foot, the dash and the door top
+    cbox(0.08, sx < 0 ? 0.1 : 0.2, 0.46, CABM.pillar, sx * 0.86, sx < 0 ? 0.84 : 0.9, -1.0); // mirror sail: fills the corner between the pillar foot, the dash and the door top
     cbox(0.16, 0.08, 0.2, CABM.pillar, sx * 0.83, 0.86, -1.18); }
 }
 { // floor, footwell, seats (driver, passenger, rear bench)
@@ -2593,11 +2594,11 @@ function makeMirror(w, h, px, py, pz, fw, fh, fov, yaw, housing) {
 }
 const mirrors = [
   makeMirror(0.36, 0.11, 0.05, 1.505, -0.52, 512, 160, 44, Math.PI),
-  makeMirror(0.29, 0.2, -1.18, 0.95, -1.15, 256, 176, 46, Math.PI - 0.32, -1),
+  makeMirror(0.29, 0.2, -1.16, 0.93, -1.29, 256, 176, 46, Math.PI - 0.36, -1), // far side: forward and low enough to be seen under the A-pillar, inside the screen
   makeMirror(0.29, 0.2, 1.2, 1.0, -0.95, 256, 176, 46, Math.PI + 0.32, 1),
 ];
 // streamlined arms: a slim aero fairing from the door to the mirror pod, and a stem from the roof for the cabin mirror
-for (const [a, b] of [[[-0.9, 0.9, -1.1], [-1.1, 0.9, -1.16]], [[0.9, 0.94, -0.9], [1.12, 0.95, -0.96]]]) {
+for (const [a, b] of [[[-0.9, 0.88, -1.22], [-1.08, 0.88, -1.29]], [[0.9, 0.94, -0.9], [1.12, 0.95, -0.96]]]) {
   const A = new T.Vector3(...a), Bv = new T.Vector3(...b), f = new T.Mesh(new T.SphereGeometry(1, 18, 10), mirShell); f.scale.set(0.022, 0.035, A.distanceTo(Bv) * 0.62); f.position.copy(A).add(Bv).multiplyScalar(0.5); f.lookAt(Bv); inter.add(f);
   const root = new T.Mesh(new T.SphereGeometry(1, 16, 10), mirShell); root.scale.set(0.035, 0.06, 0.11); root.position.copy(A); root.position.y -= 0.01; inter.add(root);
 }
