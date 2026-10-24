@@ -81,7 +81,7 @@ body.touch #sigs{left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:10
   <div id="nav"><canvas id="mini" width="170" height="170"></canvas><div id="navBox"><div id="navArrow">⬆</div><div id="navText"></div><div id="navDist"></div><div id="navMis" style="clear:both;font-size:12px;opacity:.8"></div></div></div>
   <div id="msgs"></div><div id="flash" style="position:fixed;inset:0;pointer-events:none;opacity:0;z-index:5"></div>
   <div id="sigs"><span id="sL">◀</span><span id="sR">▶</span></div>
-  <div id="help">C 方向盤設定 ｜ K 鏡頭轉頭看(Z 歸零) ｜ G 畫質 ｜ N 日夜 ｜ T 天氣 ｜ M 大地圖 ｜ 滑鼠移動 看四周(V 開關) ｜ H / 滑鼠左鍵 喇叭</div>
+  <div id="help">C 方向盤設定 ｜ G 畫質 ｜ N 日夜 ｜ T 天氣 ｜ M 大地圖 ｜ 滑鼠移動 看四周(V 開關) ｜ H / 滑鼠左鍵 喇叭</div>
   <div id="bigmap" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);align-items:center;justify-content:center;pointer-events:none"><canvas id="bmC" width="820" height="820" style="width:min(86vh,92vw);height:min(86vh,92vw);border-radius:50%;box-shadow:0 10px 50px rgba(0,0,0,.65)"></canvas></div>
 </div>
 
@@ -129,6 +129,7 @@ body.touch #sigs{left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:10
 <div id="pause"><div class="panel">
   <h1 style="margin:0 0 6px">⏸ 暫停</h1>
   <button id="pzGo">▶ 繼續駕駛</button>
+  <div style="font-size:13px;opacity:.8;margin:8px 0 2px">📍 選一個城市重新出發</div><div class="row" id="pzCity" style="flex-wrap:wrap;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.15)"></div>
   <div class="row"><button class="sec" id="pzDay">🌙 日 / 夜</button><button class="sec" id="pzWx">🌦 換天氣</button></div>
   <div class="row"><button class="sec" id="pzQ">🖥 畫質</button><button class="sec" id="pzMap">🗺 大地圖</button></div>
   <button class="sec kbOnly" id="pzWheel">🎮 方向盤設定</button>
@@ -350,7 +351,7 @@ function facadeTex(style) {
   const win = (px, py, w, h, glass, frame) => {
     x.fillStyle = frame || '#555'; x.fillRect(px - 3, py - 3, w + 6, h + 6);
     x.fillStyle = glass; x.fillRect(px, py, w, h);
-    if (R() < 0.45) { y.fillStyle = 'rgb(255,' + (200 + R() * 40 | 0) + ',' + (110 + R() * 60 | 0) + ')'; y.fillRect(px, py, w, h); }
+    y.fillStyle = 'rgb(255,' + (200 + R() * 40 | 0) + ',' + (110 + R() * 60 | 0) + ')'; y.fillRect(px, py, w, h); /* window mask: the facade shader picks which ones are lit */
   };
   switch (style) {
     case 0: // apartment with balconies
@@ -363,7 +364,7 @@ function facadeTex(style) {
     case 1: // office glass band
       x.fillStyle = '#9aa7b2'; x.fillRect(0, 0, 256, 256);
       x.fillStyle = '#4d6a82'; x.fillRect(0, 34, 256, 150);
-      for (let i = 0; i < 4; i++) { if (R() < 0.5) { y.fillStyle = 'rgb(255,235,170)'; y.fillRect(i * 64 + 3, 34, 58, 150); } }
+      for (let i = 0; i < 4; i++) { y.fillStyle = 'rgb(255,235,170)'; y.fillRect(i * 64 + 3, 34, 58, 150); }
       x.fillStyle = '#222'; for (let i = 0; i <= 256; i += 64) x.fillRect(i - 2, 34, 4, 150);
       x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(0, 34, 256, 40);
       break;
@@ -505,6 +506,68 @@ function makeSky(night) {
 // ============ materials ============
 const facade = [];
 for (let i = 0; i < 6; i++) { const f = facadeTex(i); facade.push(new T.MeshLambertMaterial({ map: f.map, emissiveMap: f.emi, emissive: 0x000000, vertexColors: true })); }
+// ---- facade shader: one wall tile is one 4 m bay of one floor, so every window used to look (and light up) the same.
+// Each window cell now gets its own hash: lit or dark at night, bulb or fluorescent, curtains / blinds by day, sky reflection on the glass
+// (Fresnel), and close up mosaic-tile grout, rain streaks, grimy ground floor and the odd AC unit. Pattern in the shader, nothing extra in memory.
+const facadeU = { uSkyT: { value: new T.Color(0x4f8fd6) }, uSkyH: { value: new T.Color(0xd6e8f5) } };
+const FACADE_CFG = [ // per style: AC slot inside the tile (u0, v0, u1, v1), mosaic tiles, shop front (always lit)
+  { ac: [0.42, 0.45, 0.58, 0.58], tile: 1 }, { ac: [0, 0, 0, 0], tile: 0 }, { ac: [0, 0, 0, 0], tile: 1 },
+  { ac: [0.42, 0.43, 0.58, 0.55], tile: 0 }, { ac: [0.12, 0.2, 0.3, 0.34], tile: 0 }, { ac: [0, 0, 0, 0], tile: 0, shop: 1 }];
+function facadeFX(m, k) {
+  const cfg = FACADE_CFG[k];
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, facadeU); sh.uniforms.uAC = { value: new T.Vector4(...cfg.ac) }; sh.uniforms.uTileK = { value: cfg.tile }; sh.uniforms.uShop = { value: cfg.shop || 0 };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vFW; varying vec3 vFN;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvFW = (modelMatrix * vec4(transformed, 1.0)).xyz; vFN = normalize(mat3(modelMatrix) * objectNormal);');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vFW; varying vec3 vFN; uniform vec3 uSkyT; uniform vec3 uSkyH; uniform vec4 uAC; uniform float uTileK; uniform float uShop;
+float fh_(vec2 p) { p = mod(p, 289.0); return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+float fn_(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(fh_(i), fh_(i + vec2(1.0, 0.0)), f.x), mix(fh_(i + vec2(0.0, 1.0)), fh_(i + vec2(1.0, 1.0)), f.x), f.y); }`)
+      .replace('#include <emissivemap_fragment>', `
+  vec3 emBase = totalEmissiveRadiance;
+  vec4 emT = texture2D(emissiveMap, vUv);
+  float glassM = smoothstep(0.25, 0.7, emT.r);
+  vec3 N = normalize(vFN);
+  bool onX = abs(N.x) > 0.5;
+  float wk = floor((onX ? vFW.x : vFW.z) * 2.0 + 0.5) + (onX ? 101.0 : 0.0) + (onX ? N.x : N.z) * 37.0; // one id per wall face
+  float bid = fh_(vec2(wk, 3.7)), bid2 = fh_(vec2(wk * 1.3, 11.1));
+  vec2 fc = floor(vUv), ff = fract(vUv);
+  float h1 = fh_(fc + vec2(bid * 97.0, 1.0)), h2 = fh_(fc * 1.37 + vec2(3.1, bid * 57.0)), h3 = fh_(fc * 2.11 + vec2(bid2 * 13.0, 7.7)), h4 = fh_(fc * 0.73 + vec2(5.3, bid2 * 41.0));
+  float along = vUv.x * 4.0, up = vUv.y * 3.5;
+  float dist = length(vFW - cameraPosition), nearW = 1.0 - smoothstep(14.0, 34.0, dist);
+  // wall: per-building shade, rain streaks, grimy ground floor, mosaic grout close up
+  vec3 wallC = diffuseColor.rgb * (0.9 + 0.18 * bid);
+  float stk = smoothstep(0.5, 0.95, fn_(vec2(along * 2.2, up * 0.22 + bid * 9.0))) * fn_(vec2(along * 0.6, 3.0 + bid2 * 7.0));
+  wallC *= 1.0 - (0.1 + 0.22 * bid2) * stk;
+  wallC *= mix(0.8, 1.0, smoothstep(0.1, 1.4, vFW.y));
+  if (uTileK > 0.5 && bid > 0.35 && nearW > 0.0) { vec2 tq = abs(fract(vec2(along, up) / 0.11) - 0.5); wallC *= 1.0 - nearW * 0.11 * smoothstep(0.4, 0.48, max(tq.x, tq.y)); }
+  if (uAC.z > 0.0 && h3 < 0.38) { vec2 ap = (ff - uAC.xy) / (uAC.zw - uAC.xy);
+    if (ap.x > 0.0 && ap.x < 1.0 && ap.y > 0.0 && ap.y < 1.0) { wallC = vec3(0.74, 0.74, 0.72) * (0.94 + 0.06 * step(0.5, fract(ap.y * 6.0)));
+      float fan = length((ap - vec2(0.62, 0.5)) * vec2(1.0, 0.72)); wallC *= 1.0 - 0.45 * (1.0 - smoothstep(0.24, 0.3, fan)); wallC *= 1.0 - 0.25 * (1.0 - smoothstep(0.0, 0.08, min(min(ap.x, 1.0 - ap.x), min(ap.y, 1.0 - ap.y))));
+      glassM = 0.0; }
+    else if (ap.x > 0.0 && ap.x < 1.0 && ap.y > -0.35 && ap.y <= 0.0) wallC *= 0.82 + 0.18 * (-ap.y / 0.35); } /* drip shadow under the AC */
+  // glass: interior, curtains or blinds, and the sky mirrored at grazing angles
+  vec3 V = normalize(vFW - cameraPosition), Rf = reflect(V, N);
+  float fres = 0.1 + 0.9 * pow(1.0 - abs(dot(V, N)), 4.0);
+  vec3 sky = Rf.y > 0.0 ? mix(uSkyH, uSkyT, clamp(Rf.y * 1.8, 0.0, 1.0)) : uSkyH * 0.35;
+  sky *= 0.75 + 0.5 * h2; // neighbouring panes tilt a little: not one flat mirror
+  float cur = uShop > 0.5 ? 0.0 : step(h4, 0.3), bli = uShop > 0.5 ? 0.0 : (1.0 - cur) * step(h4, 0.46);
+  vec3 gl = diffuseColor.rgb * (0.45 + 0.6 * h1);
+  gl = mix(gl, vec3(0.86, 0.8, 0.68) * (0.75 + 0.3 * h2) * (0.92 + 0.08 * sin(along * 55.0)), cur * 0.9);
+  gl = mix(gl, vec3(0.8, 0.8, 0.78), bli * 0.75 * step(0.45, fract(up * 9.0)));
+  float refl = fres * (1.0 - 0.6 * cur - 0.4 * bli);
+  diffuseColor.rgb = mix(wallC, gl * (1.0 - 0.55 * refl), glassM);
+  // night: about a quarter to three quarters of the windows on a face are lit, bulb-warm or fluorescent-white
+  float lit = uShop > 0.5 ? 1.0 : step(h1, 0.22 + 0.5 * bid);
+  vec3 lc = uShop > 0.5 ? vec3(1.0) : (h2 < 0.55 ? vec3(1.0, 0.8, 0.52) : vec3(0.82, 0.93, 1.0)) * (0.5 + 0.65 * h3);
+  lc = mix(lc, lc * vec3(1.0, 0.72, 0.5) * 0.8, cur);
+  lc *= 0.72 + 0.42 * ff.y; /* ceiling lamp: brighter towards the top of the room */
+  if (uShop > 0.5) lc = 0.3 + 0.9 * diffuseColor.rgb / max(0.25, max(diffuseColor.r, max(diffuseColor.g, diffuseColor.b))); /* lit shop: you see the goods, not a white sheet */
+  totalEmissiveRadiance = emBase * emT.rgb * lc * lit + glassM * sky * refl * 0.6;`);
+  };
+  m.customProgramCacheKey = () => 'facadefx' + k;
+}
+facade.forEach(facadeFX);
 const mats = {
   // per-pixel lighting on desktop so the headlight pool on the road is smooth (Lambert lights only at the corners of the big road quads)
   col: isTouch ? new T.MeshLambertMaterial({ vertexColors: true }) : new T.MeshPhongMaterial({ vertexColors: true, specular: 0x0b0b0b, shininess: 6 }),
@@ -517,17 +580,70 @@ const mats = {
   arrow: new (isTouch ? T.MeshLambertMaterial : T.MeshPhongMaterial)({ map: roadArrowTex(), alphaTest: 0.5, transparent: true, vertexColors: true, specular: 0x000000 }),
 };
 facade.forEach((m, i) => mats['f' + i] = m); mats.dirt = mats.col;
+// ---- ground textures (desktop): 512² greyscale tiles that repeat seamlessly (periodic noise, cracks drawn on all 9 wrap copies).
+// RGB = detail around mid-grey, A = big blotch noise; the shader samples A again at a very low frequency so the repeat never shows.
+const GROUND_TEX = isTouch ? null : (() => {
+  const N = 512, R = rng(9071);
+  const pnoise = (per, seed) => { const r = rng(seed), g = new Float32Array(per * per); for (let k = 0; k < g.length; k++) g[k] = r();
+    const at = (a, b) => g[(((b % per) + per) % per) * per + (((a % per) + per) % per)];
+    return (x, y) => { const fx = x / N * per, fy = y / N * per, ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy, sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
+      const a = at(ix, iy) + (at(ix + 1, iy) - at(ix, iy)) * sx, b = at(ix, iy + 1) + (at(ix + 1, iy + 1) - at(ix, iy + 1)) * sx; return a + (b - a) * sy; }; };
+  const wrap9 = f => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) f(dx * N, dy * N); };
+  const crack = (x, x0, y0, n, a, w) => { const pts = [[x0, y0]]; let ang = R() * 7, px = x0, py = y0; for (let k = 0; k < n; k++) { ang += (R() - 0.5) * 1.4; px += Math.cos(ang) * (3 + R() * 6); py += Math.sin(ang) * (3 + R() * 6); pts.push([px, py]); }
+    wrap9((ox, oy) => { x.beginPath(); x.moveTo(pts[0][0] + ox, pts[0][1] + oy); for (const q of pts) x.lineTo(q[0] + ox, q[1] + oy); x.strokeStyle = 'rgba(14,14,16,' + a + ')'; x.lineWidth = w; x.stroke(); }); };
+  const blot = (x, cx, cy, r, c, a) => wrap9((ox, oy) => { const g = x.createRadialGradient(cx + ox, cy + oy, 0, cx + ox, cy + oy, r); g.addColorStop(0, 'rgba(' + c + ',' + a + ')'); g.addColorStop(1, 'rgba(' + c + ',0)'); x.fillStyle = g; x.fillRect(cx + ox - r, cy + oy - r, r * 2, r * 2); });
+  const finish = (c, mA, mB) => { const d = c.getContext('2d').getImageData(0, 0, N, N).data; // alpha: blotch noise for macro variation and puddles
+    for (let y = 0, k = 3; y < N; y++) for (let x = 0; x < N; x++, k += 4) d[k] = Math.max(0, Math.min(255, (mA(x, y) * 0.6 + mB(x, y) * 0.4) * 340 - 42));
+    const t = new T.DataTexture(new Uint8Array(d.buffer), N, N, T.RGBAFormat); t.wrapS = t.wrapT = T.RepeatWrapping; t.magFilter = T.LinearFilter; t.minFilter = T.LinearMipmapLinearFilter; t.generateMipmaps = true; t.anisotropy = maxAniso; t.needsUpdate = true; return t; };
+  // asphalt: three octaves of grain, light and dark aggregate stones, sealed repair patches, cracks, oil drips
+  const ca = mkCanvas(N, N), xa = ca.getContext('2d'), da = xa.createImageData(N, N), n1 = pnoise(128, 11), n2 = pnoise(32, 12), n3 = pnoise(8, 13);
+  for (let y = 0, k = 0; y < N; y++) for (let x = 0; x < N; x++, k += 4) { let v = 128 + (n1(x, y) - 0.5) * 30 + (n2(x, y) - 0.5) * 24 + (n3(x, y) - 0.5) * 18; const r = R();
+    if (r > 0.986) v += 22 + R() * 40; else if (r < 0.04) v -= 16 + R() * 10; else v += (R() - 0.5) * 10; da.data[k] = da.data[k + 1] = da.data[k + 2] = Math.max(0, Math.min(255, v)); da.data[k + 3] = 255; }
+  xa.putImageData(da, 0, 0);
+  for (let k = 0; k < 3; k++) { const w = 60 + R() * 150, h = 40 + R() * 110, px = R() * N, py = R() * N, s = R() < 0.6 ? -1 : 1;
+    wrap9((ox, oy) => { xa.fillStyle = s < 0 ? 'rgba(20,20,24,0.16)' : 'rgba(210,210,210,0.08)'; xa.fillRect(px + ox, py + oy, w, h); xa.strokeStyle = 'rgba(12,12,14,0.25)'; xa.lineWidth = 1.2; xa.strokeRect(px + ox, py + oy, w, h); }); }
+  for (let k = 0; k < 7; k++) crack(xa, R() * N, R() * N, 8 + R() * 22 | 0, (0.35 + R() * 0.3).toFixed(2), 0.8 + R() * 1.2);
+  for (let k = 0; k < 5; k++) blot(xa, R() * N, R() * N, 14 + R() * 30, '10,10,14', (0.1 + R() * 0.16).toFixed(2));
+  const asph = finish(ca, pnoise(4, 21), pnoise(16, 22));
+  // sidewalk: 30 cm concrete pavers (8×8 over 2.4 m), each a slightly different shade, chamfered joints, speckle and a few stains
+  const cw = mkCanvas(N, N), xw = cw.getContext('2d'), dw = xw.createImageData(N, N), m1 = pnoise(64, 31), T8 = N / 8, shade = [];
+  for (let k = 0; k < 64; k++) shade.push((R() - 0.5) * 26);
+  for (let y = 0, k = 0; y < N; y++) for (let x = 0; x < N; x++, k += 4) { const tx = x % T8, ty = y % T8, e = Math.min(tx, ty, T8 - 1 - tx, T8 - 1 - ty);
+    let v = 132 + shade[(y / T8 | 0) * 8 + (x / T8 | 0)] + (m1(x, y) - 0.5) * 16 + (R() - 0.5) * 14; if (R() > 0.993) v -= 30;
+    if (e < 1.5) v = 70 + R() * 14; else if (e < 3) v -= 18; else if (tx < 5 || ty < 5) v += 8; /* joint, chamfer, lit edge */
+    dw.data[k] = dw.data[k + 1] = dw.data[k + 2] = Math.max(0, Math.min(255, v)); dw.data[k + 3] = 255; }
+  xw.putImageData(dw, 0, 0);
+  for (let k = 0; k < 4; k++) blot(xw, R() * N, R() * N, 18 + R() * 34, '30,28,24', (0.08 + R() * 0.1).toFixed(2));
+  const walk = finish(cw, pnoise(4, 41), pnoise(16, 42));
+  return { asph, walk };
+})();
+const groundWetU = { value: 0 };
 const snowCoverU = { value: 0 };
 const DETAIL_FN = isTouch ? '' : `
 float hn_(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float vn_(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hn_(i), hn_(i + vec2(1.0, 0.0)), f.x), mix(hn_(i + vec2(0.0, 1.0)), hn_(i + vec2(1.0, 1.0)), f.x), f.y); }`;
+float vn_(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hn_(i), hn_(i + vec2(1.0, 0.0)), f.x), mix(hn_(i + vec2(0.0, 1.0)), hn_(i + vec2(1.0, 1.0)), f.x), f.y); }
+uniform sampler2D tGrA; uniform sampler2D tGrW; uniform float uGrK; uniform float uWetG;`;
 const DETAIL = isTouch ? '' : `
       { vec2 uv_ = vSnUp > 0.7 ? vSnW.xz : vec2(vSnW.x + vSnW.z, vSnW.y * 1.4);
         float dt_ = 0.17 * vn_(uv_ * 0.27) + 0.1 * vn_(uv_ * 1.7) + 0.08 * vn_(uv_ * 8.5);
         diffuseColor.rgb *= 0.83 + dt_;
-        if (vSnUp < 0.3) diffuseColor.rgb *= mix(0.8, 1.0, smoothstep(0.0, 1.6, vSnW.y - 0.15)); }`;
-function addSnowCover(m) {
+        if (vSnUp < 0.3) diffuseColor.rgb *= mix(0.8, 1.0, smoothstep(0.0, 1.6, vSnW.y - 0.15)); }
+      if (uGrK < 1.5 && vSnUp > 0.7) { /* paving texture: asphalt on the grey road colours, pavers on the sidewalk */
+        float ak = 1.0;
+        #ifdef USE_COLOR
+        if (uGrK < 0.5) { float lm = (vColor.r + vColor.g + vColor.b) / 3.0, st = max(vColor.r, max(vColor.g, vColor.b)) - min(vColor.r, min(vColor.g, vColor.b));
+          ak = smoothstep(0.1, 0.16, lm) * (1.0 - smoothstep(0.4, 0.5, lm)) * (1.0 - smoothstep(0.05, 0.09, st)); }
+        #endif
+        if (ak > 0.0) { vec2 gp = vSnW.xz;
+          vec4 gt = uGrK < 0.5 ? texture2D(tGrA, gp / 7.0) : texture2D(tGrW, gp / 2.4);
+          float ma = texture2D(tGrA, gp * 0.011 + vec2(0.37, 0.11)).a, ma2 = texture2D(tGrA, gp * 0.0037 + vec2(0.71, 0.29)).a;
+          float fl = smoothstep(25.0, 90.0, length(vSnW - cameraPosition)) * 0.6; /* far away: settle to the average so it does not shimmer */
+          float g = mix(gt.r * 1.95, 1.0, fl) * (0.9 + 0.14 * ma + 0.1 * ma2);
+          float pud = smoothstep(0.6, 0.82, ma * 0.5 + ma2 * 0.5) * uWetG;
+          diffuseColor.rgb *= mix(1.0, g * (1.0 - 0.4 * pud), ak); } }`;
+function addSnowCover(m, grK) {
   const prev = m.onBeforeCompile; m.onBeforeCompile = (sh, r) => { if (prev) prev(sh, r);
+    if (GROUND_TEX) { sh.uniforms.tGrA = { value: GROUND_TEX.asph }; sh.uniforms.tGrW = { value: GROUND_TEX.walk }; sh.uniforms.uGrK = { value: grK === undefined ? 2 : grK }; sh.uniforms.uWetG = groundWetU; }
     sh.uniforms.uSnow = snowCoverU; sh.uniforms.uDeck = { value: new T.Vector4(HW_X0, HW_X1, HJ * S, DECK_Y) }; sh.uniforms.uLoops = { value: new T.Vector4(LOOPS[0].cx, LOOPS[0].cz, LOOPS[1].cx, LOOPS[1].cz) };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSnW; varying float vSnUp;').replace('#include <project_vertex>', '#include <project_vertex>\nvSnW = (modelMatrix * vec4(transformed, 1.0)).xyz; vSnUp = normalize(mat3(modelMatrix) * objectNormal).y;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSnW; varying float vSnUp; uniform float uSnow; uniform vec4 uDeck; uniform vec4 uLoops;' + DETAIL_FN).replace('#include <color_fragment>', `#include <color_fragment>${DETAIL}
@@ -537,7 +653,7 @@ function addSnowCover(m) {
       vec2 cq = floor(vSnW.xz * 0.9); float nz = fract(sin(dot(cq, vec2(12.9898, 78.233))) * 43758.5453), nz2 = fract(sin(dot(floor(vSnW.xz * 0.23), vec2(39.3, 11.7))) * 24634.63);
       sn = clamp(sn * (0.55 + 0.35 * nz2 + 0.25 * nz) * 1.25 - 0.1, 0.0, 1.0);
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92, 0.94, 0.97), sn);`); };
-  m.customProgramCacheKey = () => (m.customProgramCacheKey0 || '') + 'snowcov'; m.needsUpdate = true;
+  m.customProgramCacheKey = () => (m.customProgramCacheKey0 || '') + 'snowcov' + grK; m.needsUpdate = true;
 }
 TXT.forEach((t, k) => mats['txt' + k] = new (isTouch ? T.MeshLambertMaterial : T.MeshPhongMaterial)({ map: txtTex(t), transparent: true, alphaTest: 0.5, vertexColors: true, specular: 0x000000 }));
 const lampCol = { g: 0x28e070, y: 0xffc420, r: 0xff2a1a };
@@ -2039,9 +2155,14 @@ function krTrack(x, z) {
   if (bk >= 0) P.krK = bk; return { k: bk, d: best };
 }
 const krOnRoad = (x, z) => inKR(x, z) && krTrack(x, z).d < 4.2;
+function krHAt(k, x, z) { // road height under (x, z): projected onto the segment next to point k and interpolated (the nearest point alone gives stair steps on a slope: the car shakes)
+  const pts = KR.pts, seg = j => { const a = pts[j], b = pts[j + 1], dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz || 1, t = ((x - a.x) * dx + (z - a.z) * dz) / l2; return [t, a.h + (b.h - a.h) * Math.max(0, Math.min(1, t))]; };
+  if (k > 0) { const [t, h] = seg(k - 1); if (t <= 1 && t >= 0) return h; }
+  if (k < pts.length - 1) return seg(k)[1]; return pts[k].h;
+}
 function krElev() { // height + pitch from the road itself (bridges and tunnels included)
   const t = krTrack(P.x, P.z); if (t.k < 0 || t.d > 5.5) return; const pts = KR.pts, a = pts[Math.max(0, t.k - 2)], b = pts[Math.min(pts.length - 1, t.k + 2)];
-  P.y = pts[t.k].h; const tx = b.x - a.x, tz = b.z - a.z, l = Math.hypot(tx, tz) || 1, fx = -Math.sin(P.th), fz = -Math.cos(P.th); P.pitch = Math.atan((b.h - a.h) / (b.s - a.s || 1) * (fx * tx + fz * tz) / l);
+  P.y = krHAt(t.k, P.x, P.z); const tx = b.x - a.x, tz = b.z - a.z, l = Math.hypot(tx, tz) || 1, fx = -Math.sin(P.th), fz = -Math.cos(P.th); P.pitch = Math.atan((b.h - a.h) / (b.s - a.s || 1) * (fx * tx + fz * tz) / l);
 }
 function krPt(s) { const P_ = KR.pts; let lo = 0, hi = P_.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (P_[m].s < s) lo = m; else hi = m; } const a = P_[lo], b = P_[hi], t = b.s > a.s ? (s - a.s) / (b.s - a.s) : 0, dx = b.x - a.x, dz = b.z - a.z, l = Math.hypot(dx, dz) || 1;
   return { x: a.x + dx * t, z: a.z + dz * t, h: a.h + (b.h - a.h) * t, tx: dx / l, tz: dz / l, nx: -dz / l, nz: dx / l, k: lo, ty: a.ty }; }
@@ -2072,8 +2193,9 @@ function buildKiroro() {
     for (let k = -3; k <= 3; k++) put(6, 8, 0.4, lk.x + k * 22, KR.lakeH - 7, dz + 8.7, [0.25, 0.27, 0.3]); } // spillway gates
   // the road: packed snow, white edges, yellow centre line; bridges with deck, red girder, piers and parapets; tunnel with walls, arched roof and lights
   { const P_ = [], N_ = [], C_ = [], add = (a, b, c, col) => { for (const v of [a, b, c]) { P_.push(v[0], v[1], v[2]); N_.push(0, 1, 0); C_.push(col[0], col[1], col[2]); } };
-    const strip = (o0, o1, y, col, dash) => { for (let k = 0; k < pts.length - 1; k++) { if (dash && Math.floor(pts[k].s / 4) % 2) continue; const p = pts[k], q = pts[k + 1], dx = q.x - p.x, dz = q.z - p.z, l = Math.hypot(dx, dz) || 1, nx = -dz / l, nz = dx / l;
-      const A = [p.x + nx * o0, p.h + y, p.z + nz * o0], B_ = [p.x + nx * o1, p.h + y, p.z + nz * o1], C2 = [q.x + nx * o1, q.h + y, q.z + nz * o1], D = [q.x + nx * o0, q.h + y, q.z + nz * o0]; add(A, C2, B_, col); add(A, D, C2, col); } };
+    const segN = pts.map((p, k) => { const q = pts[Math.min(k + 1, pts.length - 1)], o = pts[Math.max(k - 1, 0)], dx = q.x - o.x, dz = q.z - o.z, l = Math.hypot(dx, dz) || 1; return [-dz / l, dx / l]; }); // one shared side vector per point: neighbouring quads meet exactly, no hairline gaps on the curves
+    const strip = (o0, o1, y, col, dash) => { for (let k = 0; k < pts.length - 1; k++) { if (dash && Math.floor(pts[k].s / 4) % 2) continue; const p = pts[k], q = pts[k + 1], [nx, nz] = segN[k], [mx, mz] = segN[k + 1];
+      const A = [p.x + nx * o0, p.h + y, p.z + nz * o0], B_ = [p.x + nx * o1, p.h + y, p.z + nz * o1], C2 = [q.x + mx * o1, q.h + y, q.z + mz * o1], D = [q.x + mx * o0, q.h + y, q.z + mz * o0]; add(A, C2, B_, col); add(A, D, C2, col); } };
     strip(-3.8, 3.8, 0.06, [0.5, 0.52, 0.55]); strip(-3.55, -3.4, 0.075, [0.95, 0.95, 0.93]); strip(3.4, 3.55, 0.075, [0.95, 0.95, 0.93]); strip(-0.08, 0.08, 0.075, [0.92, 0.72, 0.12]);
     strip(-3.8, -2.7, 0.068, [0.82, 0.84, 0.88]); strip(2.7, 3.8, 0.068, [0.82, 0.84, 0.88]);
     const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(P_, 3)); g.setAttribute('normal', new T.Float32BufferAttribute(N_, 3)); g.setAttribute('color', new T.Float32BufferAttribute(C_, 3));
@@ -3135,7 +3257,7 @@ function elevUpdate() {
   else if (!inB && !inLoopZone(P.x)) { if (az >= 9.45 || (az > 8.5 && hasRamp(P.x, P.z) && rampH(P.x) < 3)) P.lay = 0; }
   P.y = !P.lay ? terrainH(P.x, P.z) : inB ? rampH(P.x) : DECK_Y;
   if (inB) { const fx = -Math.sin(P.th); P.pitch = Math.atan((rampH(P.x + 0.5) - rampH(P.x - 0.5)) * fx); }
-  else if (!P.lay) { const fx = -Math.sin(P.th), fz = -Math.cos(P.th); P.pitch = Math.atan((terrainH(P.x + fx, P.z + fz) - terrainH(P.x - fx, P.z - fz)) / 2); } else P.pitch = 0;
+  else if (!P.lay) { const fx = -Math.sin(P.th), fz = -Math.cos(P.th); const gH = (x, z) => { if (inKR(x, z)) { const [d, k] = KR.near(x, z); if (k >= 0 && d < 5.5) return krHAt(k, x, z); } return terrainH(x, z); }; /* at the キロロ gate the sample ahead must read the road, not the roadside slope */ P.pitch = Math.atan((gH(P.x + fx, P.z + fz) - gH(P.x - fx, P.z - fz)) / 2); } else P.pitch = 0;
   if (!P.lay && inKR(P.x, P.z)) krElev(); // on the キロロ road: height from the road (loop bridge, tunnel)
 }
 function updateETC(dt) {
@@ -3834,7 +3956,7 @@ function applyEnv(light) {
   hemi.intensity = lerp3(0.8, 0.55, 0.32, ph) * (0.6 + 0.4 * W.sun); hemi.color.copy(col3(0xdfeeff, 0xffc9a6, 0x6a7aa8, ph));
   sun.intensity = lerp3(1.0, 0.75, 0.1, ph) * W.sun; sun.color.copy(col3(0xfff2dd, 0xff9a55, 0x8494c8, ph));
   cloudMat.color.copy(col3(new T.Color().setScalar(W.cl).getHex(), new T.Color(1, 0.66, 0.58).multiplyScalar(0.55 + 0.45 * W.cl).getHex(), new T.Color().setScalar(0.3).getHex(), ph)); skyTint();
-  { const lit = clamp((ph - 0.55) / 0.9, 0, 1); facade.forEach((m, k) => m.emissive.setScalar(clamp(lit * 1.6 - (k % 3) * 0.3, 0, 1))); } // window lights come on gradually
+  { const lit = clamp((ph - 0.55) / 0.9, 0, 1); facade.forEach((m, k) => m.emissive.setScalar(clamp(lit * 1.6 - (k % 3) * 0.3, 0, 1))); } facadeU.uSkyH.value.copy(bg); facadeU.uSkyT.value.copy(col3(0x4f8fd6, 0x6a5a80, 0x04061a, ph)).multiplyScalar(0.55 + 0.45 * W.cl); // window lights come on gradually
   if (FAR > 1) { if (!(typeof snowAmt !== 'undefined' && snowAmt > 0 && W.bliz)) { scene.fog.near *= 1.35; scene.fog.far *= FAR; } }
   if (light) return;
   wetRoads(); updateEnvMap();
@@ -3850,7 +3972,7 @@ function updateEnvMap() {
 const envGM = [new T.MeshBasicMaterial({ color: 0x55585a }), new T.MeshBasicMaterial({ color: 0x0c0e12 })]; function envGroundMat() { return envGM[night ? 1 : 0]; }
 if (!isTouch) { groundMesh.material.envMap = envRT.texture; groundMesh.material.combine = T.MixOperation; groundMesh.material.reflectivity = 0.45; }
 // wet asphalt shines in the rain
-function wetRoads() { if (isTouch || !mats.col.isMeshPhongMaterial) return; const w = WEATHER[weather].rain ? 1 : 0; mats.col.specular.setScalar(0.043 + w * 0.2); mats.col.shininess = 6 + w * 40; }
+function wetRoads() { if (isTouch || !mats.col.isMeshPhongMaterial) return; const w = WEATHER[weather].rain ? 1 : 0; mats.col.specular.setScalar(0.043 + w * 0.2); mats.col.shininess = 6 + w * 40; groundWetU.value = w; }
 function skyTint() { const W = WEATHER[weather]; skyMats.forEach(m => m.color.setScalar(0.45 + 0.55 * W.cl)); skyOvMats.forEach(m => m.color.setScalar(0.45 + 0.55 * W.cl)); }
 function updateWeather(dt) {
   weatherT -= dt; if (weatherT < 0) { weatherT = 160 + Math.random() * 160; setWeather(snowAt(P.x, P.z) > 0.5 && Math.random() < 0.5 ? 3 : (weather === 3 ? 0 : (weather + 1 + Math.floor(Math.random() * 2)) % 3)); }
@@ -4132,8 +4254,6 @@ addEventListener('keydown', e => {
     case 'KeyG': qi = (qi + 1) % 3; renderScale = 1; applyRes(); notify('畫質 ' + ['標準(無陰影)', '高(即時陰影)', '最高(寫實:遠景、高解析陰影、車子即時反光)'][qi] + '(越高越吃顯卡)', ''); break;
     case 'KeyM': toggleBigMap(); break;
     case 'KeyF': $('faceFile').click(); break;
-    case 'KeyZ': recenterHead(); break;
-    case 'KeyK': if (e.shiftKey) { headCam.inv = !headCam.inv; try { localStorage.setItem('hcInv', headCam.inv ? '1' : ''); } catch (er) { } notify('📷 轉頭方向已' + (headCam.inv ? '反轉' : '恢復'), ''); } else toggleHeadCam(); break;
     case 'KeyV': mouseLook = !mouseLook; if (!mouseLook) look.ty = look.tp = 0; notify(mouseLook ? '滑鼠視角:開' : '滑鼠視角:關', ''); break;
     case 'KeyC': openWizard(); break;
     case 'BracketLeft': baseFov = clamp(baseFov - 3, 45, 100); break;
@@ -4149,6 +4269,24 @@ function setPause(on) {
   if (!on) last = performance.now(); // no time jump when resuming
 }
 $('pzGo').onclick = () => setPause(false);
+// ---- restart from another city (pause menu): a straight stretch of road near the middle of each island, facing the way its lane runs ----
+const START_NAMES = [...ISLES.map(I => I.n === '北海道' ? '札幌' : I.n), 'キロロ山路']; let START_PTS = null;
+const startPts = () => START_PTS || (START_PTS = (() => { const out = [];
+  for (const I of ISLES) { const ic = Math.round((I.i0 + I.i1) / 2), jc = Math.round((I.j0 + I.j1) / 2); let pt = null;
+    for (let r = 0; r <= 5 && !pt; r++) for (let di = -r; di <= r && !pt; di++) for (let dj = -r; dj <= r && !pt; dj++) { if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;
+      const i = ic + di, j = jc + dj, x = i * S - 40, z = j * S - 2; /* mid-block on an east-west road, left lane heading east */
+      if (isleOf(i, j) && isleOf(i - 1, j) && onRoad(x, z) && onRoad(x - 10, z) && onRoad(x + 10, z)) pt = { n: I.n === '北海道' ? '札幌' : I.n, x, z, th: -Math.PI / 2 }; }
+    if (I.n === '北海道') pt = { n: '札幌', x: -15 * S - 46, z: 2 * S - 2, th: -Math.PI / 2 }; /* the usual start */
+    if (I.n === '東京') pt = { n: '東京', x: -1.8, z: 30, th: 0 }; /* main avenue, heading north */
+    if (I.n === '大阪') pt = { n: '大阪', x: -1361.8, z: 1320, th: 0 }; /* clear of the coin-parking entrance */
+    if (pt) out.push(pt); }
+  out.push({ n: 'キロロ山路', x: -1075, z: -318, th: -Math.PI / 2 });
+  return out; })());
+function restartAt(k) { const c = startPts().find(p => p.n === START_NAMES[k]); if (!c) return;
+  if (knock) { dropPed(knock.g); if (knock.a) { knock.a.angry = false; knock.a.honkN = 0; } knock = null; }
+  Object.assign(P, { x: c.x, z: c.z, th: c.th, v: 0, lay: 0, drift: 0, stuckT: 0, offT: 0, krK: -1, rev: false, safe: [] });
+  elevUpdate(); manageCells(true); setPause(false); notify('📍 從' + c.n + '重新出發!', 'good'); }
+START_NAMES.forEach((n, k) => { const b = document.createElement('button'); b.className = 'sec'; b.textContent = n; b.style.cssText = 'flex:1 1 30%;min-width:84px;background:#2c5f55;border:1px solid #4fa58f'; b.onclick = () => restartAt(k); $('pzCity').appendChild(b); });
 $('pzDay').onclick = () => { gameHour = night ? 7.5 : (skyPhase(gameHour) > 0.3 ? 19.6 : 16.6); setNight(isNightHour(gameHour)); applyEnv(); render(); };
 $('pzWx').onclick = () => { setWeather((weather + 1) % 4); weatherT = 240; render(); };
 $('pzQ').onclick = () => { qi = (qi + 1) % 3; renderScale = 1; applyRes(); render(); $('pzQ').textContent = '🖥 畫質:' + ['標準', '高', '最高'][qi]; };
@@ -4169,11 +4307,10 @@ function applyRes() { renderer.setPixelRatio([1, 1, Math.min(2, Math.max(1, devi
 function adaptPerf(dt) { // dynamic resolution: keep the frame rate up on integrated GPUs
   fpsAcc += dt; fpsN++; perfT += dt;
   if (perfT > 1.5) { const fps = fpsN / fpsAcc; fpsShow = Math.round(fps); fpsAcc = 0; fpsN = 0; perfT = 0;
-    if (headCam.on && fps < 50 && qi > 0 && renderScale <= 0.75) { if (headCam.qi0 === undefined) headCam.qi0 = qi; qi--; renderScale = 1; applyRes(); notify('📷 鏡頭轉頭看時畫面偏慢,畫質自動降一級(關掉鏡頭會恢復)', ''); }
-    else if (fps < 45 && renderScale > (isTouch ? 0.45 : 0.6)) { renderScale = Math.max(isTouch ? 0.45 : 0.6, renderScale - 0.1); applyRes(); }
+    if (fps < 45 && renderScale > (isTouch ? 0.45 : 0.6)) { renderScale = Math.max(isTouch ? 0.45 : 0.6, renderScale - 0.1); applyRes(); }
     else if (fps > 58 && renderScale < 1) { renderScale = Math.min(1, renderScale + 0.05); applyRes(); } }
 }
-addEventListener('mousemove', e => { if (!started || wz.active || headCam.on) return; look.ty = mouseLook ? -(e.clientX / innerWidth - 0.5) * 2 * 1.7 : 0; look.tp = mouseLook ? -(e.clientY / innerHeight - 0.5) * 2 * 0.6 : 0; });
+addEventListener('mousemove', e => { if (!started || wz.active) return; look.ty = mouseLook ? -(e.clientX / innerWidth - 0.5) * 2 * 1.7 : 0; look.tp = mouseLook ? -(e.clientY / innerHeight - 0.5) * 2 * 0.6 : 0; });
 // ---- touch controls (phones / tablets) ----
 let touchSteer = null;
 const gyro = { on: false, has: false, ref: null, drag: false, q: new T.Quaternion(), rel: new T.Quaternion(), tmp: new T.Quaternion(), q0: new T.Quaternion(), q1: new T.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)), zee: new T.Vector3(0, 0, 1), eu: new T.Euler(), eu2: new T.Euler() };
@@ -4219,73 +4356,6 @@ function gyroLook(dt) {
 }
 function toggleRev() { if (Math.abs(P.v) > 0.8) { notify('請先完全停車再切換 D / R', ''); return; } P.rev = !P.rev; $('gear').textContent = P.rev ? 'R' : 'D'; }
 
-// ---- head tracking with the webcam (desktop): turn your head to look around while both hands are on the wheel ----
-// MediaPipe Face Landmarker runs in a background worker (the game never waits for it); the video never leaves this computer
-const headCam = { inv: (() => { try { return !!localStorage.getItem('hcInv'); } catch (e) { return false; } })(), on: false, busy: false, worker: null, ready: null, pending: false, video: null, stream: null, yaw0: 0, pitch0: 0, yaw: 0, pitch: 0, calN: 0, calY: 0, calP: 0, lastT: 0, seen: 0 };
-const HC_VER = '0.10.14', HC_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@' + HC_VER, HC_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
-const HC_WORKER = `
-self.exports = {}; self.module = { exports: self.exports }; let lm = null;
-self.onmessage = async e => { const d = e.data;
-  if (d.init) { try { const code = await (await fetch(d.cdn + '/vision_bundle.cjs')).text(); importScripts(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
-      const V = self.module.exports && self.module.exports.FaceLandmarker ? self.module.exports : self.exports, fs = await V.FilesetResolver.forVisionTasks(d.cdn + '/wasm');
-      lm = await V.FaceLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: d.model, delegate: 'CPU' }, runningMode: 'VIDEO', numFaces: 1, outputFacialTransformationMatrixes: true });
-      self.postMessage({ ready: true }); } catch (er) { self.postMessage({ err: String((er && er.message) || er) }); } return; }
-  let m = null; try { if (lm) { const r = lm.detectForVideo(d.bmp, d.t), M = r.facialTransformationMatrixes && r.facialTransformationMatrixes[0]; if (M) m = Array.from(M.data); } } catch (er) { }
-  try { d.bmp.close(); } catch (er) { } self.postMessage({ m }); };`;
-function hcWorker() { // start the worker once; resolves when the model is loaded
-  const h = headCam; if (h.ready) return h.ready;
-  h.ready = new Promise((res, rej) => { const w = new Worker(URL.createObjectURL(new Blob([HC_WORKER], { type: 'text/javascript' }))); h.worker = w;
-    w.onmessage = e => { const d = e.data; if (d.ready) { w.onmessage = ev => { h.pending = false; hcResult(ev.data.m); }; res(); } else if (d.err) { h.ready = null; w.terminate(); rej(new Error(d.err)); } };
-    w.onerror = e => { h.ready = null; rej(new Error(e.message || 'worker')); }; w.postMessage({ init: true, cdn: HC_CDN, model: HC_MODEL }); });
-  return h.ready;
-}
-async function toggleHeadCam() {
-  if (isTouch) { notify('手機請用 📱 陀螺儀轉頭看', ''); return; }
-  if (headCam.busy) return;
-  if (headCam.on) { headCam.on = false; try { headCam.stream.getTracks().forEach(t => t.stop()); } catch (e) { } look.ty = look.tp = 0; headCam.dx = 0; if (headCam.qi0 !== undefined) { qi = headCam.qi0; headCam.qi0 = undefined; renderScale = 1; applyRes(); } if ($('hcBox')) $('hcBox').style.display = 'none'; try { localStorage.removeItem('hcOn'); } catch (e) { } notify('📷 鏡頭轉頭看:關', ''); return; }
-  headCam.busy = true; notify('📷 啟動鏡頭頭部追蹤…(影像只在這台電腦上計算,不會上傳)', 'tip');
-  try {
-    let box = $('hcBox'); if (!box) { box = document.createElement('div'); box.id = 'hcBox'; box.style.cssText = 'position:fixed;left:10px;bottom:34px;z-index:60;background:rgba(0,0,0,.55);color:#fff;font:12px/1.35 "Microsoft JhengHei",sans-serif;padding:4px 8px;border-radius:8px;pointer-events:none'; box.innerHTML = '<div id="hcTxt"></div>'; document.body.appendChild(box); }
-    box.style.display = 'block'; $('hcTxt').textContent = '📷 開啟鏡頭…';
-    const st = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user', frameRate: { ideal: 15, max: 20 } }, audio: false });
-    const v = headCam.video || (headCam.video = Object.assign(document.createElement('video'), { muted: true, playsInline: true })); v.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:0;top:0'; if (!v.parentNode) document.body.appendChild(v);
-    v.srcObject = st; await v.play(); headCam.stream = st;
-    $('hcTxt').textContent = '📷 載入臉部辨識…'; await hcWorker();
-    hcF = null; Object.assign(headCam, { on: true, pending: false, calN: 0, calY: 0, calP: 0, calX: 0, dx: 0, okT: 0, seen: performance.now() }); try { localStorage.setItem('hcOn', '1'); } catch (e) { }
-    notify('📷 鏡頭轉頭看:開。請先看著螢幕正前方 1 秒做校正,之後轉頭就能看左右(Z 或方向盤上設定的按鈕可隨時歸零;再按 K 關閉;左右相反請按 Shift+K)', 'good');
-  } catch (e) { const why = e && e.name === 'NotAllowedError' ? '沒有允許鏡頭權限(網址列左邊的鎖頭/相機圖示可以改)' : e && e.name === 'NotFoundError' ? '找不到鏡頭' : e && e.name === 'NotReadableError' ? '鏡頭被別的程式佔用中' : ((e && e.message) || e) + '(需要連上網路下載臉部辨識模型)'; notify('📷 無法使用鏡頭:' + why, 'bad'); if ($('hcTxt')) $('hcTxt').textContent = '❌ ' + why; try { headCam.stream && headCam.stream.getTracks().forEach(t => t.stop()); } catch (er) { } }
-  headCam.busy = false;
-}
-function recenterHead() { // whatever the head is doing right now becomes 'looking straight ahead'
-  const h = headCam; if (!h.on) { look.ty = look.tp = 0; notify('🎯 視角已歸正', ''); return; }
-  if (h.calN < 15) return; h.yaw0 = h.yaw; h.pitch0 = h.pitch; if (h.lx !== undefined) h.x0 = h.lx; look.ty = look.tp = 0; notify('🎯 頭部視角已歸零', '');
-}
-const hcM = new T.Matrix4(), hcE = new T.Euler();
-function oneEuro(minCut, beta) { let x = null, dx = 0, t0 = 0; const a = (cut, dt) => 1 / (1 + 1 / (2 * Math.PI * cut * dt));
-  return (v, t) => { if (x === null) { x = v; t0 = t; return v; } const dt = Math.max(1e-3, (t - t0) / 1000); t0 = t; const d = (v - x) / dt; dx += a(1, dt) * (d - dx); x += a(minCut + beta * Math.abs(dx), dt) * (v - x); return x; }; }
-let hcF = null; // filters for yaw, pitch and lean
-function hcResult(m) { // a detection came back from the worker
-  const h = headCam; if (!h.on) return; const now = performance.now(), tx = $('hcTxt'), box = $('hcBox');
-  if (m) { h.seen = now; hcM.fromArray(m); hcE.setFromRotationMatrix(hcM, 'YXZ'); const y = hcE.y, p = hcE.x, lx = m[12]; // lx: head position across the camera (cm)
-    h.okT = (h.okT || 0) + 1; if (box) box.style.display = h.calN < 15 || h.okT < 30 ? 'block' : 'none'; // the status line hides once tracking is steady
-    if (tx) tx.textContent = h.calN < 15 ? '📷 看正前方… 校正 ' + Math.round(h.calN / 15 * 100) + '%' : '📷 追蹤中';
-    if (h.calN < 15) { h.calY += y; h.calP += p; h.calX += lx; if (++h.calN === 15) { h.yaw0 = h.yaw = h.calY / 15; h.pitch0 = h.pitch = h.calP / 15; h.x0 = h.lx = h.calX / 15; notify('📷 校正完成:轉頭看左右,身體左右靠可以探頭', 'good'); } return; }
-    if (!hcF) hcF = [oneEuro(0.8, 0.9), oneEuro(0.8, 0.9), oneEuro(0.6, 0.05)]; // jitter of a degree or two would shake the 3x-amplified view
-    h.yaw = hcF[0](y, now); h.pitch = hcF[1](p, now); h.lx = hcF[2](lx, now);
-    const dy = h.yaw - h.yaw0, dp = h.pitch - h.pitch0; if (Math.abs(dy) < 0.06 && Math.abs(dp) < 0.06) { h.yaw0 += dy * 0.01; h.pitch0 += dp * 0.01; } // follow slow posture drift while looking ahead
-  } else { h.okT = 0; if (box) box.style.display = 'block'; if (tx) tx.textContent = '📷 ❓ 找不到臉:請正對鏡頭、開燈'; }
-}
-function updateHeadCam(dt) {
-  const h = headCam; if (!h.on || !h.worker || !h.video || h.video.readyState < 2) return; const now = performance.now();
-  if (!h.pending && now - h.lastT > 95) { h.lastT = now; h.pending = true; // ~10 a second, one frame in flight at a time; the filter + view easing fill the gaps
-    createImageBitmap(h.video, { resizeWidth: 224, resizeHeight: 168, resizeQuality: 'low' }).then(b => { if (!h.on) { b.close(); h.pending = false; return; } h.worker.postMessage({ bmp: b, t: now }, [b]); }).catch(() => { h.pending = false; }); }
-  if (now - h.seen > 1500) { look.ty = look.tp = 0; h.dx = 0; return; } // face lost: look ahead
-  if (h.calN < 15) return;
-  const dz_ = (v, d) => Math.sign(v) * Math.max(0, Math.abs(v) - d);
-  look.ty = clamp(dz_(h.yaw - h.yaw0, 0.06) * 3.2 * (h.inv ? -1 : 1), -1.9, 1.9); // a 25° turn of the head looks ~75° round: your eyes still have to see the screen
-  look.tp = clamp(-dz_(h.pitch - h.pitch0, 0.06) * 1.6, -0.55, 0.45);
-  h.dx = clamp(-dz_(h.lx - h.x0, 1.5) * 0.012 * (h.inv ? -1 : 1), -0.16, 0.16); // leaning: the eye point slides sideways a little
-}
 // ---- gamepad / wheel ----
 const prevBtn = {}, axisInit = {}, axisMoved = {};
 let padInfo = '';
@@ -4332,10 +4402,10 @@ function readPad() {
     if (cfg.brk) out.brk = cfg.brk.btn !== undefined ? btnPedal(cfg.brk) : pedal(cfg.brk, g.axes[cfg.brk.axis], 'b' + cfg.brk.axis);
     const b = cfg.btn || {};
     const pedB = [cfg.thr, cfg.brk].filter(c => c && c.btn !== undefined).map(c => c.btn);
-    for (const k of ['sigL', 'sigR', 'rev', 'horn', 'hand', 'center']) {
+    for (const k of ['sigL', 'sigR', 'rev', 'horn', 'hand']) {
       if (b[k] === undefined || pedB.includes(b[k])) continue;
       if (k === 'horn' || k === 'hand') { out[k] = !!(g.buttons[b[k]] && g.buttons[b[k]].pressed); continue; }
-      if (btnEdge(g, b[k])) { if (k === 'sigL') toggleSig('L'); else if (k === 'sigR') toggleSig('R'); else if (k === 'center') recenterHead(); else toggleRev(); }
+      if (btnEdge(g, b[k])) { if (k === 'sigL') toggleSig('L'); else if (k === 'sigR') toggleSig('R'); else toggleRev(); }
     }
   } else if (g.mapping === 'standard') {
     out.steer = g.axes[0]; out.thr = g.buttons[7] ? g.buttons[7].value : 0; out.brk = g.buttons[6] ? g.buttons[6].value : 0; out.horn = g.buttons[0].pressed; out.hand = !!(g.buttons[1] && g.buttons[1].pressed);
@@ -4357,7 +4427,6 @@ const WSTEPS = [
   { id: 'rev', type: 'btn', txt: '⑥ 按一下【前進/倒車 切換】按鈕(例如換檔撥片)' },
   { id: 'horn', type: 'btn', txt: '⑦ 按一下【喇叭】按鈕' },
   { id: 'hand', type: 'btn', txt: '⑧ 按一下【手煞車(甩尾)】按鈕' },
-  { id: 'center', type: 'btn', txt: '⑨ 按一下要當【頭部視角歸零】的按鈕(鏡頭轉頭看用;不需要就按 Enter 跳過)' },
 ];
 function openWizard() {
   const g = getPad();
@@ -4539,7 +4608,7 @@ function loopValid(x, z) { // the straight necks of both rows, then the half-cir
       const pr = new T.Mesh(new T.CylinderGeometry(1.2, 1.5, Y, 10), CON); pr.position.set(nx, Y / 2 - 1.2, zr); scene.add(pr); }
   }
 })();
-[mats.col, walkMat, snowWalkMat].forEach(addSnowCover);
+addSnowCover(mats.col, 0); addSnowCover(walkMat, 1); addSnowCover(snowWalkMat, 2);
 
 // ============ 日本の道路 tips: the first time you meet a Japan-specific sign / junction, explain it ============
 const JP_TIPS = {
@@ -4886,7 +4955,7 @@ function stepPlayer(dt, inp) {
     if (simT - (P.skidT || 0) > 0.5) { P.skidT = simT; noise(0.35, 'lowpass', 420, 0.05); } } else P.wob = 0;
   if (Math.abs(P.v) > 0.02) acc -= sgn(P.v) * (0.25 + 0.0012 * P.v * P.v + (thr < 0.01 ? 0.35 : 0) + brk * 8.5 * mu * (locked ? 0.8 : 1));
   else if (brk > 0.3 || (thr < 0.01 && brk > 0.05)) P.v = 0;
-  if (!onRoad(P.x, P.z)) acc -= sgn(P.v) * 3;
+  if (!onRoad(P.x, P.z)) acc -= sgn(P.v) * 0.5 + P.v * 0.32; // off the road: drag grows with speed, so you can always creep back off the pavement
   if (!P.lay && P.pitch) acc -= 5.6 * Math.sin(P.pitch); // hills: slower uphill, the car rolls back if you let go
   P.v += acc * dt;
   if (vOld * P.v < 0 && thr < 0.01) P.v = 0;
@@ -4938,11 +5007,16 @@ function stepPlayer(dt, inp) {
   krConfine(ox, oz);
   { const dirS = P.rev ? -1 : 1, near = hitAt(P.x - Math.sin(P.th) * 2.2 * dirS, P.z - Math.cos(P.th) * 2.2 * dirS) || hitAt(P.x, P.z);
     P.realV = (P.realV || 0) + (Math.hypot(P.x - ox, P.z - oz) / Math.max(dt, 1e-3) - (P.realV || 0)) * Math.min(1, dt * 2); // how fast the car really moves
-    const pushing = simT - (P.lastHit || -99) < 0.6 || ((inp.thr > 0.2 || (inp.brk > 0.2 && P.rev)) && P.realV < 0.5 && (near || Math.abs(P.v) > 1));
+    const pushing = simT - (P.lastHit || -99) < 0.6 || ((inp.thr > 0.2 || (inp.brk > 0.2 && P.rev)) && P.realV < 0.5 && (near || Math.abs(P.v) > 1 || (!P.lay && !onRoad(P.x, P.z))));
     P.stuckT = pushing ? (P.stuckT || 0) + dt : Math.max(0, (P.stuckT || 0) - dt * 2);
     const onLand = P.lay || inKR(P.x, P.z) || !!isleAt(P.x, P.z); // isleAt also covers the coast roads and sea-wall strips next to the land
     P.offT = onLand ? 0 : (P.offT || 0) + dt; if (P.offT > 3) P.stuckT = 6;
     if (!pushing && !near && onLand && (P.lay || onRoad(P.x, P.z)) && Math.abs(P.v) > 1.5 && simT - (P.safeT || -9) > 0.5) { P.safeT = simT; (P.safe || (P.safe = [])).push([P.x, P.z, P.th, P.lay, simT]); if (P.safe.length > 30) P.safe.shift(); }
+    // stuck on the pavement for 3 s: hop onto the nearest lane, facing along that road
+    if (!P.lay && P.stuckT > 3 && onLand && !onRoad(P.x, P.z) && !inKR(P.x, P.z)) { let best = null;
+      for (let r = 1.5; r <= 40 && !best; r += r < 12 ? 1.5 : 3) for (let k = 0; k < 32; k++) { const a = k / 24 * Math.PI * 2, x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r; if (onRoad(x, z) && !hitAt(x, z) && !inLot(x, z)) { best = [x, z]; break; } }
+      if (best) { const [x, z] = best, fx = -Math.sin(P.th), fz = -Math.cos(P.th), alongX = Math.abs(Math.round(z / S) * S - z) < Math.abs(Math.round(x / S) * S - x); /* which way does that road run? */
+        const z0 = Math.round(z / S) * S, x0 = Math.round(x / S) * S; P.x = x; P.z = z; P.th = alongX ? (z < z0 ? -Math.PI / 2 : Math.PI / 2) : (x > x0 ? Math.PI : 0); /* keep left: face the way that lane runs */ P.v = 0; P.drift = 0; P.stuckT = 0; elevUpdate(); notify('🔄 卡在人行道上,已移回車道', ''); } }
     if (P.stuckT > 5) { let sp = null; if (P.safe) for (let k = P.safe.length - 1; k >= 0; k--) if (P.safe[k][4] < simT - 7) { sp = P.safe[k]; break; } if (!sp && P.safe && P.safe.length) sp = P.safe[0];
       if (!sp) { const isl = isleAt(P.x, P.z) || ISLES[1], ci = clamp(Math.round(P.x / S), isl.i0 + 1, isl.i1 - 1), cj = clamp(Math.round(P.z / S), isl.j0 + 1, isl.j1 - 1); sp = [ci * S + 20, cj * S - rxOf(cj) / 2, -Math.PI / 2, 0]; } // fall back to the nearest street on land
       P.x = sp[0]; P.z = sp[1]; P.th = sp[2]; P.lay = sp[3]; P.v = 0; P.drift = 0; P.offT = 0; elevUpdate(); notify('🔄 卡住了,自動退回陸地上的道路', ''); P.stuckT = 0; P.safe = []; } }
@@ -5153,12 +5227,11 @@ function animateCar(dt, inp) {
   shifter.rotation.x += ((P.rev ? -0.28 : 0.12) - shifter.rotation.x) * Math.min(1, dt * 12);
   hazBtn.material.color.setHex(P.haz && blinkOn() ? 0xff3020 : 0x5a1010);
   { const bo = blinkOn(), lL = mirrors[1].lamp, lR = mirrors[2].lamp; lL.visible = lL.userData.dot.visible = (P.sigL || P.haz) && bo; lR.visible = lR.userData.dot.visible = (P.sigR || P.haz) && bo; }
-  updateHeadCam(dt);
   const lk = Math.min(1, dt * 10); look.yaw += (look.ty - look.yaw) * lk; look.pitch += (look.tp - look.pitch) * lk;
   const spd = Math.abs(P.v), vib = Math.min(spd, 25) * 0.00028;
   { const f = baseFov + Math.min(spd, 25) * 0.42; if (Math.abs(camera.fov - f) > 0.05) { camera.fov += (f - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix(); } }
   const sk = (simT - shakeT < 0.7 ? shakeA * (1 - (simT - shakeT) / 0.7) : 0) + vib;
-  camera.position.set(EYE.x + (headCam.on ? headCam.dx || 0 : 0) + P.steer * 0.04 + (Math.random() - 0.5) * sk, EYE.y + Math.sin(simT * 1.7) * 0.0015 * Math.min(1, Math.abs(P.v)) + (Math.random() - 0.5) * sk, EYE.z + (Math.random() - 0.5) * sk);
+  camera.position.set(EYE.x + P.steer * 0.04 + (Math.random() - 0.5) * sk, EYE.y + Math.sin(simT * 1.7) * 0.0015 * Math.min(1, Math.abs(P.v)) + (Math.random() - 0.5) * sk, EYE.z + (Math.random() - 0.5) * sk);
   camera.rotation.y = look.yaw; camera.rotation.x = look.pitch - clamp(inp.brk, 0, 1) * 0.015 * Math.min(1, Math.abs(P.v) / 6);
   { const sx = Math.round(P.x), sz = Math.round(P.z), o = sunOffset(); sun.position.set(sx + o[0], o[1] + P.y, sz + o[2]); sun.target.position.set(sx, P.y, sz); }
   sky.position.x = P.x; sky.position.z = P.z; skyOv.position.x = P.x; skyOv.position.z = P.z; groundMesh.position.x = P.x; groundMesh.position.z = P.z;
@@ -5170,7 +5243,7 @@ function startGame() {
   started = true; paused = false; $('start').style.display = 'none'; initAudio();
   if (isTouch) { askGyro(); gyro.ref = null; document.body.classList.add('playing'); applyRes(); try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f) Promise.resolve(f.call(d)).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => { }); } catch (e) { } }
   if (!isTouch) applyRes();
-  try { if (!isTouch && localStorage.getItem('hcOn')) setTimeout(() => toggleHeadCam(), 800); } catch (e) { }
+  try { localStorage.removeItem('hcOn'); localStorage.removeItem('hcInv'); } catch (e) { }
   try { const r = JSON.parse(sessionStorage.getItem('jdResume') || 'null'); sessionStorage.removeItem('jdResume'); if (r && Date.now() - r.t < 10 * 60 * 1000) { P.x = r.x; P.z = r.z; P.th = r.th; P.lay = r.lay || 0; P.v = 0; score = r.score; $('scoreV').textContent = score; gameHour = r.hour; applyEnv(); elevUpdate(); manageCells(true); notify('🔄 畫面已恢復,從剛才的位置繼續', 'tip'); return; } } catch (er) { }
   manageCells(true); notify('從北海道・札幌出發!左側通行・限速 40。郊外是被雪蓋住的鄉下路,看紅白箭頭(矢羽根)找路', '');
 }
