@@ -174,6 +174,7 @@ body.jdtouch #jdTR{top:76px;right:12px} body.jdtouch #jdCities{display:none} bod
 @keyframes jdfade{0%{opacity:0;transform:translateY(-6px)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
 #jdMission{padding:10px 14px;font-size:14px;line-height:1.5;width:250px;display:none}
 #jdMission .t{font-size:16px;font-weight:800;margin-bottom:2px} #jdMission .bar{height:6px;border-radius:3px;background:rgba(255,255,255,.15);margin-top:6px;overflow:hidden} #jdMission .bar i{display:block;height:100%;background:linear-gradient(90deg,#ffd24a,#ff9a3a);border-radius:3px;transition:width .3s}
+#jdInfo{padding:4px 12px;font-size:13px;opacity:.9} #jdInfo:empty{display:none}
 #jdMoney{padding:6px 14px;font-size:20px;font-weight:800;color:#ffd24a}
 #jdSig{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);font-size:34px;letter-spacing:60px;text-shadow:0 0 8px #3f3;display:none}
 #jdPause,#jdWz{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;pointer-events:auto;z-index:80}
@@ -211,7 +212,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
 <div id="jd">
   <div id="jdCities" class="pe"><div data-c="0">札幌</div><div data-c="1">東京</div><div data-c="2">横浜</div><div data-c="3">大阪</div><div data-c="4">キロロ</div></div>
   <div id="jdMsgs"></div>
-  <div id="jdTR"><div id="jdMoney" class="card">¥10,000</div><div id="jdMission" class="card"></div></div>
+  <div id="jdTR"><div id="jdMoney" class="card">¥10,000</div><div id="jdInfo" class="card"></div><div id="jdMission" class="card"></div></div>
   <div id="jdSpd" class="card"><div id="spdNum">0</div><div id="spdSide"><div id="spdGear">D</div><div>km/h</div><div id="spdFuel"></div></div><div id="spdLim">40</div></div>
   <div id="jdSig"><span id="jdSigL">◀</span><span id="jdSigR">▶</span></div>
   <div id="jdHelp">⌨ 操作說明 <span style="opacity:.6">F1</span></div>
@@ -271,6 +272,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   (function () { var t0 = performance.now(); var iv = setInterval(function () { var bar = document.querySelector('#unity-progress-bar-full'), w = bar ? parseFloat(bar.style.width) || 0 : 0, s = ((performance.now() - t0) / 1000).toFixed(0);
     if (window.unityInstance) { var l = $('jdLoad'); if (l) l.remove(); clearInterval(iv); return; }
     $('jdLoadT').textContent = w < 90 ? '下載中 ' + Math.round(w) + '%  (' + s + ' 秒)' : '啟動遊戲中… (' + s + ' 秒)'; }, 250); })();
+  window.jdInfo = function (s) { var a = s.split('|'); var wx = ['☀ 晴', '☁ 陰', '🌧 雨', '❄ 雪'][+a[1]] || ''; $('jdInfo').textContent = '🕐 ' + a[0] + '  ' + wx + '  ・ ' + a[2] + ' fps'; };
   window.jdGear = function (rev) { $('tRev').textContent = rev ? 'R' : 'D'; };
   var lastFuel = -1; window.jdSpeed = function (k, r, l, f) { if (f !== undefined && f !== lastFuel) { lastFuel = f; var n8 = Math.ceil(f / 12.5); $('spdFuel').innerHTML = '⛽ <b class="' + (f < 15 ? 'low' : '') + '">' + '▮'.repeat(n8) + '</b><span style="opacity:.25">' + '▮'.repeat(8 - n8) + '</span>'; } var n = $('spdNum'); n.textContent = k; n.classList.toggle('over', k > l + 10); var g = $('spdGear'); g.textContent = r ? 'R' : 'D'; g.classList.toggle('r', !!r); $('spdLim').textContent = l; };
   // the key list shows for a while at the start, then folds away; F1 or a click brings it back
