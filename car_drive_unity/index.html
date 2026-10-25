@@ -133,7 +133,7 @@
           } else {
             loadingContainer.style.display = "none";
           }
-        }).then((unityInstance) => {
+        }).then((unityInstance) => { window.unityInstance = unityInstance;
                 document.querySelector("#unity-fullscreen-button").onclick = () => {
                   unityInstance.SetFullscreen(1);
                 };
