@@ -159,6 +159,7 @@
 #spdNum.over{color:#ff6b5a}
 #spdSide{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;opacity:.85}
 #spdGear{font-size:20px;font-weight:800;padding:1px 9px;border-radius:7px;background:rgba(255,255,255,.14)} #spdGear.r{background:#e0a21e;color:#111}
+#spdFuel{font-size:11px;letter-spacing:-1px;white-space:nowrap} #spdFuel b{color:#7f7} #spdFuel b.low{color:#ff5a48}
 #spdLim{width:46px;height:46px;border-radius:50%;background:#fff;border:6px solid #d42a1e;box-sizing:border-box;color:#1a2a7a;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center}
 #jdTR{position:fixed;right:16px;top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 body.jdtouch #jdSpd{top:8px;bottom:auto;right:12px;padding:6px 12px;gap:8px} body.jdtouch #spdNum{font-size:38px} body.jdtouch #spdLim{width:38px;height:38px;font-size:15px;border-width:5px}
@@ -201,6 +202,9 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
 #tSide{position:absolute;left:50%;top:8px;transform:translateX(-50%);display:flex;gap:6px}
 #tSide .tb{position:static;width:50px;height:40px;font-size:17px;border-radius:12px}
 @media (max-width:760px){#tTop .tb{width:52px;height:46px;font-size:20px}#tTop{gap:5px}#tSide .tb{width:44px}}
+#jdLoad{position:fixed;inset:0;z-index:150;background:#0d1220;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;text-align:center;pointer-events:none}
+#jdLoad .spin{width:46px;height:46px;border-radius:50%;border:5px solid rgba(255,255,255,.2);border-top-color:#e6aa28;animation:jdspin 1s linear infinite;margin-bottom:16px}
+@keyframes jdspin{to{transform:rotate(360deg)}}
 #jdRot{position:fixed;inset:0;z-index:200;background:#0d1220;color:#fff;display:none;align-items:center;justify-content:center;flex-direction:column;font-size:22px;text-align:center}
 @media (orientation:portrait){body.jdtouch #jdRot{display:flex}}
 </style>
@@ -208,16 +212,16 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   <div id="jdCities" class="pe"><div data-c="0">札幌</div><div data-c="1">東京</div><div data-c="2">横浜</div><div data-c="3">大阪</div><div data-c="4">キロロ</div></div>
   <div id="jdMsgs"></div>
   <div id="jdTR"><div id="jdMoney" class="card">¥10,000</div><div id="jdMission" class="card"></div></div>
-  <div id="jdSpd" class="card"><div id="spdNum">0</div><div id="spdSide"><div id="spdGear">D</div><div>km/h</div></div><div id="spdLim">40</div></div>
+  <div id="jdSpd" class="card"><div id="spdNum">0</div><div id="spdSide"><div id="spdGear">D</div><div>km/h</div><div id="spdFuel"></div></div><div id="spdLim">40</div></div>
   <div id="jdSig"><span id="jdSigL">◀</span><span id="jdSigR">▶</span></div>
   <div id="jdHelp">⌨ 操作說明 <span style="opacity:.6">F1</span></div>
-  <div id="jdKeysPanel"><div><b>W</b><b>S</b> 油門 / 煞車</div><div><b>A</b><b>D</b> 方向盤</div><div><b>Space</b> 手煞車</div><div><b>R</b> 切換 D / R</div><div><b>Q</b><b>E</b> 方向燈</div><div><b>X</b> 雙閃</div><div><b>H</b> 喇叭 (行人會回頭)</div><div><b>V</b> 滑鼠轉頭看</div><div><b>Tab</b> 切換視角</div><div><b>M</b> 地圖 / 全國地圖</div><div><b>N</b> 日 / 夜</div><div><b>T</b> 天氣</div><div><b>1</b>-<b>5</b> 換城市</div><div><b>C</b> 方向盤設定</div><div><b>⌫</b> 回到路上</div><div style="grid-column:1/3">🚃 踏切前一定要停車,柵欄放下時不能過</div><div><b>Esc</b> 暫停</div><div style="grid-column:1/3">🚓 違規可能被警察追,靠邊停下會被開單,甩掉 220 m 以上就沒事</div><div style="grid-column:1/3;opacity:.7;margin-top:4px">北邊的牆有缺口可以開上山坡區 ・ 首都高接成「口」字環線,四個城市互通</div></div>
+  <div id="jdKeysPanel"><div><b>W</b><b>S</b> 油門 / 煞車</div><div><b>A</b><b>D</b> 方向盤</div><div><b>Space</b> 手煞車</div><div><b>R</b> 切換 D / R</div><div><b>Q</b><b>E</b> 方向燈</div><div><b>X</b> 雙閃</div><div><b>H</b> 喇叭 (行人會回頭)</div><div><b>V</b> 滑鼠轉頭看</div><div><b>Tab</b> 切換視角</div><div><b>M</b> 地圖 / 全國地圖</div><div><b>N</b> 日 / 夜</div><div><b>T</b> 天氣</div><div><b>1</b>-<b>5</b> 換城市</div><div><b>C</b> 方向盤設定</div><div><b>⌫</b> 回到路上</div><div style="grid-column:1/3">🚃 踏切前一定要停車,柵欄放下時不能過</div><div><b>Esc</b> 暫停</div><div style="grid-column:1/3">⛽ 油不夠時開進加油站停著就會自動加油 ・ <b>G</b> 畫質</div><div style="grid-column:1/3">🚓 違規可能被警察追,靠邊停下會被開單,甩掉 220 m 以上就沒事</div><div style="grid-column:1/3;opacity:.7;margin-top:4px">北邊的牆有缺口可以開上山坡區 ・ 首都高接成「口」字環線,四個城市互通</div></div>
   <div id="jdPause"><div class="panel">
     <h1>⏸ 暫停</h1>
     <button id="pzGo">▶ 繼續駕駛</button>
     <div style="font-size:13px;opacity:.8;margin:10px 0 2px">📍 選一個城市重新出發</div>
     <div><button class="city" data-c="0">札幌</button><button class="city" data-c="1">東京</button><button class="city" data-c="2">横浜</button><button class="city" data-c="3">大阪</button><button class="city" data-c="4">キロロ山路</button></div>
-    <div><button class="sec" id="pzCam">🎥 切換視角</button><button class="sec" id="pzNight">🌙 日 / 夜</button><button class="sec" id="pzWx">🌦 換天氣</button><button class="sec" id="pzWheel">🎮 方向盤設定</button></div>
+    <div><button class="sec" id="pzCam">🎥 切換視角</button><button class="sec" id="pzNight">🌙 日 / 夜</button><button class="sec" id="pzWx">🌦 換天氣</button><button class="sec" id="pzQ">🖥 畫質</button><button class="sec" id="pzWheel">🎮 方向盤設定</button></div>
     <div id="jdKeys">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車<br>Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角<br>C 方向盤設定 ・ Tab 切換視角 ・ Backspace 回到路上 ・ [ ] 視野角度 ・ 1-4 換城市 ・ Esc 暫停 / 繼續<br>手機:左下拖曳方向盤,右下油門/煞車/手煞車/D·R,📱 陀螺儀轉頭看,🎯 歸零</div>
   </div></div>
   <div id="jdWz"><div class="panel">
@@ -236,6 +240,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
     <div class="tb" id="tBrk" data-k="brake">煞車</div>
     <div class="tb" id="tGas" data-k="gas">油門</div>
   </div>
+  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 15 MB,之後會快很多</div></div>
   <div id="jdRot"><div style="font-size:60px">📱↻</div>請把手機轉成橫向來玩</div>
 </div>
 <script>
@@ -251,7 +256,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   var paused = false;
   function pause(on) { paused = on; $('jdPause').style.display = on ? 'flex' : 'none'; U('SetPause', on ? 1 : 0); }
   $('pzGo').onclick = function () { pause(false); };
-  $('pzCam').onclick = function () { U('Action', 'cam'); }; $('pzNight').onclick = function () { U('Action2', 'night'); }; $('pzWx').onclick = function () { U('Action2', 'weather'); };
+  $('pzCam').onclick = function () { U('Action', 'cam'); }; $('pzNight').onclick = function () { U('Action2', 'night'); }; $('pzWx').onclick = function () { U('Action2', 'weather'); }; $('pzQ').onclick = function () { U('Action2', 'quality'); };
   [].forEach.call(document.querySelectorAll('[data-a2]'), function (el) { el.addEventListener('pointerdown', function (e) { U('Action2', el.dataset.a2); e.preventDefault(); }); });
   $('pzWheel').onclick = function () { pause(false); wzOpen(); };
   window.addEventListener('keydown', function (e) {
@@ -262,8 +267,12 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   setTimeout(function () { jdCity(1); }, 100);
   // turn signal lamps shown by the game (Game calls window.jdSig(l, r) through the page)
   window.jdSig = function (l, r) { $('jdSig').style.display = (l || r) ? 'block' : 'none'; $('jdSigL').style.opacity = l ? 1 : 0.15; $('jdSigR').style.opacity = r ? 1 : 0.15; $('tSigL').classList.toggle('lit', !!l); $('tSigR').classList.toggle('lit', !!r); };
+  // the loading screen: download percentage from the stock progress bar, then the start-up phase, gone once the game runs
+  (function () { var t0 = performance.now(); var iv = setInterval(function () { var bar = document.querySelector('#unity-progress-bar-full'), w = bar ? parseFloat(bar.style.width) || 0 : 0, s = ((performance.now() - t0) / 1000).toFixed(0);
+    if (window.unityInstance) { var l = $('jdLoad'); if (l) l.remove(); clearInterval(iv); return; }
+    $('jdLoadT').textContent = w < 90 ? '下載中 ' + Math.round(w) + '%  (' + s + ' 秒)' : '啟動遊戲中… (' + s + ' 秒)'; }, 250); })();
   window.jdGear = function (rev) { $('tRev').textContent = rev ? 'R' : 'D'; };
-  window.jdSpeed = function (k, r, l) { var n = $('spdNum'); n.textContent = k; n.classList.toggle('over', k > l + 10); var g = $('spdGear'); g.textContent = r ? 'R' : 'D'; g.classList.toggle('r', !!r); $('spdLim').textContent = l; };
+  var lastFuel = -1; window.jdSpeed = function (k, r, l, f) { if (f !== undefined && f !== lastFuel) { lastFuel = f; var n8 = Math.ceil(f / 12.5); $('spdFuel').innerHTML = '⛽ <b class="' + (f < 15 ? 'low' : '') + '">' + '▮'.repeat(n8) + '</b><span style="opacity:.25">' + '▮'.repeat(8 - n8) + '</span>'; } var n = $('spdNum'); n.textContent = k; n.classList.toggle('over', k > l + 10); var g = $('spdGear'); g.textContent = r ? 'R' : 'D'; g.classList.toggle('r', !!r); $('spdLim').textContent = l; };
   // the key list shows for a while at the start, then folds away; F1 or a click brings it back
   (function () { var kp = $('jdKeysPanel'), t = setTimeout(function () { kp.classList.add('hide'); }, 12000);
     var tog = function () { clearTimeout(t); kp.classList.toggle('hide'); }; $('jdHelp').addEventListener('click', tog); window.addEventListener('keydown', function (e) { if (e.code === 'F1') { tog(); e.preventDefault(); } }); })();
@@ -310,26 +319,29 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   function quat(a, b, g, orient) { var d = Math.PI / 180, x = b * d, y = a * d, z = -g * d, c1 = Math.cos(x / 2), c2 = Math.cos(y / 2), c3 = Math.cos(z / 2), s1 = Math.sin(x / 2), s2 = Math.sin(y / 2), s3 = Math.sin(z / 2);
     var r = [s1 * c2 * c3 + c1 * s2 * s3, c1 * s2 * c3 - s1 * c2 * s3, c1 * c2 * s3 - s1 * s2 * c3, c1 * c2 * c3 + s1 * s2 * s3]; r = mul(r, [-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)]); var o = -(orient || 0) * d / 2; return mul(r, [0, 0, Math.sin(o), Math.cos(o)]); }
   function mul(a, b) { return [a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1], a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0], a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3], a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]]; }
-  var gyroEvents = 0;
+  var gyroEvents = 0, relSeen = false, lastYaw = 0, lastPitch = 0;
   function onOrient(e) {
     if (e.alpha !== null && e.alpha !== undefined) gyroEvents++;
     if (!gyroOn || e.alpha === null) return; var orient = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
     q = quat(e.alpha, e.beta, e.gamma, orient); if (!ref) ref = q; var now = performance.now(); if (now - lastG < 33) return; lastG = now;
     var r = mul([-ref[0], -ref[1], -ref[2], ref[3]], q), x = r[0], y = r[1], z = r[2], w = r[3];
     var yaw = Math.atan2(2 * (w * y + x * z), 1 - 2 * (y * y + x * x)) * 180 / Math.PI, pitch = Math.asin(Math.max(-1, Math.min(1, 2 * (w * x - y * z)))) * 180 / Math.PI;
-    U('GyroLook', (-yaw).toFixed(1) + ',' + (-pitch).toFixed(1));
+    yaw = -yaw; pitch = -pitch; var dy = ((yaw - lastYaw + 540) % 360) - 180;
+    if (Math.abs(dy) > 50 || Math.abs(pitch - lastPitch) > 40) return; // a sudden jump is a sensor glitch, not your head turning
+    yaw = Math.max(-150, Math.min(150, yaw)); lastYaw = yaw; lastPitch = pitch;
+    U('GyroLook', yaw.toFixed(1) + ',' + pitch.toFixed(1));
   }
   function gyroStart() {
     var go = function () {
-      if (!gyroAsked) { window.addEventListener('deviceorientation', onOrient); window.addEventListener('deviceorientationabsolute', function (e) { if (gyroEvents === 0 || e.alpha !== null) onOrient(e); }); }
-      gyroAsked = true; gyroOn = true; ref = null; $('tGyro').classList.add('on'); if (window.jdNotify) jdNotify('📱 陀螺儀轉頭:開 (🎯 回正)');
+      if (!gyroAsked) { window.addEventListener('deviceorientation', function (e) { relSeen = true; onOrient(e); }); window.addEventListener('deviceorientationabsolute', function (e) { if (!relSeen) onOrient(e); }); window.addEventListener('orientationchange', function () { ref = null; }); if (screen.orientation) screen.orientation.addEventListener('change', function () { ref = null; }); } // one frame of reference only: the compass-based one just when there is nothing else
+      gyroAsked = true; gyroOn = true; ref = null; lastYaw = 0; lastPitch = 0; $('tGyro').classList.add('on'); if (window.jdNotify) jdNotify('📱 陀螺儀轉頭:開 (🎯 回正)');
       var before = gyroEvents; setTimeout(function () { if (gyroOn && gyroEvents === before && window.jdNotify) jdNotify(location.protocol !== 'https:' ? '⚠ 陀螺儀需要 https 網址 (請用 github.io 的連結)' : '⚠ 收不到陀螺儀資料,這台手機或瀏覽器可能不支援'); }, 2500);
     };
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().then(function (s) { if (s === 'granted') go(); }).catch(function () { });
     else go();
   }
   $('tGyro').addEventListener('pointerdown', function (e) { e.preventDefault(); if (gyroOn) { gyroOn = false; $('tGyro').classList.remove('on'); U('GyroLook', '0,0'); U('GyroOff'); if (window.jdNotify) jdNotify('📱 陀螺儀轉頭:關'); } else gyroStart(); });
-  $('tCenter').addEventListener('pointerdown', function (e) { e.preventDefault(); ref = q; U('GyroLook', '0,0'); });
+  $('tCenter').addEventListener('pointerdown', function (e) { e.preventDefault(); ref = q; lastYaw = 0; lastPitch = 0; U('GyroLook', '0,0'); });
   if (isTouch) window.addEventListener('pointerup', function first() { gyroStart(); window.removeEventListener('pointerup', first); }); // on by default after the first tap (iOS asks once)
 
   // ---- USB steering wheel / pedals: the setup wizard finds which axis does what (saved in this browser)
