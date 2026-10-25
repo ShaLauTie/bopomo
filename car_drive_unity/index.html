@@ -184,14 +184,14 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
 @media (orientation:portrait){body.jdtouch #jdRot{display:flex}}
 </style>
 <div id="jd">
-  <div id="jdCities" class="pe"><div data-c="0">札幌</div><div data-c="1">東京</div><div data-c="2">横浜</div><div data-c="3">大阪</div></div>
+  <div id="jdCities" class="pe"><div data-c="0">札幌</div><div data-c="1">東京</div><div data-c="2">横浜</div><div data-c="3">大阪</div><div data-c="4">キロロ</div></div>
   <div id="jdSig"><span id="jdSigL">◀</span><span id="jdSigR">▶</span></div>
-  <div id="jdHelp">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車 ・ Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角 ・ C 方向盤設定 ・ Tab 切換視角 ・ 1-4 換城市 ・ Esc 暫停</div>
+  <div id="jdHelp">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車 ・ Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角 ・ C 方向盤設定 ・ Tab 切換視角 ・ 1-5 換城市 (5 = キロロ雪山) ・ 首都高隧道可開到下一個城市 ・ Esc 暫停</div>
   <div id="jdPause"><div class="panel">
     <h1>⏸ 暫停</h1>
     <button id="pzGo">▶ 繼續駕駛</button>
     <div style="font-size:13px;opacity:.8;margin:10px 0 2px">📍 選一個城市重新出發</div>
-    <div><button class="city" data-c="0">札幌</button><button class="city" data-c="1">東京</button><button class="city" data-c="2">横浜</button><button class="city" data-c="3">大阪</button></div>
+    <div><button class="city" data-c="0">札幌</button><button class="city" data-c="1">東京</button><button class="city" data-c="2">横浜</button><button class="city" data-c="3">大阪</button><button class="city" data-c="4">キロロ山路</button></div>
     <div><button class="sec" id="pzCam">🎥 切換視角</button><button class="sec" id="pzWheel">🎮 方向盤設定</button></div>
     <div id="jdKeys">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車<br>Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角<br>C 方向盤設定 ・ Tab 切換視角 ・ Backspace 回到路上 ・ [ ] 視野角度 ・ 1-4 換城市 ・ Esc 暫停 / 繼續<br>手機:左下拖曳方向盤,右下油門/煞車/手煞車/D·R,📱 陀螺儀轉頭看,🎯 歸零</div>
   </div></div>
@@ -229,7 +229,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   $('pzWheel').onclick = function () { pause(false); wzOpen(); };
   window.addEventListener('keydown', function (e) {
     if (e.code === 'Escape') { if ($('jdWz').style.display === 'flex') wzClose(); else pause(!paused); e.preventDefault(); }
-    if (/^Digit[1-4]$/.test(e.code)) setCity(+e.code.slice(5) - 1);
+    if (/^Digit[1-5]$/.test(e.code)) setCity(+e.code.slice(5) - 1);
   });
   window.jdCity = function (k) { city = k; [].forEach.call(document.querySelectorAll('#jdCities div'), function (d) { d.classList.toggle('on', +d.dataset.c === k); }); };
   setTimeout(function () { jdCity(1); }, 100);
