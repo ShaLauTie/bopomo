@@ -146,5 +146,177 @@
       document.body.appendChild(script);
 
     </script>
-  <div id="jdhelp" onclick="this.remove()" style="position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9;background:rgba(0,0,0,.6);color:#fff;font:15px/1.6 'Microsoft JhengHei','PingFang TC',sans-serif;padding:10px 16px;border-radius:10px;transition:opacity 1s;text-align:center">🚕 日本ドライブ Unity 版(測試中)<br>W/S 油門/煞車(停住後按住 S 倒車)・A/D 方向・Space 手煞車・C 切換視角・R 回到路上<br>USB 方向盤/手把直接可用・手機用畫面按鈕・點這裡關閉</div><script>setTimeout(function(){var h=document.getElementById('jdhelp');if(h){h.style.opacity=0;setTimeout(function(){h.remove()},1200)}},12000)</script></body>
+  <!-- ===== Japan Drive overlay: the same controls as the three.js version (touch pedals + wheel, pause menu, USB wheel setup, gyro look) ===== -->
+<style>
+#jd{position:fixed;inset:0;pointer-events:none;z-index:50;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;color:#fff}
+#jd .pe{pointer-events:auto}
+#jdHelp{position:fixed;left:10px;bottom:8px;font-size:13px;opacity:.85;text-shadow:0 1px 2px #000}
+#jdCities{position:fixed;left:10px;top:10px;display:flex;gap:6px}
+#jdCities div{padding:6px 12px;border-radius:8px;background:rgba(20,26,36,.55);border:1px solid rgba(255,255,255,.35);font-weight:700;cursor:pointer;font-size:15px}
+#jdCities div.on{background:rgba(230,170,40,.75);border-color:#fd6}
+#jdSig{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);font-size:34px;letter-spacing:60px;text-shadow:0 0 8px #3f3;display:none}
+#jdPause,#jdWz{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;pointer-events:auto;z-index:80}
+#jd .panel{background:rgba(16,20,30,.95);border:1px solid #3c4c6c;border-radius:14px;padding:22px 26px;max-width:560px;text-align:center}
+#jd .panel h1{margin:0 0 10px;font-size:28px}
+#jd button{font-size:17px;padding:9px 20px;margin:6px 4px;border:0;border-radius:8px;background:#2a9d5c;color:#fff;cursor:pointer;font-family:inherit}
+#jd button.sec{background:#3a4560} #jd button.city{background:#2c5f55;border:1px solid #4fa58f}
+#jdKeys{font-size:13px;opacity:.8;margin-top:12px;line-height:1.7;text-align:left}
+#wzText{font-size:22px;margin:12px 0}#wzAxes{font-family:monospace;font-size:12px;color:#9ab;white-space:pre;text-align:left}
+/* touch controls (phones / tablets): same layout as the web version */
+#jdTouch{display:none;position:fixed;inset:0;z-index:60;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
+.tb{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:16px;background:rgba(20,26,36,.42);border:2px solid rgba(255,255,255,.35);color:#fff;font-weight:700;font-size:20px;box-sizing:border-box;text-shadow:0 1px 2px #000;pointer-events:auto}
+.tb.on{background:rgba(80,180,255,.45);border-color:#9df}
+#tGas{right:18px;bottom:22px;width:96px;height:150px;background:rgba(40,150,80,.4)}
+#tBrk{right:126px;bottom:22px;width:96px;height:110px;background:rgba(190,50,50,.4)}
+#tHand{right:126px;bottom:144px;width:96px;height:52px;font-size:15px}
+#tRev{right:18px;bottom:182px;width:96px;height:52px;font-size:26px;background:rgba(230,160,30,.38)}
+#tSteer{left:14px;bottom:14px;width:min(44vw,300px);height:170px;border-radius:24px;background:rgba(20,26,36,.25)}
+#tWheel{width:120px;height:120px;border-radius:50%;border:12px solid rgba(255,255,255,.55);box-sizing:border-box;position:relative;pointer-events:none}
+#tWheel:after{content:'';position:absolute;left:50%;top:-12px;width:8px;height:20px;margin-left:-4px;background:#ff7a30;border-radius:3px}
+#tTop{position:absolute;left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:58px;transform:translateX(-50%);display:flex;gap:8px}
+#tTop .tb{position:static;width:62px;height:52px;font-size:24px;border-radius:14px}
+#tTop .tb.lit{background:rgba(40,220,90,.75);border-color:#bfb;box-shadow:0 0 14px #3f3}
+#tSide{position:absolute;left:50%;top:8px;transform:translateX(-50%);display:flex;gap:6px}
+#tSide .tb{position:static;width:50px;height:40px;font-size:17px;border-radius:12px}
+@media (max-width:760px){#tTop .tb{width:52px;height:46px;font-size:20px}#tTop{gap:5px}#tSide .tb{width:44px}}
+#jdRot{position:fixed;inset:0;z-index:200;background:#0d1220;color:#fff;display:none;align-items:center;justify-content:center;flex-direction:column;font-size:22px;text-align:center}
+@media (orientation:portrait){body.jdtouch #jdRot{display:flex}}
+</style>
+<div id="jd">
+  <div id="jdCities" class="pe"><div data-c="0">札幌</div><div data-c="1">東京</div><div data-c="2">横浜</div><div data-c="3">大阪</div></div>
+  <div id="jdSig"><span id="jdSigL">◀</span><span id="jdSigR">▶</span></div>
+  <div id="jdHelp">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車 ・ Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角 ・ C 方向盤設定 ・ Tab 切換視角 ・ 1-4 換城市 ・ Esc 暫停</div>
+  <div id="jdPause"><div class="panel">
+    <h1>⏸ 暫停</h1>
+    <button id="pzGo">▶ 繼續駕駛</button>
+    <div style="font-size:13px;opacity:.8;margin:10px 0 2px">📍 選一個城市重新出發</div>
+    <div><button class="city" data-c="0">札幌</button><button class="city" data-c="1">東京</button><button class="city" data-c="2">横浜</button><button class="city" data-c="3">大阪</button></div>
+    <div><button class="sec" id="pzCam">🎥 切換視角</button><button class="sec" id="pzWheel">🎮 方向盤設定</button></div>
+    <div id="jdKeys">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車<br>Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角<br>C 方向盤設定 ・ Tab 切換視角 ・ Backspace 回到路上 ・ [ ] 視野角度 ・ 1-4 換城市 ・ Esc 暫停 / 繼續<br>手機:左下拖曳方向盤,右下油門/煞車/手煞車/D·R,📱 陀螺儀轉頭看,🎯 歸零</div>
+  </div></div>
+  <div id="jdWz"><div class="panel">
+    <h1>🎮 方向盤設定</h1>
+    <div id="wzText">請先把方向盤放正、放開踏板,然後按「下一步」</div>
+    <div id="wzAxes"></div>
+    <button id="wzNext">下一步</button><button class="sec" id="wzReset">清除設定</button><button class="sec" id="wzClose">關閉</button>
+  </div></div>
+  <div id="jdTouch">
+    <div id="tTop"><div class="tb" data-a="sigL" id="tSigL">◀</div><div class="tb" data-a="haz" id="tHaz">⚠</div><div class="tb" data-a="sigR" id="tSigR">▶</div></div>
+    <div id="tSide"><div class="tb" data-a="pause" id="tPause">⏸</div><div class="tb" data-k="horn" id="tHorn">📢</div><div class="tb" data-a="cam" id="tCam">🎥</div><div class="tb" id="tGyro">📱</div><div class="tb" id="tCenter">🎯</div><div class="tb" data-a="reset" id="tReset">↺</div></div>
+    <div class="tb" id="tSteer"><div id="tWheel"></div></div>
+    <div class="tb" id="tHand" data-k="hand">手煞車</div>
+    <div class="tb" data-a="gear" id="tRev">D</div>
+    <div class="tb" id="tBrk" data-k="brake">煞車</div>
+    <div class="tb" id="tGas" data-k="gas">油門</div>
+  </div>
+  <div id="jdRot"><div style="font-size:60px">📱↻</div>請把手機轉成橫向來玩</div>
+</div>
+<script>
+(function () {
+  var U = function (m, v) { if (window.unityInstance) window.unityInstance.SendMessage('Game', m, v === undefined ? '' : v); }; // numbers stay numbers (int parameters), strings stay strings
+  var $ = function (id) { return document.getElementById(id); };
+  var isTouch = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+  if (isTouch) document.body.classList.add('jdtouch');
+  // ---- city buttons (top left) and the pause menu
+  var city = 1;
+  function setCity(k) { city = k; U('DebugCity', k); [].forEach.call(document.querySelectorAll('#jdCities div'), function (d) { d.classList.toggle('on', +d.dataset.c === k); }); }
+  [].forEach.call(document.querySelectorAll('[data-c]'), function (d) { d.addEventListener('click', function () { setCity(+d.dataset.c); pause(false); }); });
+  var paused = false;
+  function pause(on) { paused = on; $('jdPause').style.display = on ? 'flex' : 'none'; U('SetPause', on ? 1 : 0); }
+  $('pzGo').onclick = function () { pause(false); };
+  $('pzCam').onclick = function () { U('Action', 'cam'); };
+  $('pzWheel').onclick = function () { pause(false); wzOpen(); };
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Escape') { if ($('jdWz').style.display === 'flex') wzClose(); else pause(!paused); e.preventDefault(); }
+    if (/^Digit[1-4]$/.test(e.code)) setCity(+e.code.slice(5) - 1);
+  });
+  window.jdCity = function (k) { city = k; [].forEach.call(document.querySelectorAll('#jdCities div'), function (d) { d.classList.toggle('on', +d.dataset.c === k); }); };
+  setTimeout(function () { jdCity(1); }, 100);
+  // turn signal lamps shown by the game (Game calls window.jdSig(l, r) through the page)
+  window.jdSig = function (l, r) { $('jdSig').style.display = (l || r) ? 'block' : 'none'; $('jdSigL').style.opacity = l ? 1 : 0.15; $('jdSigR').style.opacity = r ? 1 : 0.15; $('tSigL').classList.toggle('lit', !!l); $('tSigR').classList.toggle('lit', !!r); };
+  window.jdGear = function (rev) { $('tRev').textContent = rev ? 'R' : 'D'; };
+
+  // ---- touch: held buttons (data-k), one-shot actions (data-a), the steering wheel pad
+  var held = { gas: 0, brake: 0, hand: 0, horn: 0 }, steer = 0, steerId = null, steerX0 = 0;
+  function touchesOn(el) { return el; }
+  [].forEach.call(document.querySelectorAll('#jdTouch [data-k]'), function (el) {
+    var k = el.dataset.k;
+    el.addEventListener('pointerdown', function (e) { held[k] = 1; el.classList.add('on'); el.setPointerCapture(e.pointerId); e.preventDefault(); });
+    var up = function () { held[k] = 0; el.classList.remove('on'); }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  });
+  [].forEach.call(document.querySelectorAll('#jdTouch [data-a]'), function (el) {
+    el.addEventListener('pointerdown', function (e) { var a = el.dataset.a; if (a === 'pause') pause(!paused); else U('Action', a); e.preventDefault(); });
+  });
+  var pad = $('tSteer'), wheel = $('tWheel');
+  pad.addEventListener('pointerdown', function (e) { steerId = e.pointerId; steerX0 = e.clientX; pad.setPointerCapture(e.pointerId); e.preventDefault(); });
+  pad.addEventListener('pointermove', function (e) { if (e.pointerId !== steerId) return; var w = pad.clientWidth; steer = Math.max(-1, Math.min(1, (e.clientX - steerX0) / (w * 0.36))); });
+  var steerUp = function (e) { if (e.pointerId === steerId) { steerId = null; steer = 0; } }; pad.addEventListener('pointerup', steerUp); pad.addEventListener('pointercancel', steerUp);
+  var hornWas = 0, last = '';
+  function tick() {
+    if (isTouch) {
+      wheel.style.transform = 'rotate(' + (steer * 120) + 'deg)';
+      var s = steer.toFixed(2) + ',' + held.gas + ',' + held.brake + ',' + held.hand; // every change goes to the game if (s !== last) { U('TouchInput', s); last = s; }
+      if (held.horn !== hornWas) { U('Action', held.horn ? 'hornOn' : 'hornOff'); hornWas = held.horn; }
+    }
+    padTick(); requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---- gyro look-around (📱 toggles, 🎯 recentres)
+  var gyroOn = false, gyroAsked = false, ref = null, q = null, lastG = 0;
+  function quat(a, b, g, orient) { var d = Math.PI / 180, x = b * d, y = a * d, z = -g * d, c1 = Math.cos(x / 2), c2 = Math.cos(y / 2), c3 = Math.cos(z / 2), s1 = Math.sin(x / 2), s2 = Math.sin(y / 2), s3 = Math.sin(z / 2);
+    var r = [s1 * c2 * c3 + c1 * s2 * s3, c1 * s2 * c3 - s1 * c2 * s3, c1 * c2 * s3 - s1 * s2 * c3, c1 * c2 * c3 + s1 * s2 * s3]; r = mul(r, [-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)]); var o = -(orient || 0) * d / 2; return mul(r, [0, 0, Math.sin(o), Math.cos(o)]); }
+  function mul(a, b) { return [a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1], a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0], a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3], a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]]; }
+  function onOrient(e) {
+    if (!gyroOn || e.alpha === null) return; var orient = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    q = quat(e.alpha, e.beta, e.gamma, orient); if (!ref) ref = q; var now = performance.now(); if (now - lastG < 33) return; lastG = now;
+    var r = mul([-ref[0], -ref[1], -ref[2], ref[3]], q), x = r[0], y = r[1], z = r[2], w = r[3];
+    var yaw = Math.atan2(2 * (w * y + x * z), 1 - 2 * (y * y + x * x)) * 180 / Math.PI, pitch = Math.asin(Math.max(-1, Math.min(1, 2 * (w * x - y * z)))) * 180 / Math.PI;
+    U('GyroLook', (-yaw).toFixed(1) + ',' + (-pitch).toFixed(1));
+  }
+  function gyroStart() {
+    var go = function () { if (!gyroAsked) window.addEventListener('deviceorientation', onOrient); gyroAsked = true; gyroOn = true; ref = null; $('tGyro').classList.add('on'); };
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().then(function (s) { if (s === 'granted') go(); }).catch(function () { });
+    else go();
+  }
+  $('tGyro').addEventListener('pointerdown', function (e) { e.preventDefault(); if (gyroOn) { gyroOn = false; $('tGyro').classList.remove('on'); U('GyroLook', '0,0'); U('GyroOff'); } else gyroStart(); });
+  $('tCenter').addEventListener('pointerdown', function (e) { e.preventDefault(); ref = q; U('GyroLook', '0,0'); });
+  if (isTouch) window.addEventListener('pointerup', function first() { gyroStart(); window.removeEventListener('pointerup', first); }); // on by default after the first tap (iOS asks once)
+
+  // ---- USB steering wheel / pedals: the setup wizard finds which axis does what (saved in this browser)
+  var map = null; try { map = JSON.parse(localStorage.getItem('jdPadMap') || 'null'); } catch (e) { }
+  function gp() { var a = navigator.getGamepads ? navigator.getGamepads() : []; for (var k = 0; k < a.length; k++) if (a[k] && a[k].axes && a[k].axes.length) return a[k]; return null; }
+  var padLast = '';
+  function norm(v, rest, full) { var t = (v - rest) / ((full - rest) || 1); return Math.max(0, Math.min(1, t)); }
+  function padTick() {
+    if (wz.on) { wzTick(); return; } var p = gp(); if (!p || !map) return;
+    var s = (p.axes[map.steer] - map.c) / (map.steer === undefined ? 1 : (map.span || 1)); s = Math.max(-1, Math.min(1, s * (map.inv ? -1 : 1)));
+    var g = map.gas >= 0 ? norm(p.axes[map.gas], map.gasRest, map.gasFull) : 0, b = map.brk >= 0 ? norm(p.axes[map.brk], map.brkRest, map.brkFull) : 0;
+    var btn = 0; for (var k = 0; k < p.buttons.length; k++) if (p.buttons[k].pressed) btn |= (1 << k);
+    var str = s.toFixed(3) + ',' + g.toFixed(3) + ',' + b.toFixed(3) + ',' + btn; if (str !== padLast) { U('PadInput', str); padLast = str; }
+  }
+  var wz = { on: false, step: 0, rest: null, left: null, right: null, gasFull: null, brkFull: null };
+  var steps = ['請先把方向盤放正、放開踏板,然後按「下一步」', '把方向盤轉到最左邊,按「下一步」', '把方向盤轉到最右邊,按「下一步」', '把油門踩到底,按「下一步」', '把煞車踩到底,按「下一步」', '完成!設定已經記住了'];
+  function wzOpen() { wz.on = true; wz.step = 0; $('jdWz').style.display = 'flex'; $('wzText').textContent = gp() ? steps[0] : '轉一下方向盤或按任一鍵讓瀏覽器偵測到它…'; }
+  function wzClose() { wz.on = false; $('jdWz').style.display = 'none'; }
+  function wzTick() { var p = gp(); if (!p) return; $('wzAxes').textContent = p.id.slice(0, 60) + '\n' + p.axes.map(function (v, k) { return 'axis ' + k + ': ' + v.toFixed(2); }).join('\n'); }
+  function big(a, b) { var best = -1, bi = -1; for (var k = 0; k < a.length; k++) { var d = Math.abs(a[k] - b[k]); if (d > best) { best = d; bi = k; } } return best > 0.25 ? bi : -1; }
+  $('wzNext').onclick = function () {
+    var p = gp(); if (!p) return; var ax = p.axes.slice();
+    if (wz.step === 0) wz.rest = ax; else if (wz.step === 1) wz.left = ax; else if (wz.step === 2) wz.right = ax; else if (wz.step === 3) wz.gasFull = ax; else if (wz.step === 4) wz.brkFull = ax;
+    wz.step++;
+    if (wz.step === 5) {
+      var st = big(wz.left, wz.right), gi = big(wz.rest, wz.gasFull), bi = big(wz.rest, wz.brkFull);
+      map = { steer: st, c: wz.rest[st], span: Math.abs(wz.right[st] - wz.left[st]) / 2 || 1, inv: wz.right[st] < wz.left[st], gas: gi, gasRest: gi >= 0 ? wz.rest[gi] : 0, gasFull: gi >= 0 ? wz.gasFull[gi] : 1, brk: bi, brkRest: bi >= 0 ? wz.rest[bi] : 0, brkFull: bi >= 0 ? wz.brkFull[bi] : 1 };
+      try { localStorage.setItem('jdPadMap', JSON.stringify(map)); } catch (e) { }
+    }
+    $('wzText').textContent = steps[Math.min(wz.step, 5)]; if (wz.step >= 5) setTimeout(wzClose, 1500);
+  };
+  $('wzReset').onclick = function () { map = null; try { localStorage.removeItem('jdPadMap'); } catch (e) { } U('PadInput', '0,0,0,0'); $('wzText').textContent = '已清除'; };
+  $('wzClose').onclick = wzClose;
+  window.addEventListener('keydown', function (e) { if (e.code === 'KeyC' && !e.repeat && $('jdWz').style.display !== 'flex') wzOpen(); }); // C = wheel setup, like the web version
+})();
+</script>
+<div id="jdhelp" onclick="this.remove()" style="position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9;background:rgba(0,0,0,.6);color:#fff;font:15px/1.6 'Microsoft JhengHei','PingFang TC',sans-serif;padding:10px 16px;border-radius:10px;transition:opacity 1s;text-align:center">🚕 日本ドライブ Unity 版(測試中)<br>W/S 油門/煞車(停住後按住 S 倒車)・A/D 方向・Space 手煞車・C 切換視角・R 回到路上<br>USB 方向盤/手把直接可用・手機用畫面按鈕・點這裡關閉</div><script>setTimeout(function(){var h=document.getElementById('jdhelp');if(h){h.style.opacity=0;setTimeout(function(){h.remove()},1200)}},12000)</script></body>
 </html>
