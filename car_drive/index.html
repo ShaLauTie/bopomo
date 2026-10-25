@@ -1117,8 +1117,8 @@ function buildCell(i, j) {
           B.orect('col', (r0 + r1) / 2, zl, 1, 0, r1 - r0, 0.15, 0.06, WHITE);
           const fx = -sg, rz = -fx * 0; // heading along x; the right of heading is +z for eastbound, -z for westbound
           const mH = hasMedian(j) ? (avenue(j) ? 2.0 : 1.4) / 2 + 0.25 : 0, zc = oz + sg * (mH + (rx - mH) / (2 * nL)); // centre of the inner lane, clear of the median
-          for (const back of [8, 22]) { const ax0 = (sg < 0 ? ox + S - 8.6 - back : ox + 8.6 + back); turnArrow(B, ax0, zc, fx, 0, -sg); }
-          txtQuad(B, 5, sg < 0 ? ox + S - 33 : ox + 33, zc, fx, 0, 0.7, 2.6);
+          for (const back of [6, 26]) { const ax0 = (sg < 0 ? ox + S - 8.6 - back : ox + 8.6 + back); turnArrow(B, ax0, zc, fx, 0, -sg); }
+          txtQuad(B, 5, sg < 0 ? ox + S - 25 : ox + 25, zc, fx, 0, 0.7, 2.6); // arrow, 右折, arrow: the text sits in the gap, never on an arrow
         }
       }
     } else if (xYellow) B.orect('col', mcx, oz, 1, 0, mlen, 0.14, 0.06, YELLOW); // yellow solid: no overtaking
@@ -1185,14 +1185,17 @@ function buildCell(i, j) {
   ARMS.forEach((A, idx) => {
     const ax = A.ax, az = A.az, px = -az, pz = ax, axis = ax !== 0 ? 'X' : 'Z', W = ax !== 0 ? 'Z' : 'X';
     const rbA = isRound(i, j), rd = ax !== 0 ? RW : rx, rl = ax !== 0 ? rx : RW, cw = rbA ? RB_O + 3.5 : rd + 2.2, sl = rbA ? RB_O + 0.8 : rd + 4.4, f = [ax, az], blockedHere = (blk !== 0 && az === blk) || !isLand(i + ax, j + az);
-    if (blockedHere) { for (const sg of [-1, 1]) B.orect('col', ox + ax * cw + px * sg * (rl + 0.5), oz + az * cw + pz * sg * (rl + 0.5), ax, az, 3.0, 0.6, 0.17, YELLOW); return; }
+    if (blockedHere) return; // no road this way: no crosswalk, so no 点字ブロック leading off the kerb either
     if (!rur) for (let s = -(rl - 0.85); s < rl - 0.3; s += 0.9) B.orect('col', ox + ax * cw + px * s, oz + az * cw + pz * s, ax, az, 3.0, 0.45, 0.06, WHITE);
     if (rb) { for (let q = 0.3; q < rl - 0.3; q += 0.9) B.orect('col', ox + ax * sl + px * q, oz + az * sl + pz * q, ax, az, 0.45, 0.45, 0.06, WHITE); { const bx = ox + ax * (sl + 1.2) + px * (rl + 0.9), bz = oz + az * (sl + 1.2) + pz * (rl + 0.9); B.box('col', bx, 1.4, bz, 0.08, 2.8, 0.08, POLE); sgnQuad(B, 7, bx, 2.75, bz, ax, az, 0.9); } }
     else if (!minor || (az !== 0 && !blockedHere)) B.orect('col', ox + ax * sl + px * rl / 2, oz + az * sl + pz * rl / 2, ax, az, 0.45, rl - 0.2, 0.06, WHITE);
     if (!rur) for (const sg of [-1, 1]) B.orect('col', ox + ax * cw + px * sg * (rl + 0.5), oz + az * cw + pz * sg * (rl + 0.5), ax, az, 3.0, 0.6, 0.17, YELLOW);
+    // ダイヤマーク: two outlined diamonds in the approach lane warn of a crosswalk with no signal ahead (the major road at an unsignalised junction)
+    if (minor && !rur && !rbA && ax !== 0) for (const dd of [10, 22]) { const cx = ox + ax * (cw + 1.5 + dd), cz = oz + az * (cw + 1.5 + dd), la = rl / 2, Lh = 2.4, Wh = 0.7, el = Math.hypot(Lh, Wh);
+      for (const [sa, sl_] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { const ux = (ax * sa * Lh + px * sl_ * -Wh) / el, uz = (az * sa * Lh + pz * sl_ * -Wh) / el; B.orect('col', cx + ax * sa * Lh / 2 + px * (la + sl_ * Wh / 2), cz + az * sa * Lh / 2 + pz * (la + sl_ * Wh / 2), ux, uz, el, 0.15, 0.062, WHITE); } }
     // 安全島 (pedestrian refuge island) on the 4-lane road crossing
     if (four && ax !== 0 && !rur) {
-      B.box('col', ox + ax * cw, 0.1, oz, 3.4, 0.2, 0.9, [0.78, 0.78, 0.74]); B.box('col', ox + ax * cw, 0.21, oz, 3.4, 0.02, 0.5, [0.95, 0.8, 0.1]);
+      B.box('col', ox + ax * cw, 0.1, oz, 3.4, 0.2, 1.1, [0.8, 0.8, 0.77]); for (const e of [-0.37, 0.37]) B.box('col', ox + ax * cw, 0.21, oz + e, 3.0, 0.02, 0.2, [0.95, 0.8, 0.1]); /* 点字ブロック only along the two edges you step on from */
       rects.push([ox + ax * cw - 1.0, oz - 0.05, ox + ax * cw + 1.0, oz + 0.05]);
     }
     if (!minor && !blockedHere && hash(i, j, 171 + idx) < 0.3) B.orect('col', ox + ax * (sl + 12) + px * rl / 2, oz + az * (sl + 12) + pz * rl / 2, ax, az, 22, rl - 0.4, 0.04, [0.62, 0.2, 0.17]); // カラー舗装 before the junction
@@ -1471,8 +1474,9 @@ function buildCell(i, j) {
     B.box('col', RX, 0.22, (b0 + b1) / 2, 12.4, 0.16, b1 - b0, [0.5, 0.48, 0.45]); // ballast
     for (const tx of [RAIL_N, RAIL_S]) {
       for (let z = b0 + 0.4; z < b1 - 0.2; z += 0.65) B.box('col', ox + tx, 0.33, z, 2.2, 0.08, 0.22, [0.42, 0.38, 0.33]);
-      for (const g of [-0.55, 0.55]) { B.box('col', ox + tx + g, 0.42, (b0 + b1) / 2, 0.08, 0.1, b1 - b0, STEEL); B.box('col', ox + tx + g, 0.075, oz, 0.08, 0.03, 2 * rx, STEEL); }
-      B.box('col', ox + tx, 0.04, oz, 2.6, 0.03, 2 * rx, [0.22, 0.22, 0.24]);
+      for (const g of [-0.55, 0.55]) { B.box('col', ox + tx + g, 0.42, (b0 + b1) / 2, 0.08, 0.1, b1 - b0, STEEL); B.box('col', ox + tx + g, 0.1, oz, 0.08, 0.03, 2 * rx, STEEL); }
+      B.box('col', ox + tx, 0.075, oz, 2.8, 0.03, 2 * rx, [0.46, 0.46, 0.44]); /* 踏切 deck panels with the rails showing through, sitting on top of the asphalt */
+      for (let z = oz - rx + 0.9; z < oz + rx; z += 1.8) B.box('col', ox + tx, 0.091, z, 2.8, 0.004, 0.05, [0.3, 0.3, 0.3]);
     }
     // fences + collision
     for (const sx of [-6.3, 6.3]) { B.box('col', RX + sx, 0.9, (b0 + b1) / 2, 0.05, 1.5, b1 - b0 - 1, [0.3, 0.45, 0.32]); for (let z = b0 + 0.5; z < b1; z += 3) B.box('col', RX + sx, 0.9, z, 0.08, 1.6, 0.08, [0.3, 0.32, 0.3]); }
@@ -2005,7 +2009,7 @@ function spawnBike(b) {
     const isl = isleOf(I, J); if (!isl || (isl.snow && Math.random() < 0.6)) continue;
     const line = bikeLine(ax, ax === 'x' ? J * S : I * S, side, road, dir), pos = (ax === 'x' ? I * S : J * S) + 14 + Math.random() * 52, x = ax === 'x' ? pos : line, z = ax === 'x' ? line : pos, d = Math.hypot(x - P.x, z - P.z);
     if (d < 45 || d > 160 || !bikeOK(ax, line, pos, road)) continue;
-    Object.assign(b, { ax, line, pos, dir, road, v: road ? 4.6 + Math.random() : 3.3 + Math.random() * 1.2, down: 0, live: true }); b.g.visible = true; b.g.rotation.set(0, 0, 0); return;
+    Object.assign(b, { ax, line, pos, dir, road, v: road ? 4.6 + Math.random() : 3.3 + Math.random() * 1.2, down: 0, live: true, ut: null, ct: null, cv: undefined, waitT: 0 }); b.g.visible = true; b.g.rotation.set(0, Math.atan2(-(ax === 'x' ? dir : 0), -(ax === 'z' ? dir : 0)), 0); b.sp = (b.sp || 0) + 1; return; /* face the way it rides from the start */
   }
   b.live = false; b.g.visible = false;
 }
@@ -2421,20 +2425,38 @@ function updateBikes(dt) {
         const gy_ = terrainH(g.position.x, g.position.z) + 0.3; if (g.position.y <= gy_ && f.vy < 0) { g.position.y = gy_; if (f.bounce-- > 0 && Math.abs(f.vy) > 2.5) { f.vy *= -0.35; f.vx *= 0.55; f.vz *= 0.55; thud(); } else { f.landed = true; g.rotation.set(0, g.rotation.y, Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1)); thud(); } } }
       b.down -= dt; if (b.down <= 0) { b.fly = null; spawnBike(b); } continue; }
     if (!b.live || b.down > 0) { if (b.down > 0) { b.down -= dt; if (b.down <= 0) spawnBike(b); } else if (Math.random() < dt * 2) spawnBike(b); continue; }
-    const bv = b.v * (simT - (b.hurryT || -99) < 4 ? 1.6 : 1); let next = b.pos + b.dir * bv * dt;
+    const bv = b.v * (simT - (b.hurryT || -99) < 4 ? 1.6 : 1); if (b.cv === undefined) b.cv = bv;
+    const uTurn = (why) => { const base = Math.round(b.line / S) * S, l1 = b.road ? 2 * base - b.line : b.line - 0.9 * (Math.sign(b.line - base) || 1), dl = Math.abs(l1 - b.line); /* on the pavement it swings round onto a line a little nearer the kerb */
+      b.ut = { t: 0, dur: 1.8 + dl * 0.3, p0: b.pos, d0: b.dir, l0: b.line, l1, R: b.road ? 2.2 : 1.0 }; b.waitT = 0; };
+    let utH = null;
+    if (b.ut) { const U = b.ut; U.t += dt; const u = Math.min(1, U.t / U.dur), sm = u * u * (3 - 2 * u), su = Math.sin(Math.PI * u), cu = Math.cos(Math.PI * u); // a U-turn ridden as a loop, not a flip on the spot
+      b.pos = U.p0 + U.d0 * U.R * su; b.line = U.l0 + (U.l1 - U.l0) * (1 - cu) / 2; b.cv = bv * 0.55; /* half an ellipse: out, across, back */
+      const dp = U.d0 * U.R * Math.PI * cu, dln = (U.l1 - U.l0) * Math.PI * su / 2; utH = b.ax === 'x' ? [dp, dln] : [dln, dp];
+      if (u >= 1) { b.dir = -U.d0; b.line = U.l1; b.ut = null; } }
+    else { // brake for whatever is in front (your car; parked or queuing cars for the ones riding in the road), and turn back after waiting a while
+      const x0 = b.ax === 'x' ? b.pos : b.line, z0 = b.ax === 'x' ? b.line : b.pos, hx0 = b.ax === 'x' ? b.dir : 0, hz0 = b.ax === 'z' ? b.dir : 0;
+      const ahead = (ox, oz, r, L) => { const rx = ox - x0, rz = oz - z0, al = rx * hx0 + rz * hz0; return al > 0 && al < L && Math.abs(rx * hz0 - rz * hx0) < r; };
+      let block = !P.lay && ahead(P.x, P.z, 2.0, 7);
+      if (!block && b.road) for (const a of aiCars) { const [ax_, az_] = aiPos(a); if (ahead(ax_, az_, 1.6, 6.5)) { block = true; break; } }
+      b.cv += clamp((block ? 0 : bv) - b.cv, -5 * dt, 1.5 * dt); b.waitT = block && b.cv < 0.3 ? (b.waitT || 0) + dt : 0;
+      if (b.waitT > 3) uTurn('blocked'); }
+    let next = b.ut ? b.pos : b.pos + b.dir * b.cv * dt;
+    if (b.ct) { const K = b.ct; K.u = Math.min(1, K.u + b.cv * dt / (Math.PI * K.R / 2)); const q = K.u * Math.PI / 2; // round the corner on a quarter circle
+      next = K.a0 + K.d0 * K.R * Math.sin(q); b.line = K.l0 + K.sd * K.R * (1 - Math.cos(q)); const da = K.d0 * Math.cos(q), dl = K.sd * Math.sin(q); utH = b.ax === 'x' ? [da, dl] : [dl, da];
+      if (K.u >= 1) { b.ax = K.nax; next = K.l0 + K.sd * K.R; b.line = K.c; b.dir = K.sd; b.ct = null; utH = null; } }
     // at a corner (sidewalk riders only) sometimes turn onto the cross street, away from the road they were on
-    if (!b.road) { const n = Math.round(next / S) * S, rx_ = b.ax === 'x' ? RW + BIKE_SW : rxOf(Math.round(next / S)) + BIKE_SW, c = n - b.dir * rx_;
-      if ((b.pos - c) * (next - c) <= 0 && Math.random() < 0.35) { const base = b.ax === 'x' ? Math.round(b.line / S) * S : Math.round(b.line / S) * S, sd = Math.sign(b.line - base) || 1, nax = b.ax === 'x' ? 'z' : 'x';
-        if (bikeOK(nax, c, b.line + sd * 6, false)) { b.ax = nax; b.pos = b.line; b.line = c; b.dir = sd; next = b.pos + b.dir * b.v * dt; } } }
-    if (!bikeOK(b.ax, b.line, next + b.dir * 4, b.road)) { b.dir = -b.dir; if (b.road) { const base = Math.round(b.line / S) * S; b.line = 2 * base - b.line; } next = b.pos; }
+    else if (!b.road && !b.ut) { const n = Math.round(next / S) * S, rx_ = b.ax === 'x' ? RW + BIKE_SW : rxOf(Math.round(next / S)) + BIKE_SW, c = n - b.dir * rx_, R = 2.2, c0 = c - b.dir * R;
+      if ((b.pos - c0) * (next - c0) <= 0 && Math.random() < 0.35) { const base = Math.round(b.line / S) * S, sd = Math.sign(b.line - base) || 1, nax = b.ax === 'x' ? 'z' : 'x';
+        if (bikeOK(nax, c, b.line + sd * 6, false)) b.ct = { u: 0, a0: c0, d0: b.dir, l0: b.line, sd, R, c, nax }; } }
+    if (!b.ut && !b.ct && !bikeOK(b.ax, b.line, next + b.dir * 4, b.road)) { uTurn('end'); next = b.pos; }
     b.pos = next;
     const x = b.ax === 'x' ? b.pos : b.line, z = b.ax === 'x' ? b.line : b.pos, dx = x - P.x, dz = z - P.z, d = Math.hypot(dx, dz);
     if (d > 175) { spawnBike(b); continue; }
-    const hx = b.ax === 'x' ? b.dir : 0, hz = b.ax === 'z' ? b.dir : 0, ty = Math.atan2(-hx, -hz);
-    const yr = normAng(ty - b.g.rotation.y) * Math.min(1, dt * 4); b.g.rotation.y += yr; b.g.position.set(x, (b.road ? 0.02 : 0.15) + terrainH(x, z), z);
+    const hx = utH ? utH[0] : b.ax === 'x' ? b.dir : 0, hz = utH ? utH[1] : b.ax === 'z' ? b.dir : 0, ty = Math.atan2(-hx, -hz);
+    const yr = normAng(ty - b.g.rotation.y) * Math.min(1, dt * (utH ? 12 : 4)); b.g.rotation.y += yr; b.g.position.set(x, (b.road ? 0.02 : 0.15) + terrainH(x, z), z);
     // lean into turns, a little sway with each pedal stroke
-    b.lean += (clamp(yr / Math.max(dt, 1e-3) * bv * 0.05, -0.35, 0.35) - b.lean) * Math.min(1, dt * 5); b.g.rotation.z = b.lean + Math.sin(b.ph) * 0.025;
-    b.ph += dt * bv / BK.wr * 0.5; for (const w of b.wheels) w.rotation.x = -b.ph * 2;
+    b.lean += (clamp(yr / Math.max(dt, 1e-3) * b.cv * 0.05, -0.35, 0.35) - b.lean) * Math.min(1, dt * 5); b.g.rotation.z = b.lean + Math.sin(b.ph) * 0.025 * Math.min(1, b.cv);
+    b.ph += dt * b.cv / BK.wr * 0.5; for (const w of b.wheels) w.rotation.x = -b.ph * 2;
     const c = -b.ph; b.crank.rotation.x = c; const py = BK.LC * Math.cos(c), pz = BK.LC * Math.sin(c);
     bikeLeg(b.legs[0].th, b.legs[0].sh, BK.bbY + py, BK.bbZ + pz); bikeLeg(b.legs[1].th, b.legs[1].sh, BK.bbY - py, BK.bbZ - pz);
     if (P.lay) continue;
@@ -2553,7 +2575,7 @@ const lam = c => new T.MeshLambertMaterial({ color: c });
 const mDark = lam(0x1b1d20), mDash = lam(0x2b2e33), mTrim = lam(0x3b3f45), mBody = lam(0xe9ecef), mRoof = lam(0x74787e);
 function bx(w, h, d, x, y, z, m) { const o = new T.Mesh(new T.BoxGeometry(w, h, d), m); o.position.set(x, y, z); inter.add(o); return o; }
 function beam(p1, p2, t, m) { const a = new T.Vector3(...p1), b = new T.Vector3(...p2), g = new T.CylinderGeometry(t, t * 1.3, a.distanceTo(b), 12); g.rotateX(Math.PI / 2); const o = new T.Mesh(g, m); o.position.copy(a).add(b).multiplyScalar(0.5); o.lookAt(b); inter.add(o); return o; }
-const EYE = new T.Vector3(0.38, 1.32, 0.15);
+const EYE = new T.Vector3(0.38, 1.38, 0.15), EYE_TILT = -0.06; // a little higher and looking slightly down: more road over the bonnet, roof still out of the way
 // ---------- cabin: modelled on a Japanese right-hand-drive hatchback / taxi (soft dash, vents, centre stack, console, seats, headliner) ----------
 // static parts are merged per material at the end (a handful of draw calls); moving parts (wheel, stalks, pedals, shifter, hazard switch) stay separate
 const CABM = (() => {
@@ -2789,9 +2811,12 @@ const CAR_DEF = {
   taxi: { L: 4.4, W: 1.7, yb: 0.34, belt: 1.02, tailY: 0.98, top: [[-2.2, 0.62], [-2.12, 0.84], [-1.75, 0.97], [-1.35, 1.05], [-0.72, 1.64], [-0.38, 1.74], [1.6, 1.75], [2.02, 1.68], [2.16, 1.45], [2.2, 1.1], [2.2, 0.7]], gl: [-1.3, 2.1], roof: [-0.45, 1.9], bp: 0.12, mirZ: -1.0 },
   van: { L: 4.7, W: 1.75, yb: 0.4, belt: 1.12, tailY: 1.0, top: [[-2.35, 0.7], [-2.3, 1.0], [-2.05, 1.18], [-1.75, 1.7], [-1.5, 1.98], [-1.0, 2.04], [2.3, 2.04], [2.35, 1.9], [2.35, 0.75]], gl: [-1.72, 0.1], roof: [-1.2, 2.3], bp: -0.6, mirZ: -1.6 },
   truck: { L: 6.2, W: 2.0, yb: 0.5, belt: 1.35, tailY: 0.9, box: true, top: [[-3.1, 0.8], [-3.05, 1.3], [-2.9, 2.2], [-2.6, 2.32], [-1.6, 2.32], [-1.55, 2.32]], gl: [-3.0, -2.3], roof: [-2.65, -1.6], bp: -9, mirZ: -2.8 },
+  // Tesla: low nose with no grille, a dark tinted glass roof from the windscreen header back into the fastback
+  tesla: { L: 4.72, W: 1.85, yb: 0.3, belt: 0.93, tailY: 0.9, top: [[-2.36, 0.52], [-2.3, 0.66], [-2.0, 0.76], [-1.5, 0.84], [-1.0, 0.9], [-0.86, 0.93], [-0.25, 1.38], [0.2, 1.44], [0.8, 1.42], [1.45, 1.22], [1.95, 1.03], [2.25, 0.99], [2.36, 0.9], [2.36, 0.56]], gl: [-0.86, 1.95], roof: [-0.3, 1.38], glassRoof: true, bp: 0.38, mirZ: -0.66 },
+  teslaY: { L: 4.75, W: 1.92, yb: 0.34, belt: 1.02, tailY: 1.0, top: [[-2.37, 0.56], [-2.3, 0.72], [-1.95, 0.84], [-1.4, 0.93], [-0.95, 1.0], [-0.86, 1.02], [-0.2, 1.52], [0.3, 1.6], [1.0, 1.58], [1.7, 1.36], [2.15, 1.12], [2.3, 1.06], [2.37, 0.95], [2.37, 0.6]], gl: [-0.87, 2.1], roof: [-0.25, 1.55], glassRoof: true, bp: 0.36, mirZ: -0.7 },
   bus: { L: 10.5, W: 2.4, yb: 0.45, belt: 1.35, tailY: 1.0, top: [[-5.25, 0.8], [-5.25, 2.6], [-5.1, 3.0], [-4.8, 3.08], [5.1, 3.08], [5.25, 2.9], [5.25, 0.8]], gl: [-5.2, 5.0], roof: [-4.95, 5.2], bp: -9, mirZ: -5.1, win: 1.2 },
 };
-const KIND_P = [['kei', 0.25], ['hatch', 0.15], ['sed', 0.11], ['mpv', 0.12], ['prius', 0.07], ['taxi', 0.1], ['van', 0.08], ['truck', 0.07], ['bus', 0.05]];
+const KIND_P = [['kei', 0.22], ['hatch', 0.12], ['sed', 0.11], ['mpv', 0.1], ['tesla', 0.05], ['teslaY', 0.03], ['prius', 0.07], ['taxi', 0.1], ['van', 0.08], ['truck', 0.07], ['bus', 0.05]];
 function profY(D, z) {
   const t = D.top; if (z <= t[0][0]) return t[0][1]; if (z >= t[t.length - 1][0]) return t[t.length - 1][1];
   for (let k = 0; k < t.length - 1; k++) if (z <= t[k + 1][0]) { const a = t[k], b = t[k + 1], u = (z - a[0]) / (b[0] - a[0]), s = u * u * (3 - 2 * u); return a[1] + (b[1] - a[1]) * (0.35 * u + 0.65 * s); }
@@ -2803,7 +2828,9 @@ function bodyGeo(D) {
   const big = D.box || D.L > 9;
   const smp = (u, af) => {
     const z = -L / 2 + L * (0.5 - 0.5 * Math.cos(Math.PI * u)), zn = Math.abs(z) / (L / 2);
-    const yt = profY(D, z), yb = D.yb + 0.06 * Math.pow(zn, 6), yc = (yt + yb) / 2, hh = (yt - yb) / 2;
+    const yt = profY(D, z), yb0 = D.yb + 0.06 * Math.pow(zn, 6); let yb = yb0;
+    if (!big) for (const w of wz) { const d = Math.abs(z - w), R = 0.43; if (d < R) yb = Math.max(yb, 0.3 + Math.sqrt(R * R - d * d) * 0.98); } // wheel arches cut into the body
+    const yc = (yt + yb) / 2, hh = (yt - yb) / 2;
     const plan = hw * (1 - (big ? 0.03 : 0.07) * Math.pow(zn, 7));
     const ex = big ? 0.25 : 0.3; let ph = af * Math.PI * 2;
     if (!big) { // put two rings of vertices exactly on the window line so the glass edge is straight (NA = 28: 0 right, 7 top, 14 left)
@@ -2812,19 +2839,21 @@ function bodyGeo(D) {
     const c = Math.cos(ph), sn = Math.sin(ph);
     const cs = Math.sign(c) * Math.pow(Math.abs(c), ex), ss = Math.sign(sn) * Math.pow(Math.abs(sn), ex);
     const y = yc + hh * ss, th = y > D.belt ? 1 - (big ? 0.04 : 0.14) * (y - D.belt) / Math.max(yt - D.belt, 0.05) : 1, x = plan * th * cs;
-    return { x, y, z, yt, yb, ss };
+    return { x, y, z, yt, yb, ss, arch: yb > yb0 + 0.02 };
   };
-  const region = ({ x, y, z, yt, yb, ss }) => {
+  const region = ({ x, y, z, yt, yb, ss, arch }) => {
     let r = 0; const ax = Math.abs(x) / hw;
     const inCab = z > D.gl[0] && z < D.gl[1], roofTop = z > D.roof[0] && z < D.roof[1] && ss > 0.85;
     if (D.box && z > -1.5) r = y > yt - 0.04 ? 0 : 5;
     const screen = z < D.roof[0] || z > D.roof[1]; // windscreen / rear window: the glass is the top surface itself
     if (inCab && y > D.belt + 0.04 && (screen || y < yt - 0.02) && !roofTop && !(Math.abs(z - D.bp) < 0.07 && ax > 0.6)) r = 1;
+    if (r === 1 && !big && ax > 0.5 && ax < 0.86 && (z < D.roof[0] + 0.08 || z > D.roof[1] - 0.12)) r = 8; // A- and C-pillars (black trim) between the screens and the side glass
+    if (D.glassRoof && roofTop && inCab) r = 6; // tinted glass roof (opaque dark, glossy)
     if (D.win && y > D.belt + 0.1 && y < yt - 0.18 && ax > 0.9 && ((z + L / 2) % D.win) < 0.14) r = 0;
     if (D.L > 9 && z < -L / 2 + 0.15 && y > 1.2 && y < 2.8) r = 1;
     if (big && z < -L / 2 + 0.22 && y > (D.box ? 0.85 : 0.52) && y < (D.box ? 1.05 : 0.72) && ax > 0.42) r = 3;
     if (z < -L / 2 + 0.12 && y > yb + 0.05 && y < (D.box ? 0.8 : 0.52) && ax < 0.55) r = 2;
-    if (y < yb + 0.12 || (big && ax > 0.82 && wz.some(w => Math.hypot(z - w, y - 0.31) < (D.L > 9 ? 0.62 : 0.44)))) r = 2;
+    if (y < yb + (arch ? 0.03 : 0.12) || (big && ax > 0.82 && wz.some(w => Math.hypot(z - w, y - 0.31) < (D.L > 9 ? 0.62 : 0.44)))) r = 2;
     if (big && z > L / 2 - 0.08 && Math.abs(y - D.tailY) < 0.1 && ax > 0.5) r = 4;
     return r;
   };
@@ -2842,7 +2871,7 @@ function bodyGeo(D) {
   const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
   const ng = g.toNonIndexed(); ng.userData.treg = treg; ng.userData.wz = wz; return ng;
 }
-const REGC = { 1: [0.07, 0.1, 0.14], 2: [0.06, 0.06, 0.07], 3: [1, 0.97, 0.85], 4: [0.45, 0.04, 0.04], 5: [0.93, 0.94, 0.95] };
+const REGC = { 8: [0.03, 0.03, 0.035], 7: [0.025, 0.025, 0.028], 6: [0.035, 0.045, 0.06], 1: [0.07, 0.1, 0.14], 2: [0.06, 0.06, 0.07], 3: [1, 0.97, 0.85], 4: [0.45, 0.04, 0.04], 5: [0.93, 0.94, 0.95] };
 // average the normals of faces that meet at a vertex (within maxAng radians), keeping sharp creases like the window line
 function smoothNormals(geo, maxAng) {
   const P = geo.attributes.position.array, N = geo.attributes.normal.array, n = P.length / 3, map = new Map(), out = new Float32Array(N.length), c = Math.cos(maxAng);
@@ -2855,13 +2884,26 @@ function carGeo(kind) {
   const D = CAR_DEF[kind], L = D.L, W = D.W, hw = W / 2, body = bodyGeo(D), wz = body.userData.wz; smoothNormals(body, 0.62); // rounded shading so the paint reflections flow over the body
   const parts = [], TIRE = [0.04, 0.04, 0.045], HUB = [0.72, 0.74, 0.78], tr = D.L > 9 ? 0.5 : D.box ? 0.45 : 0.31;
   for (const sx of [-1, 1]) for (const z of wz) {
-    const m = new T.Matrix4().makeTranslation(sx * (hw - (D.box || D.L > 9 ? 0.12 : 0.07)), tr, z);
-    const w = new T.CylinderGeometry(tr, tr, 0.24, 12); w.rotateZ(Math.PI / 2); parts.push({ g: w, m, c: TIRE });
-    const h = new T.CylinderGeometry(tr * 0.6, tr * 0.6, 0.26, 8); h.rotateZ(Math.PI / 2); parts.push({ g: h, m, c: HUB });
+    const bigW = D.box || D.L > 9, wx = sx * (hw - (bigW ? 0.12 : 0.14)), m = new T.Matrix4().makeTranslation(wx, tr, z);
+    const w = new T.CylinderGeometry(tr, tr, 0.23, 18); w.rotateZ(Math.PI / 2); parts.push({ g: w, m, c: [0.075, 0.075, 0.08] });
+    const h = new T.CylinderGeometry(tr * 0.7, tr * 0.7, 0.235, 16); h.rotateZ(Math.PI / 2); parts.push({ g: h, m, c: bigW ? HUB : [0.16, 0.16, 0.18] }); // rim well (dark between the spokes)
+    if (!bigW) { const face = wx + sx * 0.118;
+      for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2, sp = new T.BoxGeometry(0.02, tr * 0.6, 0.075); sp.translate(0, tr * 0.33, 0); sp.rotateX(a); parts.push({ g: sp, m: new T.Matrix4().makeTranslation(face, tr, z), c: [0.74, 0.75, 0.78] }); }
+      const rim = new T.TorusGeometry(tr * 0.66, 0.018, 4, 20); rim.rotateY(Math.PI / 2); parts.push({ g: rim, m: new T.Matrix4().makeTranslation(face, tr, z), c: [0.78, 0.79, 0.82] });
+      const cap = new T.CylinderGeometry(tr * 0.14, tr * 0.14, 0.03, 10); cap.rotateZ(Math.PI / 2); parts.push({ g: cap, m: new T.Matrix4().makeTranslation(face + sx * 0.005, tr, z), c: [0.6, 0.61, 0.64] }); }
   }
   for (const sx of [-1, 1]) {
     const my = profY(D, D.mirZ) * 0.5 + D.belt * 0.5;
     const mg = new T.SphereGeometry(0.1, 8, 6); mg.scale(0.9, 0.75, 1.3); parts.push({ g: mg, m: new T.Matrix4().makeTranslation(sx * (hw * (D.box ? 1 : 0.86) + 0.08), my, D.mirZ), c: [0.1, 0.1, 0.1] });
+  }
+  if (!D.box && L < 9) { // door shut lines (front door, B-pillar, rear door) and flush handles
+    const sideX = (z, y) => { const zn = Math.abs(z) / (L / 2); return hw * (1 - 0.07 * Math.pow(zn, 7)) * (y > D.belt - 0.05 ? 0.97 : 1) + 0.006; };
+    const lines = [D.gl[0] + 0.12, D.bp]; if (L > 3.8 && D.bp + 0.9 < wz[1] - 0.2) lines.push(Math.min(D.bp + 1.0, wz[1] - 0.44));
+    for (const sx of [-1, 1]) {
+      for (const lz of lines) { const y0 = D.yb + 0.16, y1 = D.belt; parts.push({ g: new T.BoxGeometry(0.012, y1 - y0, 0.014), m: new T.Matrix4().makeTranslation(sx * sideX(lz, (y0 + y1) / 2), (y0 + y1) / 2, lz), c: [0.05, 0.05, 0.06] }); }
+      for (const hz of [D.bp - 0.2, lines.length > 2 ? lines[2] - 0.2 : null]) if (hz !== null) parts.push({ g: new T.BoxGeometry(0.03, 0.035, 0.16), m: new T.Matrix4().makeTranslation(sx * sideX(hz, D.belt - 0.12), D.belt - 0.12, hz), c: [0.2, 0.2, 0.22] });
+      parts.push({ g: new T.BoxGeometry(0.02, 0.07, wz[1] - wz[0] - 0.9), m: new T.Matrix4().makeTranslation(sx * (hw - 0.01), D.yb + 0.08, (wz[0] + wz[1]) / 2), c: [0.08, 0.08, 0.09] }); // black sill between the wheels
+    }
   }
   if (kind === 'taxi') {
     parts.push({ g: new T.BoxGeometry(0.45, 0.2, 0.16), m: new T.Matrix4().makeTranslation(0, profY(D, 0.3) + 0.08, 0.3), c: [1, 0.85, 0.2] });
@@ -2891,8 +2933,8 @@ function carGeo(kind) {
   return carGeoCache[kind] = { body, detail: mergeGeos(parts), L, W, D, paintIndex, glassGeo };
 }
 const carDetailMat = new T.MeshLambertMaterial({ vertexColors: true, side: T.DoubleSide });
-const carGlassMat = isTouch ? new T.MeshPhongMaterial({ color: 0x141c22, transparent: true, opacity: 0.68, shininess: 90, specular: 0x777777, depthWrite: false })
-  : new T.MeshPhysicalMaterial({ color: 0x10181d, metalness: 0, roughness: 0.03, transparent: true, opacity: 0.62, depthWrite: false }); // tinted (privacy film), reflective, see-through
+const carGlassMat = isTouch ? new T.MeshPhongMaterial({ color: 0x0e1418, transparent: true, opacity: 0.93, shininess: 90, specular: 0x777777, depthWrite: false })
+  : new T.MeshPhysicalMaterial({ color: 0x0a0f12, metalness: 0, roughness: 0.03, transparent: true, opacity: 0.92, depthWrite: false }); // dark privacy glass with a mirror sheen: only shapes show through, like a real car in daylight
 const carPaintMat = isTouch ? new T.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x555555, side: T.DoubleSide })
   : new T.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.45, metalness: 0.08, clearcoat: 1, clearcoatRoughness: 0.015, side: T.DoubleSide }); // deep paint under a mirror-like clear coat
 const tailBox = new T.BoxGeometry(0.34, 0.14, 0.04), headBox = new T.BoxGeometry(0.36, 0.13, 0.05), tailStrip = new T.BoxGeometry(0.36, 0.075, 0.22), headStrip = new T.BoxGeometry(0.4, 0.07, 0.24), headLampM = new T.MeshBasicMaterial({ color: 0xbfc3c6 });
@@ -2918,10 +2960,122 @@ function carSnowShape(kind) {
 }
 function addCarSnow(g) { const geo = carSnowShape(g.userData.kind); if (geo) g.add(new T.Mesh(geo, carSnowM)); }
 function dropCar(g) { scene.remove(g); g.traverse(o => { if (o.geometry && o.geometry.userData.own) o.geometry.dispose(); }); }
-function makeAICar() {
-  let r = Math.random(), kind = 'sed'; for (const [k, p] of KIND_P) { if (r < p) { kind = k; break; } r -= p; }
+// Japanese number plates (white with green letters; kei cars yellow with black) and a soft contact shadow so cars sit on the road
+const PLATE_M = (() => { const mk = (kei, k) => { const c = mkCanvas(256, 128), x = c.getContext('2d'), fg = kei ? '#111' : '#1b6b3a';
+    x.fillStyle = kei ? '#f2d230' : '#f4f4ef'; x.fillRect(0, 0, 256, 128); x.strokeStyle = fg; x.lineWidth = 5; x.strokeRect(5, 5, 246, 118);
+    x.fillStyle = fg; x.textAlign = 'center'; x.font = 'bold 30px "Yu Gothic","Meiryo",sans-serif'; x.fillText(['品川', '練馬', '横浜', '札幌', 'なにわ', '多摩'][k] + ' ' + (kei ? 580 : 300 + k * 11), 128, 42);
+    x.font = 'bold 26px "Yu Gothic","Meiryo",sans-serif'; x.fillText('さ', 34, 104); x.font = 'bold 64px Arial,sans-serif'; x.fillText(['12-34', '56-78', '・・・8', '24-60', '・3 71', '90-12'][k], 146, 112);
+    return new T.MeshLambertMaterial({ map: tex(c, false) }); };
+  return { std: [0, 1, 2, 3, 4, 5].map(k => mk(false, k)), kei: [0, 1, 2].map(k => mk(true, k)) }; })();
+const plateGeo = new T.PlaneGeometry(0.33, 0.165);
+const shadowM = (() => { const c = mkCanvas(64, 128), x = c.getContext('2d'), g = x.createRadialGradient(32, 64, 6, 32, 64, 64); g.addColorStop(0, 'rgba(0,0,0,0.62)'); g.addColorStop(0.6, 'rgba(0,0,0,0.42)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g; x.save(); x.scale(1, 1); x.fillRect(0, 0, 64, 128); x.restore(); return new T.MeshBasicMaterial({ map: new T.CanvasTexture(c), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }); })();
+const shadowGeo = new T.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+function addPlatesShadow(g, kind, D, L, W) {
+  const pm = kind === 'kei' ? PLATE_M.kei : PLATE_M.std, mat = pm[Math.floor(Math.random() * pm.length)], big = D.box || L > 9;
+  const f = new T.Mesh(plateGeo, mat); f.position.set(0, big ? 0.55 : D.yb + 0.2, -L / 2 - 0.012); f.rotation.y = Math.PI; g.add(f);
+  const r = new T.Mesh(plateGeo, mat); r.position.set(0, big ? 0.75 : Math.max(D.yb + 0.25, D.tailY - 0.32), L / 2 + 0.012); g.add(r);
+  const sh = new T.Mesh(shadowGeo, shadowM); sh.scale.set(W + 0.5, 1, L + 0.7); sh.position.y = 0.025; sh.renderOrder = -1; g.add(sh);
+}
+// ---- city bus: a Japanese low-floor route bus (white body, red band under the roof, dark window band, red/navy pin-stripes,
+// red rear-half skirt, red sweeps on the nose). The livery is painted on canvases (sides, front, rear) and mapped onto a box,
+// with the 3D bits that stick out added on top: roof A/C pod, mirrors on stalks, tyres in the arches (twin rears).
+const BUS = (() => { let built = null;
+  const L = CAR_DEF.bus.L, W = CAR_DEF.bus.W, Y0 = 0.35, Y1 = 3.05, H = Y1 - Y0, PX = 190; // pixels per metre on the canvases
+  const RED = '#c8102e', NAVY = '#1f2d6e', WHITE = '#f3f3f0', GLASS = '#14181c';
+  const glass = (x, x0, y0, w, h) => { const g = x.createLinearGradient(x0, y0, x0 + w * 0.6, y0 + h); g.addColorStop(0, '#2a3138'); g.addColorStop(0.45, GLASS); g.addColorStop(1, '#0b0e11'); x.fillStyle = g; x.fillRect(x0, y0, w, h);
+    x.fillStyle = 'rgba(255,255,255,0.07)'; x.beginPath(); x.moveTo(x0 + w * 0.1, y0); x.lineTo(x0 + w * 0.35, y0); x.lineTo(x0 + w * 0.05, y0 + h); x.lineTo(x0 - w * 0.2, y0 + h); x.closePath(); x.fill(); };
+  function side(doors) { // canvas for one side; drawn with the front of the bus on the left when `doors` (left side), on the right otherwise
+    const cw = Math.round(L * PX), ch = Math.round(H * PX), c = mkCanvas(cw, ch), x = c.getContext('2d'), e = mkCanvas(cw, ch), ex = e.getContext('2d');
+    ex.fillStyle = '#000'; ex.fillRect(0, 0, cw, ch);
+    const Z = m => (doors ? m : L - m) * PX, Yp = y => (Y1 - y) * PX, box = (ctx, z0, z1, y0, y1, col) => { ctx.fillStyle = col; const a = Z(z0), b = Z(z1); ctx.fillRect(Math.min(a, b), Yp(y1), Math.abs(b - a), (y1 - y0) * PX); };
+    x.fillStyle = WHITE; x.fillRect(0, 0, cw, ch);
+    // windows: one long dark band split by slim pillars; doors on the kerb side (front door behind the front wheel arch is wrong: it is ahead of it)
+    const wy0 = 1.28, wy1 = 2.66; { const a = Z(0.25), b = Z(L - 0.35); glass(x, Math.min(a, b), Yp(wy1), Math.abs(b - a), (wy1 - wy0) * PX); }
+    box(ex, 0.3, L - 0.4, wy0 + 0.05, wy1 - 0.05, '#c9c4b0'); // night: the saloon lights show through the windows
+    const doorZ = doors ? [[0.35, 1.4], [4.55, 5.65]] : [];
+    for (let z = 1.55; z < L - 0.4; z += 1.24) if (!doorZ.some(([a, b]) => z > a - 0.1 && z < b + 0.1)) box(x, z, z + 0.06, wy0, wy1, '#2c3136');
+    box(x, 0.2, L - 0.3, wy1, wy1 + 0.04, '#2c3136'); box(x, 0.2, L - 0.3, wy0 - 0.04, wy0, '#2c3136');
+    for (const [a, b] of doorZ) { // folding glass doors: two leaves, glass almost to the floor, a dark frame
+      box(x, a - 0.03, b + 0.03, 0.42, wy1 + 0.02, '#2a2e33'); const m = (a + b) / 2;
+      for (const [p, q] of [[a, m - 0.02], [m + 0.02, b]]) { const u = Z(p), v = Z(q); glass(x, Math.min(u, v) + 4, Yp(wy1 - 0.03), Math.abs(v - u) - 8, (wy1 - 0.48) * PX); box(x, p, q, 1.18, 1.24, '#2a2e33'); }
+      box(ex, a, b, 0.5, wy1 - 0.05, '#b8b4a2'); }
+    // red band under the roof, red/navy pin-stripes under the windows, red skirt on the rear half
+    box(x, 0.0, L, 2.78, 2.93, RED); box(x, 0.0, L, 2.93, 2.96, NAVY);
+    const gaps = z => doorZ.some(([a, b]) => z > a - 0.05 && z < b + 0.05);
+    for (let z = 0; z < L; z += 0.05) if (!gaps(z)) { box(x, z, z + 0.051, 1.12, 1.16, NAVY); box(x, z, z + 0.051, 1.05, 1.09, RED); }
+    const rs = doors ? 5.75 : 4.6; box(x, rs, L, 0.45, 0.98, RED); box(x, rs, L, 0.78, 0.81, WHITE); box(x, rs, L, 0.71, 0.73, NAVY);
+    { x.fillStyle = RED; const a = Z(rs), b = Z(rs - 0.7); x.beginPath(); x.moveTo(a, Yp(0.98)); x.lineTo(b, Yp(0.45)); x.lineTo(a, Yp(0.45)); x.closePath(); x.fill(); } // the red panel starts with a slanted edge
+    box(x, 0, L, Y0, 0.45, '#8c8f93'); // grey skirt
+    // wheel arches: dark wells, the tyres sit inside them
+    for (const zm of [2.2, L - 2.6]) { x.fillStyle = '#0d0f11'; x.beginPath(); x.arc(Z(zm), Yp(0.5), 0.64 * PX, Math.PI, 0); x.lineTo(Z(zm) + 0.64 * PX, Yp(Y0)); x.lineTo(Z(zm) - 0.64 * PX, Yp(Y0)); x.closePath(); x.fill(); }
+    // lettering: company name in the red band, fleet number, non-step sticker
+    x.fillStyle = WHITE; x.font = 'bold ' + Math.round(0.11 * PX) + 'px Arial,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('SAKURA KOTSU BUS CO.,LTD.', Z(L - 2.4), Yp(2.855));
+    x.fillStyle = '#222'; x.font = 'bold ' + Math.round(0.1 * PX) + 'px Arial,sans-serif'; x.fillText('A-' + (300 + Math.floor(Math.random() * 90)), Z(1.7), Yp(1.22));
+    if (doors) { x.fillStyle = '#1d5fb8'; x.fillRect(Z(5.85), Yp(1.02), 0.26 * PX, 0.26 * PX); x.fillStyle = '#fff'; x.font = 'bold ' + Math.round(0.2 * PX) + 'px "Segoe UI Symbol",Arial,sans-serif'; x.fillText('♿', Z(5.98), Yp(0.89)); }
+    x.fillStyle = '#1d5fb8'; x.font = 'bold ' + Math.round(0.085 * PX) + 'px "Yu Gothic","Meiryo",sans-serif'; x.fillText('ノンステップバス', Z(doors ? 3.0 : 3.4), Yp(1.0));
+    x.fillStyle = '#ffa31a'; for (const zm of [0.6, L / 2, L - 0.6]) x.fillRect(Z(zm) - 6, Yp(0.52), 12, 8); // side markers
+    const t = tex(c, false), te = tex(e, false); return new T.MeshLambertMaterial({ map: t, emissiveMap: te, emissive: 0x000000 });
+  }
+  function front() {
+    const cw = Math.round(W * PX), ch = Math.round(H * PX), c = mkCanvas(cw, ch), x = c.getContext('2d'), e = mkCanvas(cw, ch), ex = e.getContext('2d');
+    const X = m => m * PX, Yp = y => (Y1 - y) * PX; ex.fillStyle = '#000'; ex.fillRect(0, 0, cw, ch);
+    x.fillStyle = WHITE; x.fillRect(0, 0, cw, ch);
+    x.fillStyle = '#111'; x.fillRect(X(0.25), Yp(2.88), X(W - 0.5), 0.32 * PX); // destination board bezel (the LED board itself is a separate plane)
+    glass(x, X(0.1), Yp(2.55), X(W - 0.2), 1.3 * PX); x.fillStyle = '#1a1d20'; x.fillRect(X(0.1), Yp(2.55), X(W - 0.2), 8); x.fillRect(X(0.1), Yp(1.25) - 8, X(W - 0.2), 8);
+    x.strokeStyle = '#222'; x.lineWidth = 6; x.beginPath(); x.moveTo(X(0.5), Yp(1.3)); x.lineTo(X(1.05), Yp(1.95)); x.moveTo(X(1.45), Yp(1.3)); x.lineTo(X(2.0), Yp(1.95)); x.stroke(); // wipers
+    ex.fillStyle = '#6a685e'; ex.fillRect(X(0.2), Yp(2.5), X(W - 0.4), 1.15 * PX);
+    // red sweeps rising from the lower corners to the badge, with navy pin-stripes
+    const sweep = (off, col, th) => { x.strokeStyle = col; x.lineWidth = th; x.beginPath(); x.moveTo(X(0.0), Yp(0.98 + off)); x.quadraticCurveTo(X(W * 0.25), Yp(0.98 + off), X(W / 2), Yp(1.18 + off)); x.quadraticCurveTo(X(W * 0.75), Yp(0.98 + off), X(W), Yp(0.98 + off)); x.stroke(); };
+    x.fillStyle = RED; x.beginPath(); x.moveTo(0, Yp(0.75)); x.lineTo(0, Yp(1.08)); x.quadraticCurveTo(X(W * 0.25), Yp(1.08), X(W / 2), Yp(1.26)); x.quadraticCurveTo(X(W * 0.75), Yp(1.08), X(W), Yp(1.08)); x.lineTo(X(W), Yp(0.75)); x.closePath(); x.fill();
+    sweep(0.12, NAVY, 7); sweep(-0.05, WHITE, 5); sweep(-0.12, NAVY, 4);
+    x.fillStyle = WHITE; x.beginPath(); x.arc(X(W / 2), Yp(1.02), 0.13 * PX, 0, 7); x.fill(); x.fillStyle = RED; x.beginPath(); x.arc(X(W / 2), Yp(1.02), 0.1 * PX, 0, 7); x.fill();
+    x.fillStyle = WHITE; x.beginPath(); for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; x.lineTo(X(W / 2) + Math.cos(a) * 0.07 * PX, Yp(1.02) + Math.sin(a) * 0.07 * PX); } x.closePath(); x.fill(); // badge
+    for (const sx of [0.12, W - 0.62]) { x.fillStyle = '#111'; x.fillRect(X(sx), Yp(1.02), X(0.5), 0.18 * PX); x.fillStyle = '#e8eef2'; x.fillRect(X(sx + 0.04), Yp(0.99), X(0.18), 0.12 * PX); x.fillRect(X(sx + 0.27), Yp(0.99), X(0.18), 0.12 * PX); x.fillStyle = '#ffa31a'; x.fillRect(X(sx + (sx < 1 ? 0.0 : 0.44)), Yp(1.0), X(0.05), 0.12 * PX); }
+    x.fillStyle = '#8c8f93'; x.fillRect(0, Yp(0.72), cw, 0.37 * PX); x.fillStyle = '#5d6064'; x.fillRect(0, Yp(0.72), cw, 6); // bumper
+    x.fillStyle = '#1d5fb8'; x.fillRect(X(W - 0.42), Yp(1.62), 0.22 * PX, 0.22 * PX); x.fillStyle = '#fff'; x.font = 'bold ' + Math.round(0.17 * PX) + 'px "Segoe UI Symbol",Arial,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('♿', X(W - 0.31), Yp(1.51));
+    return new T.MeshLambertMaterial({ map: tex(c, false), emissiveMap: tex(e, false), emissive: 0x000000 });
+  }
+  function rear() {
+    const cw = Math.round(W * PX), ch = Math.round(H * PX), c = mkCanvas(cw, ch), x = c.getContext('2d'), X = m => m * PX, Yp = y => (Y1 - y) * PX;
+    x.fillStyle = WHITE; x.fillRect(0, 0, cw, ch); x.fillStyle = RED; x.fillRect(0, Yp(2.93), cw, 0.15 * PX);
+    glass(x, X(0.35), Yp(2.7), X(W - 0.7), 0.6 * PX);
+    x.fillStyle = RED; x.fillRect(0, Yp(1.55), cw, 1.1 * PX); x.fillStyle = WHITE; x.fillRect(0, Yp(1.22), cw, 5); x.fillStyle = NAVY; x.fillRect(0, Yp(1.15), cw, 5);
+    x.fillStyle = '#2a2c30'; x.fillRect(X(0.55), Yp(1.45), X(W - 1.1), 0.5 * PX); x.fillStyle = '#3a3d42'; for (let k = 0; k < 9; k++) x.fillRect(X(0.6), Yp(1.42) + k * 10, X(W - 1.2), 4); // engine grille
+    for (const sx of [0.06, W - 0.24]) { x.fillStyle = '#7a0a0a'; x.fillRect(X(sx), Yp(1.55), X(0.18), 0.85 * PX); x.fillStyle = '#ffa31a'; x.fillRect(X(sx), Yp(0.85), X(0.18), 0.12 * PX); }
+    x.fillStyle = '#8c8f93'; x.fillRect(0, Yp(0.6), cw, 0.25 * PX);
+    x.fillStyle = WHITE; x.font = 'bold ' + Math.round(0.12 * PX) + 'px Arial,sans-serif'; x.textAlign = 'center'; x.fillText('SAKURA BUS', X(W / 2), Yp(1.62));
+    return new T.MeshLambertMaterial({ map: tex(c, false) });
+  }
+  function build() {
+    const mL = side(true), mR = side(false), roof = new T.MeshLambertMaterial({ color: 0xf0f0ec }), under = new T.MeshLambertMaterial({ color: 0x1a1a1c }), mF = front(), mB = rear();
+    const body = new T.BoxGeometry(W, H, L); body.translate(0, Y0 + H / 2, 0);
+    const parts = [], put = (g, x, y, z, c) => parts.push({ g, m: new T.Matrix4().makeTranslation(x, y, z), c });
+    put(new T.BoxGeometry(W - 0.12, 0.08, L - 0.2), 0, Y1 + 0.04, 0, [0.93, 0.93, 0.91]); // roof crown
+    put(new T.BoxGeometry(1.9, 0.3, 3.3), 0, Y1 + 0.23, -1.6, [0.88, 0.89, 0.9]); put(new T.BoxGeometry(1.7, 0.04, 3.0), 0, Y1 + 0.39, -1.6, [0.8, 0.81, 0.83]); // A/C pod
+    put(new T.BoxGeometry(0.9, 0.12, 0.7), 0, Y1 + 0.12, 2.6, [0.85, 0.86, 0.87]); // roof hatch
+    for (const sx of [-1, 1]) { // mirrors hang on stalks from the front corners, out ahead of the windscreen
+      const st = new T.BoxGeometry(0.05, 0.05, 0.55); parts.push({ g: st, m: new T.Matrix4().makeRotationY(sx * 0.35).setPosition(sx * (W / 2 - 0.02), 2.75, -L / 2 - 0.22), c: [0.08, 0.08, 0.09] });
+      put(new T.BoxGeometry(0.06, 0.38, 0.16), sx * (W / 2 + 0.08), 2.5, -L / 2 - 0.44, [0.08, 0.08, 0.09]); put(new T.BoxGeometry(0.04, 0.6, 0.04), sx * (W / 2 + 0.08), 2.55, -L / 2 - 0.44, [0.08, 0.08, 0.09]); }
+    const tr = 0.5, wzF = -(L / 2 - 2.2), wzR = L / 2 - 2.6;
+    for (const sx of [-1, 1]) for (const [wz_, twin] of [[wzF, false], [wzR, true]]) {
+      const x0 = sx * (W / 2 - (twin ? 0.36 : 0.2)), tw = twin ? 0.55 : 0.3, ty = new T.CylinderGeometry(tr, tr, tw, 20); ty.rotateZ(Math.PI / 2); put(ty, x0, tr, wz_, [0.07, 0.07, 0.075]);
+      const hb = new T.CylinderGeometry(tr * 0.62, tr * 0.62, tw + 0.01, 16); hb.rotateZ(Math.PI / 2); put(hb, x0, tr, wz_, [0.62, 0.63, 0.66]);
+      const cap = new T.CylinderGeometry(tr * 0.22, tr * 0.25, tw + 0.06, 10); cap.rotateZ(Math.PI / 2); put(cap, x0, tr, wz_, [0.4, 0.41, 0.44]);
+      for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, nut = new T.CylinderGeometry(0.025, 0.025, tw + 0.04, 6); nut.rotateZ(Math.PI / 2); put(nut, x0, tr + Math.sin(a) * 0.2, wz_ + Math.cos(a) * 0.2, [0.75, 0.76, 0.78]); }
+    }
+    built = { body, mats: [mR, mL, roof, under, mB, mF], detail: mergeGeos(parts) };
+    for (const m of [mL, mR, mF]) { m.userData.nightCol = 0xffffff; if (typeof lmGlow !== 'undefined') lmGlow.push([m, 0xffffff]); m.emissive.setHex(typeof night !== 'undefined' && night ? 0xffffff : 0); }
+    return built;
+  }
+  return { get: () => built || build() };
+})();
+function makeBusMesh(g) { const B_ = BUS.get(), m = new T.Mesh(B_.body, B_.mats); m.castShadow = true; g.add(m); const d = new T.Mesh(B_.detail, carDetailMat); d.castShadow = true; g.add(d); }
+const TESLA_COL = [0xf4f4f2, 0xf4f4f2, 0xf4f4f2, 0x111214, 0x111214, 0x5a5e64, 0x1e3f8a, 0xa8121b, 0x8e9399]; // pearl white, black, midnight silver, deep blue, red, quicksilver
+function makeAICar(fk) {
+  let r = Math.random(), kind = 'sed'; for (const [k, p] of KIND_P) { if (r < p) { kind = k; break; } r -= p; } if (fk) kind = fk;
   const G = carGeo(kind), L = G.L, W = G.W, D = G.D;
-  const col = kind === 'taxi' ? TAXI_COL[Math.floor(Math.random() * TAXI_COL.length)] : kind === 'bus' ? [0xc41e26, 0xb81a22, 0xcc2a2a][Math.floor(Math.random() * 3)] : kind === 'truck' ? [0xf2f2f2, 0x2a6ab0, 0x1a7a40][Math.floor(Math.random() * 3)] : CARCOL[Math.floor(Math.random() * CARCOL.length)];
+  const col = kind === 'taxi' ? TAXI_COL[Math.floor(Math.random() * TAXI_COL.length)] : kind === 'bus' ? [0xc41e26, 0xb81a22, 0xcc2a2a][Math.floor(Math.random() * 3)] : kind === 'truck' ? [0xf2f2f2, 0x2a6ab0, 0x1a7a40][Math.floor(Math.random() * 3)] : kind.startsWith('tesla') ? TESLA_COL[Math.floor(Math.random() * TESLA_COL.length)] : CARCOL[Math.floor(Math.random() * CARCOL.length)];
   const pc = new T.Color(col), treg = G.body.userData.treg, P2 = G.body.attributes.position.array, cols = new Float32Array(treg.length * 9);
   for (let t = 0; t < treg.length; t++) {
     const yc = (P2[t * 9 + 1] + P2[t * 9 + 4] + P2[t * 9 + 7]) / 3; let c = REGC[treg[t]] || [pc.r, pc.g, pc.b];
@@ -2930,17 +3084,18 @@ function makeAICar() {
   }
   const bg = new T.BufferGeometry(); bg.setAttribute('position', G.body.attributes.position); bg.setAttribute('normal', G.body.attributes.normal); bg.setAttribute('color', new T.BufferAttribute(cols, 3));
   bg.setIndex(G.paintIndex); bg.userData.own = true; // per-car colours: freed when the car leaves (dropCar)
-  const g = new T.Group(); g.add(new T.Mesh(bg, carPaintMat)); g.add(new T.Mesh(G.detail, carDetailMat)); if (G.glassGeo) { const gm = new T.Mesh(G.glassGeo, carGlassMat); gm.renderOrder = 1; g.add(gm); }
+  const g = new T.Group(); if (kind === 'bus') makeBusMesh(g); else { g.add(new T.Mesh(bg, carPaintMat)); g.add(new T.Mesh(G.detail, carDetailMat)); } if (G.glassGeo && kind !== 'bus') { const gm = new T.Mesh(G.glassGeo, carGlassMat); gm.renderOrder = 1; g.add(gm); }
   // lamps: slim LED strips sitting on the actual nose / tail surface (big vehicles keep their boxes)
   const big = D.box || L > 9, hY = big ? D.tailY - 0.05 : Math.min(D.belt - 0.14, profY(D, -L / 2 + 0.14) - 0.06), tY = big ? D.tailY : Math.min(D.tailY, profY(D, L / 2 - 0.14) - 0.06);
   const tails = [-1, 1].map(sx => { const o = new T.Mesh(big ? tailBox : tailStrip, tailOff); o.position.set(sx * (W / 2 * (big ? 1 : 0.93) - 0.26), tY, big ? L / 2 + 0.03 : L / 2 - 0.1); g.add(o); return o; });
   for (const sx of [-1, 1]) { const h = new T.Mesh(big ? headBox : headStrip, headLampM); h.position.set(sx * (W / 2 * (big ? 1 : 0.93) - 0.28), hY, big ? -L / 2 - 0.03 : -L / 2 + 0.11); g.add(h); }
   { const b = new T.Mesh(beamGeo, beamMat); b.position.set(0, 0.06, -L / 2 - 5.6); b.renderOrder = 2; g.add(b); }
   g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  addPlatesShadow(g, kind, D, L, W);
   if (kind === 'bus') { const dm = new T.Mesh(busDestGeo, busDestM[Math.floor(Math.random() * busDestM.length)]); dm.position.set(0, 2.72, -L / 2 - 0.04); dm.rotation.y = Math.PI; g.add(dm); }
   g.userData.tails = tails; g.userData.len = L; g.userData.kind = kind; g.rotation.order = 'YXZ'; return g;
 }
-function aiPos(a) { return a.axis === 'x' ? [a.s, a.line * S + a.lat] : [a.line * S + a.lat, a.s]; }
+function aiPos(a) { if (a.turn) return [a.turn.x, a.turn.z]; return a.axis === 'x' ? [a.s, a.line * S + a.lat] : [a.line * S + a.lat, a.s]; }
 function laneSet(axis, line, dir, hw) {
   const sg = dir > 0 ? -1 : 1;
   if (hw) return [sg * 5.75, sg * 2.25];
@@ -2977,15 +3132,62 @@ function carDodge(a) {
   a.dodge = { t0: simT, dur: 2.6 + Math.random(), off: out * (a.lanes.length > 1 ? 0.7 : 1.15), v: 2.2 }; return true;
 }
 function aiSkid(a) { if (a.v > 4) noise(0.35, 'bandpass', 1400, 0.05); }
+// ---- AI cars turn at junctions: they used to run straight and vanish where their road ended (or at the coast).
+// Approaching each node a car picks straight / left / right (forced to turn when straight on is a dead end), then drives a smooth
+// quadratic curve from its lane into the matching lane of the cross street and carries on from there.
+function aiTurnOpts(a, k) {
+  const ii = a.axis === 'x' ? k : a.line, jj = a.axis === 'x' ? a.line : k, out = [];
+  const seg = a.dir > 0 ? k : k - 1, odd = isRound(ii, jj) || diagCell(ii, jj) || diagCell(ii, jj - 1) || diagCell(ii - 1, jj) || diagCell(ii - 1, jj - 1);
+  const straight = a.axis === 'x' ? xRoadAt(seg, a.line) && isleAt(k * S + a.dir * 24, a.line * S + a.lat)
+    : zRoadAt(a.line, seg) && !noZ(a.line, seg) && isleAt(a.line * S + a.lat, k * S + a.dir * 24);
+  if (!odd) for (const side of [-1, 1]) { // -1 left, +1 right (keep-left country: left of heading (fx, fz) is (fz, -fx))
+    const fx = a.axis === 'x' ? a.dir : 0, fz = a.axis === 'z' ? a.dir : 0, vx = -side * fz, vz = side * fx;
+    if (a.axis === 'x') { const nd = Math.sign(vz), sg = nd > 0 ? jj : jj - 1; if (zRoadAt(ii, sg) && !noZ(ii, sg) && isleAt(ii * S, jj * S + nd * 24) && (!oneWay(ii) || oneWay(ii) === nd)) out.push({ side, nAxis: 'z', nLine: ii, nDir: nd }); }
+    else { const nd = Math.sign(vx), sg = nd > 0 ? ii : ii - 1; if (xRoadAt(sg, jj) && isleAt(ii * S + nd * 24, jj * S)) out.push({ side, nAxis: 'x', nLine: jj, nDir: nd }); }
+  }
+  return { ii, jj, straight, out };
+}
+function aiPlan(a, k) {
+  const o = aiTurnOpts(a, k), L = o.out.find(t => t.side < 0), R = o.out.find(t => t.side > 0), r = Math.random();
+  let pick = null; if (!o.straight) pick = L || R || { side: 2, nAxis: a.axis, nLine: a.line, nDir: -a.dir }; /* dead end with nowhere to turn: U-turn in the junction */ else if (L && r < 0.2) pick = L; else if (R && r > 0.88) pick = R;
+  return { k, ii: o.ii, jj: o.jj, t: pick, e: a.axis === 'x' ? RW + 3 : rxOf(k) + 3 };
+}
+function aiStartTurn(a) {
+  const p = a.plan, t = p.t, lanes = laneSet(t.nAxis, t.nLine, t.nDir, false), byAbs = lanes.map((l, i) => [Math.abs(l), i]).sort((m, n) => m[0] - n[0]);
+  const li = t.side < 0 ? byAbs[byAbs.length - 1][1] : byAbs[0][1], lat2 = lanes[li], [ex, ez] = aiPos(a);
+  let C, X; if (t.side === 2) { const at = (al, la) => a.axis === 'x' ? [al, a.line * S + la] : [a.line * S + la, al]; C = at(p.k * S, 0); X = at(p.k * S - a.dir * p.e, lat2); }
+  else if (a.axis === 'x') { C = [p.ii * S + lat2, a.line * S + a.lat]; X = [p.ii * S + lat2, p.jj * S + t.nDir * (rxOf(p.jj) + 3)]; }
+  else { C = [a.line * S + a.lat, p.jj * S + lat2]; X = [p.ii * S + t.nDir * (RW + 3), p.jj * S + lat2]; }
+  const d = (u, w) => Math.hypot(u[0] - w[0], u[1] - w[1]), E = [ex, ez];
+  a.turn = { E, C, X, u: 0, len: 0.5 * (d(E, C) + d(C, X)) + 0.5 * d(E, X), lanes, li, lat2, x: ex, z: ez, ...t }; a.dodge = null; a.latV = 0;
+}
+function aiStepTurn(a, dt) { // returns true while the car is still in the junction
+  const T_ = a.turn, vT = Math.min(a.vmax, T_.side < 0 ? 5.5 : T_.side > 1 ? 3.2 : 4.8), u = T_.u, E = T_.E, C = T_.C, X = T_.X;
+  const tx = 2 * (1 - u) * (C[0] - E[0]) + 2 * u * (X[0] - C[0]), tz = 2 * (1 - u) * (C[1] - E[1]) + 2 * u * (X[1] - C[1]), tl = Math.hypot(tx, tz) || 1;
+  const ax_ = T_.x + tx / tl * 4 - P.x, az_ = T_.z + tz / tl * 4 - P.z, blocked = !P.lay && Math.hypot(ax_, az_) < 3.2; // you are in its way: it waits
+  a.v += clamp((blocked ? 0 : vT) - a.v, -6 * dt, 2.5 * dt); T_.u = Math.min(1, u + a.v * dt / T_.len);
+  const w = T_.u, x = (1 - w) * (1 - w) * E[0] + 2 * w * (1 - w) * C[0] + w * w * X[0], z = (1 - w) * (1 - w) * E[1] + 2 * w * (1 - w) * C[1] + w * w * X[1]; T_.x = x; T_.z = z;
+  a.mesh.position.set(x, terrainH(x, z), z); a.mesh.rotation.set(0, Math.atan2(-tx, -tz), 0);
+  if (!P.lay && Math.hypot(x - P.x, z - P.z) < 2.3 && simT - lastCrash > 1.5) { lastCrash = simT; crash(); a.v = 0; P.v *= 0.3; shakeT = simT; shakeA = 0.06; }
+  if (T_.u < 1) return true;
+  Object.assign(a, { axis: T_.nAxis, line: T_.nLine, dir: T_.nDir, lanes: T_.lanes, li: T_.li, lat: T_.lat2, s: T_.nAxis === 'x' ? X[0] : X[1], rel: undefined, wait: 0, plan: null, turn: null, swY: 0 });
+  return false;
+}
 function updateAI(dt) {
   if (aiCars.length < (isTouch ? 14 : 24) && Math.random() < dt * 3) spawnAI();
   for (let n = aiCars.length - 1; n >= 0; n--) {
     const a = aiCars[n], [x, z] = aiPos(a);
     const kill = () => { dropCar(a.mesh); aiCars.splice(n, 1); };
     if (Math.hypot(x - P.x, z - P.z) > 240) { kill(); continue; }
-    if (a.hw ? (a.s < HW_X0 + 20 || a.s > HW_X1 - 20) : !isleAt(x + (a.axis === 'x' ? a.dir * 14 : 0), z + (a.axis === 'z' ? a.dir * 14 : 0))) { kill(); continue; }
-    if (!a.hw) { const s2 = a.s + a.dir * 14, k2 = Math.floor(s2 / S); if (a.axis === 'x' ? !xRoadAt(k2, a.line) : !zRoadAt(a.line, k2)) { kill(); continue; } }
-    if (a.axis === 'z') {
+    if (a.turn) { if (a.boom || aiStepTurn(a, dt)) continue; }
+    let turning = false;
+    if (!a.hw && !a.boom) { const kN = a.dir > 0 ? Math.floor(a.s / S) + 1 : Math.ceil(a.s / S) - 1, eN = (kN * S - a.s) * a.dir;
+      if (a.plan && a.plan.k !== kN) a.plan = null;
+      if (!a.plan && eN > 0 && eN < 70) a.plan = aiPlan(a, kN);
+      if (a.plan && a.plan.t) { turning = true; if (eN <= a.plan.e) { aiStartTurn(a); if (aiStepTurn(a, dt)) continue; turning = false; } } }
+    if (!turning && (a.hw ? (a.s < HW_X0 + 20 || a.s > HW_X1 - 20) : !isleAt(x + (a.axis === 'x' ? a.dir * 14 : 0), z + (a.axis === 'z' ? a.dir * 14 : 0)))) { kill(); continue; }
+    if (!a.hw && !turning) { const s2 = a.s + a.dir * 14, k2 = Math.floor(s2 / S); if (a.axis === 'x' ? !xRoadAt(k2, a.line) : !zRoadAt(a.line, k2)) { kill(); continue; } }
+    if (a.axis === 'z' && !turning) {
       const sj = Math.floor(a.s / S), ahead = a.dir > 0 ? noZ(a.line, sj + 1) : noZ(a.line, sj - 1), dEnd = a.dir > 0 ? (sj + 1) * S - a.s : a.s - sj * S;
       if (noZ(a.line, sj) || (ahead && dEnd < 30)) { kill(); continue; }
     }
@@ -3154,7 +3356,7 @@ function mkCoinParking(B, rnd, x0, x1, zf, zb, roadZ, rects, extras, slots, lots
       const taken = rnd() < 0.55;
       B.box('col', cx, 0.19, rz, 0.5, taken ? 0.1 : 0.04, 0.6, [0.15, 0.15, 0.16]); // lock plate
       if (taken) {
-        let r = rnd(), kind = 'sed'; for (const [k, p] of [['kei', 0.36], ['hatch', 0.18], ['sed', 0.12], ['mpv', 0.16], ['prius', 0.08], ['van', 0.1]]) { if (r < p) { kind = k; break; } r -= p; }
+        let r = rnd(), kind = 'sed'; for (const [k, p] of [['kei', 0.32], ['hatch', 0.16], ['sed', 0.12], ['mpv', 0.15], ['prius', 0.08], ['tesla', 0.04], ['teslaY', 0.03], ['van', 0.1]]) { if (r < p) { kind = k; break; } r -= p; }
         const m = new T.Matrix4().makeTranslation(cx, 0.16, rz).multiply(new T.Matrix4().makeRotationY(fdir > 0 ? Math.PI : 0));
         cars.push({ g: carColoredGeo(kind, CARCOL[Math.floor(rnd() * CARCOL.length)]), m }); dets.push({ g: carGeo(kind).detail, m });
         const hl = carGeo(kind).L / 2 - 0.2; rects.push([cx - 0.75, rz - hl, cx + 0.75, rz + hl]);
@@ -5232,7 +5434,7 @@ function animateCar(dt, inp) {
   { const f = baseFov + Math.min(spd, 25) * 0.42; if (Math.abs(camera.fov - f) > 0.05) { camera.fov += (f - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix(); } }
   const sk = (simT - shakeT < 0.7 ? shakeA * (1 - (simT - shakeT) / 0.7) : 0) + vib;
   camera.position.set(EYE.x + P.steer * 0.04 + (Math.random() - 0.5) * sk, EYE.y + Math.sin(simT * 1.7) * 0.0015 * Math.min(1, Math.abs(P.v)) + (Math.random() - 0.5) * sk, EYE.z + (Math.random() - 0.5) * sk);
-  camera.rotation.y = look.yaw; camera.rotation.x = look.pitch - clamp(inp.brk, 0, 1) * 0.015 * Math.min(1, Math.abs(P.v) / 6);
+  camera.rotation.y = look.yaw; camera.rotation.x = EYE_TILT + look.pitch - clamp(inp.brk, 0, 1) * 0.015 * Math.min(1, Math.abs(P.v) / 6);
   { const sx = Math.round(P.x), sz = Math.round(P.z), o = sunOffset(); sun.position.set(sx + o[0], o[1] + P.y, sz + o[2]); sun.target.position.set(sx, P.y, sz); }
   sky.position.x = P.x; sky.position.z = P.z; skyOv.position.x = P.x; skyOv.position.z = P.z; groundMesh.position.x = P.x; groundMesh.position.z = P.z;
 }
