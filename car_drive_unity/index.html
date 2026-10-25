@@ -150,18 +150,31 @@
 <style>
 #jd{position:fixed;inset:0;pointer-events:none;z-index:50;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;color:#fff}
 #jd .pe{pointer-events:auto}
-#jdHelp{position:fixed;left:10px;bottom:8px;font-size:13px;opacity:.85;text-shadow:0 1px 2px #000}
+#jdHelp{position:fixed;left:16px;bottom:16px;font-size:13px;padding:6px 12px;border-radius:999px;background:rgba(12,16,24,.55);border:1px solid rgba(255,255,255,.18);cursor:pointer;pointer-events:auto;backdrop-filter:blur(6px)}
+#jdKeysPanel{position:fixed;left:16px;bottom:56px;display:grid;grid-template-columns:auto auto;gap:4px 14px;padding:12px 16px;border-radius:14px;background:rgba(12,16,24,.72);border:1px solid rgba(255,255,255,.15);font-size:13px;backdrop-filter:blur(6px);transition:opacity .4s}
+#jdKeysPanel.hide{opacity:0;pointer-events:none} #jdKeysPanel b{display:inline-block;min-width:22px;padding:1px 6px;margin-right:3px;border-radius:5px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);text-align:center;font-weight:700;font-size:12px}
+.card{background:rgba(12,16,24,.58);border:1px solid rgba(255,255,255,.16);border-radius:16px;backdrop-filter:blur(6px);box-shadow:0 4px 18px rgba(0,0,0,.25)}
+#jdSpd{position:fixed;right:16px;bottom:16px;display:flex;align-items:center;gap:12px;padding:10px 16px}
+#spdNum{font-size:54px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;min-width:2.1em;text-align:right;letter-spacing:-1px}
+#spdNum.over{color:#ff6b5a}
+#spdSide{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;opacity:.85}
+#spdGear{font-size:20px;font-weight:800;padding:1px 9px;border-radius:7px;background:rgba(255,255,255,.14)} #spdGear.r{background:#e0a21e;color:#111}
+#spdLim{width:46px;height:46px;border-radius:50%;background:#fff;border:6px solid #d42a1e;box-sizing:border-box;color:#1a2a7a;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center}
+#jdTR{position:fixed;right:16px;top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+body.jdtouch #jdSpd{top:8px;bottom:auto;right:12px;padding:6px 12px;gap:8px} body.jdtouch #spdNum{font-size:38px} body.jdtouch #spdLim{width:38px;height:38px;font-size:15px;border-width:5px}
+body.jdtouch #jdTR{top:76px;right:12px} body.jdtouch #jdCities{display:none} body.jdtouch #jdKeysPanel{display:none} body.jdtouch #jdSig{display:none!important}
 #jdCities{position:fixed;left:10px;top:10px;display:flex;gap:6px}
-#jdCities div{padding:6px 12px;border-radius:8px;background:rgba(20,26,36,.55);border:1px solid rgba(255,255,255,.35);font-weight:700;cursor:pointer;font-size:15px}
-#jdCities div.on{background:rgba(230,170,40,.75);border-color:#fd6}
+#jdCities{padding:4px;gap:2px;border-radius:12px;background:rgba(12,16,24,.55);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(6px)}
+#jdCities div{padding:6px 13px;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px;opacity:.8;transition:background .2s}
+#jdCities div:hover{background:rgba(255,255,255,.1);opacity:1} #jdCities div.on{background:#e6aa28;color:#111;opacity:1}
 #jdMsgs{position:fixed;left:50%;top:60px;transform:translateX(-50%);width:min(92vw,620px);text-align:center;pointer-events:none}
 #jdMsgs .msg{display:inline-block;margin:3px;padding:5px 12px;border-radius:9px;background:rgba(0,0,0,.6);font-size:16px;font-weight:700;text-shadow:0 1px 2px #000;animation:jdfade 4s forwards}
 #jdMsgs .msg.bad{background:rgba(170,30,30,.75)}#jdMsgs .msg.good{background:rgba(30,140,70,.75)}
 @keyframes jdfade{0%{opacity:0;transform:translateY(-6px)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
-#jdMission{position:fixed;right:12px;top:calc(12vh + 70px);background:rgba(0,0,0,.55);border-radius:10px;padding:8px 12px;font-size:15px;line-height:1.5;max-width:300px;display:none}
-#jdMoney{position:fixed;right:14px;top:calc(12vh + 20px);font-size:22px;font-weight:700;color:#ffd24a;text-shadow:0 1px 3px #000}
-body:not(.jdtouch) #jdMoney{top:92px}body:not(.jdtouch) #jdMission{top:130px}
-#jdSig{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);font-size:34px;letter-spacing:60px;text-shadow:0 0 8px #3f3;display:none}
+#jdMission{padding:10px 14px;font-size:14px;line-height:1.5;width:250px;display:none}
+#jdMission .t{font-size:16px;font-weight:800;margin-bottom:2px} #jdMission .bar{height:6px;border-radius:3px;background:rgba(255,255,255,.15);margin-top:6px;overflow:hidden} #jdMission .bar i{display:block;height:100%;background:linear-gradient(90deg,#ffd24a,#ff9a3a);border-radius:3px;transition:width .3s}
+#jdMoney{padding:6px 14px;font-size:20px;font-weight:800;color:#ffd24a}
+#jdSig{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);font-size:34px;letter-spacing:60px;text-shadow:0 0 8px #3f3;display:none}
 #jdPause,#jdWz{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;pointer-events:auto;z-index:80}
 #jd .panel{background:rgba(16,20,30,.95);border:1px solid #3c4c6c;border-radius:14px;padding:22px 26px;max-width:560px;text-align:center}
 #jd .panel h1{margin:0 0 10px;font-size:28px}
@@ -181,7 +194,8 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
 #tSteer{left:14px;bottom:14px;width:min(44vw,300px);height:170px;border-radius:24px;background:rgba(20,26,36,.25)}
 #tWheel{width:120px;height:120px;border-radius:50%;border:12px solid rgba(255,255,255,.55);box-sizing:border-box;position:relative;pointer-events:none}
 #tWheel:after{content:'';position:absolute;left:50%;top:-12px;width:8px;height:20px;margin-left:-4px;background:#ff7a30;border-radius:3px}
-#tTop{position:absolute;left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:58px;transform:translateX(-50%);display:flex;gap:8px}
+#tTop{position:absolute;left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:112px;transform:translateX(-50%);display:flex;gap:8px}
+#tHorn{left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:16px;transform:translateX(-50%);width:88px;height:88px;border-radius:50%;font-size:30px;flex-direction:column;background:rgba(230,170,40,.35);border-color:rgba(255,220,120,.7)} #tHorn small{font-size:12px;margin-top:-2px}
 #tTop .tb{position:static;width:62px;height:52px;font-size:24px;border-radius:14px}
 #tTop .tb.lit{background:rgba(40,220,90,.75);border-color:#bfb;box-shadow:0 0 14px #3f3}
 #tSide{position:absolute;left:50%;top:8px;transform:translateX(-50%);display:flex;gap:6px}
@@ -192,9 +206,12 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
 </style>
 <div id="jd">
   <div id="jdCities" class="pe"><div data-c="0">札幌</div><div data-c="1">東京</div><div data-c="2">横浜</div><div data-c="3">大阪</div><div data-c="4">キロロ</div></div>
-  <div id="jdMsgs"></div><div id="jdMoney">¥10,000</div><div id="jdMission"></div>
+  <div id="jdMsgs"></div>
+  <div id="jdTR"><div id="jdMoney" class="card">¥10,000</div><div id="jdMission" class="card"></div></div>
+  <div id="jdSpd" class="card"><div id="spdNum">0</div><div id="spdSide"><div id="spdGear">D</div><div>km/h</div></div><div id="spdLim">40</div></div>
   <div id="jdSig"><span id="jdSigL">◀</span><span id="jdSigR">▶</span></div>
-  <div id="jdHelp">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車 ・ Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角 ・ C 方向盤設定 ・ Tab 切換視角 ・ N 日夜 ・ T 天氣 ・ M 地圖 ・ 1-5 換城市 (5 = キロロ雪山) ・ 首都高隧道可開到下一個城市 ・ Esc 暫停</div>
+  <div id="jdHelp">⌨ 操作說明 <span style="opacity:.6">F1</span></div>
+  <div id="jdKeysPanel"><div><b>W</b><b>S</b> 油門 / 煞車</div><div><b>A</b><b>D</b> 方向盤</div><div><b>Space</b> 手煞車</div><div><b>R</b> 切換 D / R</div><div><b>Q</b><b>E</b> 方向燈</div><div><b>X</b> 雙閃</div><div><b>H</b> 喇叭 (行人會回頭)</div><div><b>V</b> 滑鼠轉頭看</div><div><b>Tab</b> 切換視角</div><div><b>M</b> 地圖 / 全國地圖</div><div><b>N</b> 日 / 夜</div><div><b>T</b> 天氣</div><div><b>1</b>-<b>5</b> 換城市</div><div><b>C</b> 方向盤設定</div><div><b>⌫</b> 回到路上</div><div><b>Esc</b> 暫停</div><div style="grid-column:1/3;opacity:.7;margin-top:4px">北邊的牆有缺口可以開上山坡區 ・ 首都高接成「口」字環線,四個城市互通</div></div>
   <div id="jdPause"><div class="panel">
     <h1>⏸ 暫停</h1>
     <button id="pzGo">▶ 繼續駕駛</button>
@@ -211,8 +228,9 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   </div></div>
   <div id="jdTouch">
     <div id="tTop"><div class="tb" data-a="sigL" id="tSigL">◀</div><div class="tb" data-a="haz" id="tHaz">⚠</div><div class="tb" data-a="sigR" id="tSigR">▶</div></div>
-    <div id="tSide"><div class="tb" data-a="pause" id="tPause">⏸</div><div class="tb" data-k="horn" id="tHorn">📢</div><div class="tb" data-a="cam" id="tCam">🎥</div><div class="tb" data-a2="map" id="tMap">🗺</div><div class="tb" data-a2="night" id="tNight">🌙</div><div class="tb" id="tGyro">📱</div><div class="tb" id="tCenter">🎯</div><div class="tb" data-a="reset" id="tReset">↺</div></div>
+    <div id="tSide"><div class="tb" data-a="pause" id="tPause">⏸</div><div class="tb" data-a="cam" id="tCam">🎥</div><div class="tb" data-a2="map" id="tMap">🗺</div><div class="tb" id="tGyro">📱</div><div class="tb" id="tCenter">🎯</div><div class="tb" data-a="reset" id="tReset">↺</div></div>
     <div class="tb" id="tSteer"><div id="tWheel"></div></div>
+    <div class="tb" data-k="horn" id="tHorn">📢<small>喇叭</small></div>
     <div class="tb" id="tHand" data-k="hand">手煞車</div>
     <div class="tb" data-a="gear" id="tRev">D</div>
     <div class="tb" id="tBrk" data-k="brake">煞車</div>
@@ -245,11 +263,18 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   // turn signal lamps shown by the game (Game calls window.jdSig(l, r) through the page)
   window.jdSig = function (l, r) { $('jdSig').style.display = (l || r) ? 'block' : 'none'; $('jdSigL').style.opacity = l ? 1 : 0.15; $('jdSigR').style.opacity = r ? 1 : 0.15; $('tSigL').classList.toggle('lit', !!l); $('tSigR').classList.toggle('lit', !!r); };
   window.jdGear = function (rev) { $('tRev').textContent = rev ? 'R' : 'D'; };
+  window.jdSpeed = function (k, r, l) { var n = $('spdNum'); n.textContent = k; n.classList.toggle('over', k > l + 10); var g = $('spdGear'); g.textContent = r ? 'R' : 'D'; g.classList.toggle('r', !!r); $('spdLim').textContent = l; };
+  // the key list shows for a while at the start, then folds away; F1 or a click brings it back
+  (function () { var kp = $('jdKeysPanel'), t = setTimeout(function () { kp.classList.add('hide'); }, 12000);
+    var tog = function () { clearTimeout(t); kp.classList.toggle('hide'); }; $('jdHelp').addEventListener('click', tog); window.addEventListener('keydown', function (e) { if (e.code === 'F1') { tog(); e.preventDefault(); } }); })();
   // toasts, the taxi job panel, the wallet (kept in this browser)
   window.jdNotify = function (t) { var d = document.createElement('div'); d.className = 'msg' + (/🚨|💥/.test(t) ? ' bad' : /💴|✅/.test(t) ? ' good' : ''); d.textContent = t; var box = $('jdMsgs'); box.appendChild(d); while (box.children.length > 4) box.removeChild(box.firstChild); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 4000); };
-  var NAMES = { tokyotower: '東京タワー', skytree: '東京スカイツリー', sensoji: '浅草寺', tocho: '東京都庁', station: '東京駅', shibuya: '渋谷スクランブル交差点', wako: '銀座 和光', meiji: '明治神宮', odaiba: 'お台場', airport: '羽田空港', tvtower: 'さっぽろテレビ塔', clocktower: '札幌市時計台', snowfes: '雪まつり会場', odori0: '大通公園', odori1: '大通公園', sapporoSt: 'JR 札幌駅', tanuki: '狸小路', susukino: 'すすきの', goryokaku: '五稜郭', jump: '大倉山ジャンプ競技場', otaru: '小樽運河', ski: 'ニセコ スキー場', wheel: 'コスモワールド 観覧車', brick: '赤レンガ倉庫', landmark: 'ランドマークタワー', castle: '大阪城', tsutenkaku: '通天閣', taiyo: '太陽の塔', shinsai: '心斎橋筋商店街', dotonbori: '道頓堀', shrine: '稲荷神社', gas: 'ガソリンスタンド', konbini: 'コンビニ', place: '住宅街', hotel0: 'ホテル札幌グランデ', hotel1: '定山渓ビューホテル', hotel2: 'ホテル東京ベイ', hotel3: '浅草ビジネスホテル', hotel4: '横浜ハーバーホテル', hotel5: 'みなとみらいイン', hotel6: 'ホテル大阪キャッスル', hotel7: '難波シティホテル', hotel8: 'ニセコ スキーリゾートホテル' };
-  window.jdMission = function (s) { var box = $('jdMission'); if (!s) { box.style.display = 'none'; return; } var a = s.split(':'); box.style.display = 'block';
-    if (a[0] === 'hail') box.innerHTML = '🙋 有人招手 <b>' + a[1] + ' m</b><br><small>開到乘客旁邊停下來</small>'; else box.innerHTML = '🚕 載客中 → <b>' + (NAMES[a[1]] || a[1]) + '</b><br>剩 <b>' + a[2] + ' m</b> ・ 車資 ¥' + a[3] + '<br><small>到了停車就能收錢</small>'; };
+  var NAMES = { tokyotower: '東京タワー', skytree: '東京スカイツリー', sensoji: '浅草寺', tocho: '東京都庁', station: '東京駅', shibuya: '渋谷スクランブル交差点', wako: '銀座 和光', meiji: '明治神宮', odaiba: 'お台場', airport: '羽田空港', tvtower: 'さっぽろテレビ塔', clocktower: '札幌市時計台', snowfes: '雪まつり会場', odori0: '大通公園', odori1: '大通公園', sapporoSt: 'JR 札幌駅', tanuki: '狸小路', susukino: 'すすきの', goryokaku: '五稜郭', jump: '大倉山ジャンプ競技場', otaru: '小樽運河', ski: 'ニセコ スキー場', wheel: 'コスモワールド 観覧車', brick: '赤レンガ倉庫', landmark: 'ランドマークタワー', castle: '大阪城', tsutenkaku: '通天閣', taiyo: '太陽の塔', shinsai: '心斎橋筋商店街', dotonbori: '道頓堀', shrine: '稲荷神社', gas: 'ガソリンスタンド', konbini: 'コンビニ', place: '住宅街', hill0: '旭山公園通', hill1: '青山一丁目', hill2: '山手町', hill3: '上町', hotel0: 'ホテル札幌グランデ', hotel1: '定山渓ビューホテル', hotel2: 'ホテル東京ベイ', hotel3: '浅草ビジネスホテル', hotel4: '横浜ハーバーホテル', hotel5: 'みなとみらいイン', hotel6: 'ホテル大阪キャッスル', hotel7: '難波シティホテル', hotel8: 'ニセコ スキーリゾートホテル' };
+  var d0 = 0, lastKey = '';
+  window.jdMission = function (s) { var box = $('jdMission'); if (!s) { box.style.display = 'none'; lastKey = ''; return; } var a = s.split(':'); box.style.display = 'block'; var key = a[0] + (a[1] || ''), d = +(a[0] === 'hail' ? a[1] : a[2]);
+    if (a[0] === 'hail') key = 'hail'; if (key !== lastKey) { lastKey = key; d0 = Math.max(d, 1); } var pct = Math.max(0, Math.min(100, 100 - d / d0 * 100));
+    if (a[0] === 'hail') box.innerHTML = '<div class="t">🙋 有人招手</div>距離 <b>' + d + ' m</b> ・ 開到旁邊停下來<div class="bar"><i style="width:' + pct + '%"></i></div>';
+    else box.innerHTML = '<div class="t">🚕 ' + (NAMES[a[1]] || a[1]) + '</div>剩 <b>' + d + ' m</b> ・ 車資 <b style="color:#ffd24a">¥' + (+a[3]).toLocaleString() + '</b><div class="bar"><i style="width:' + pct + '%"></i></div>'; };
   window.jdMoney = function (m, f) { $('jdMoney').textContent = '¥' + m.toLocaleString() + (f ? '  (' + f + ' 趟)' : ''); try { localStorage.setItem('jdWallet', m + ',' + f); } catch (e) { } };
   (function () { var w = null; try { w = localStorage.getItem('jdWallet'); } catch (e) { } if (w) { var a = w.split(','); $('jdMoney').textContent = '¥' + (+a[0]).toLocaleString() + (+a[1] ? '  (' + a[1] + ' 趟)' : ''); var tries = 0, t = setInterval(function () { if (window.unityInstance) { U('SetMoney', w); clearInterval(t); } else if (++tries > 600) clearInterval(t); }, 500); } })();
 
