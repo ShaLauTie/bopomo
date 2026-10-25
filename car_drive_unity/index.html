@@ -154,6 +154,13 @@
 #jdCities{position:fixed;left:10px;top:10px;display:flex;gap:6px}
 #jdCities div{padding:6px 12px;border-radius:8px;background:rgba(20,26,36,.55);border:1px solid rgba(255,255,255,.35);font-weight:700;cursor:pointer;font-size:15px}
 #jdCities div.on{background:rgba(230,170,40,.75);border-color:#fd6}
+#jdMsgs{position:fixed;left:50%;top:60px;transform:translateX(-50%);width:min(92vw,620px);text-align:center;pointer-events:none}
+#jdMsgs .msg{display:inline-block;margin:3px;padding:5px 12px;border-radius:9px;background:rgba(0,0,0,.6);font-size:16px;font-weight:700;text-shadow:0 1px 2px #000;animation:jdfade 4s forwards}
+#jdMsgs .msg.bad{background:rgba(170,30,30,.75)}#jdMsgs .msg.good{background:rgba(30,140,70,.75)}
+@keyframes jdfade{0%{opacity:0;transform:translateY(-6px)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+#jdMission{position:fixed;right:12px;top:calc(12vh + 70px);background:rgba(0,0,0,.55);border-radius:10px;padding:8px 12px;font-size:15px;line-height:1.5;max-width:300px;display:none}
+#jdMoney{position:fixed;right:14px;top:calc(12vh + 20px);font-size:22px;font-weight:700;color:#ffd24a;text-shadow:0 1px 3px #000}
+body:not(.jdtouch) #jdMoney{top:92px}body:not(.jdtouch) #jdMission{top:130px}
 #jdSig{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);font-size:34px;letter-spacing:60px;text-shadow:0 0 8px #3f3;display:none}
 #jdPause,#jdWz{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;pointer-events:auto;z-index:80}
 #jd .panel{background:rgba(16,20,30,.95);border:1px solid #3c4c6c;border-radius:14px;padding:22px 26px;max-width:560px;text-align:center}
@@ -185,14 +192,15 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
 </style>
 <div id="jd">
   <div id="jdCities" class="pe"><div data-c="0">札幌</div><div data-c="1">東京</div><div data-c="2">横浜</div><div data-c="3">大阪</div><div data-c="4">キロロ</div></div>
+  <div id="jdMsgs"></div><div id="jdMoney">¥10,000</div><div id="jdMission"></div>
   <div id="jdSig"><span id="jdSigL">◀</span><span id="jdSigR">▶</span></div>
-  <div id="jdHelp">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車 ・ Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角 ・ C 方向盤設定 ・ Tab 切換視角 ・ 1-5 換城市 (5 = キロロ雪山) ・ 首都高隧道可開到下一個城市 ・ Esc 暫停</div>
+  <div id="jdHelp">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車 ・ Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角 ・ C 方向盤設定 ・ Tab 切換視角 ・ N 日夜 ・ T 天氣 ・ M 地圖 ・ 1-5 換城市 (5 = キロロ雪山) ・ 首都高隧道可開到下一個城市 ・ Esc 暫停</div>
   <div id="jdPause"><div class="panel">
     <h1>⏸ 暫停</h1>
     <button id="pzGo">▶ 繼續駕駛</button>
     <div style="font-size:13px;opacity:.8;margin:10px 0 2px">📍 選一個城市重新出發</div>
     <div><button class="city" data-c="0">札幌</button><button class="city" data-c="1">東京</button><button class="city" data-c="2">横浜</button><button class="city" data-c="3">大阪</button><button class="city" data-c="4">キロロ山路</button></div>
-    <div><button class="sec" id="pzCam">🎥 切換視角</button><button class="sec" id="pzWheel">🎮 方向盤設定</button></div>
+    <div><button class="sec" id="pzCam">🎥 切換視角</button><button class="sec" id="pzNight">🌙 日 / 夜</button><button class="sec" id="pzWx">🌦 換天氣</button><button class="sec" id="pzWheel">🎮 方向盤設定</button></div>
     <div id="jdKeys">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車<br>Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角<br>C 方向盤設定 ・ Tab 切換視角 ・ Backspace 回到路上 ・ [ ] 視野角度 ・ 1-4 換城市 ・ Esc 暫停 / 繼續<br>手機:左下拖曳方向盤,右下油門/煞車/手煞車/D·R,📱 陀螺儀轉頭看,🎯 歸零</div>
   </div></div>
   <div id="jdWz"><div class="panel">
@@ -203,7 +211,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   </div></div>
   <div id="jdTouch">
     <div id="tTop"><div class="tb" data-a="sigL" id="tSigL">◀</div><div class="tb" data-a="haz" id="tHaz">⚠</div><div class="tb" data-a="sigR" id="tSigR">▶</div></div>
-    <div id="tSide"><div class="tb" data-a="pause" id="tPause">⏸</div><div class="tb" data-k="horn" id="tHorn">📢</div><div class="tb" data-a="cam" id="tCam">🎥</div><div class="tb" id="tGyro">📱</div><div class="tb" id="tCenter">🎯</div><div class="tb" data-a="reset" id="tReset">↺</div></div>
+    <div id="tSide"><div class="tb" data-a="pause" id="tPause">⏸</div><div class="tb" data-k="horn" id="tHorn">📢</div><div class="tb" data-a="cam" id="tCam">🎥</div><div class="tb" data-a2="map" id="tMap">🗺</div><div class="tb" data-a2="night" id="tNight">🌙</div><div class="tb" id="tGyro">📱</div><div class="tb" id="tCenter">🎯</div><div class="tb" data-a="reset" id="tReset">↺</div></div>
     <div class="tb" id="tSteer"><div id="tWheel"></div></div>
     <div class="tb" id="tHand" data-k="hand">手煞車</div>
     <div class="tb" data-a="gear" id="tRev">D</div>
@@ -225,7 +233,8 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   var paused = false;
   function pause(on) { paused = on; $('jdPause').style.display = on ? 'flex' : 'none'; U('SetPause', on ? 1 : 0); }
   $('pzGo').onclick = function () { pause(false); };
-  $('pzCam').onclick = function () { U('Action', 'cam'); };
+  $('pzCam').onclick = function () { U('Action', 'cam'); }; $('pzNight').onclick = function () { U('Action2', 'night'); }; $('pzWx').onclick = function () { U('Action2', 'weather'); };
+  [].forEach.call(document.querySelectorAll('[data-a2]'), function (el) { el.addEventListener('pointerdown', function (e) { U('Action2', el.dataset.a2); e.preventDefault(); }); });
   $('pzWheel').onclick = function () { pause(false); wzOpen(); };
   window.addEventListener('keydown', function (e) {
     if (e.code === 'Escape') { if ($('jdWz').style.display === 'flex') wzClose(); else pause(!paused); e.preventDefault(); }
@@ -236,6 +245,13 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   // turn signal lamps shown by the game (Game calls window.jdSig(l, r) through the page)
   window.jdSig = function (l, r) { $('jdSig').style.display = (l || r) ? 'block' : 'none'; $('jdSigL').style.opacity = l ? 1 : 0.15; $('jdSigR').style.opacity = r ? 1 : 0.15; $('tSigL').classList.toggle('lit', !!l); $('tSigR').classList.toggle('lit', !!r); };
   window.jdGear = function (rev) { $('tRev').textContent = rev ? 'R' : 'D'; };
+  // toasts, the taxi job panel, the wallet (kept in this browser)
+  window.jdNotify = function (t) { var d = document.createElement('div'); d.className = 'msg' + (/🚨|💥/.test(t) ? ' bad' : /💴|✅/.test(t) ? ' good' : ''); d.textContent = t; var box = $('jdMsgs'); box.appendChild(d); while (box.children.length > 4) box.removeChild(box.firstChild); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 4000); };
+  var NAMES = { tokyotower: '東京タワー', skytree: '東京スカイツリー', sensoji: '浅草寺', tocho: '東京都庁', station: '東京駅', shibuya: '渋谷スクランブル交差点', wako: '銀座 和光', meiji: '明治神宮', odaiba: 'お台場', airport: '羽田空港', tvtower: 'さっぽろテレビ塔', clocktower: '札幌市時計台', snowfes: '雪まつり会場', odori0: '大通公園', odori1: '大通公園', sapporoSt: 'JR 札幌駅', tanuki: '狸小路', susukino: 'すすきの', goryokaku: '五稜郭', jump: '大倉山ジャンプ競技場', otaru: '小樽運河', ski: 'ニセコ スキー場', wheel: 'コスモワールド 観覧車', brick: '赤レンガ倉庫', landmark: 'ランドマークタワー', castle: '大阪城', tsutenkaku: '通天閣', taiyo: '太陽の塔', shinsai: '心斎橋筋商店街', dotonbori: '道頓堀', shrine: '稲荷神社', gas: 'ガソリンスタンド', konbini: 'コンビニ', place: '住宅街', hotel0: 'ホテル札幌グランデ', hotel1: '定山渓ビューホテル', hotel2: 'ホテル東京ベイ', hotel3: '浅草ビジネスホテル', hotel4: '横浜ハーバーホテル', hotel5: 'みなとみらいイン', hotel6: 'ホテル大阪キャッスル', hotel7: '難波シティホテル', hotel8: 'ニセコ スキーリゾートホテル' };
+  window.jdMission = function (s) { var box = $('jdMission'); if (!s) { box.style.display = 'none'; return; } var a = s.split(':'); box.style.display = 'block';
+    if (a[0] === 'hail') box.innerHTML = '🙋 有人招手 <b>' + a[1] + ' m</b><br><small>開到乘客旁邊停下來</small>'; else box.innerHTML = '🚕 載客中 → <b>' + (NAMES[a[1]] || a[1]) + '</b><br>剩 <b>' + a[2] + ' m</b> ・ 車資 ¥' + a[3] + '<br><small>到了停車就能收錢</small>'; };
+  window.jdMoney = function (m, f) { $('jdMoney').textContent = '¥' + m.toLocaleString() + (f ? '  (' + f + ' 趟)' : ''); try { localStorage.setItem('jdWallet', m + ',' + f); } catch (e) { } };
+  (function () { var w = null; try { w = localStorage.getItem('jdWallet'); } catch (e) { } if (w) { var a = w.split(','); $('jdMoney').textContent = '¥' + (+a[0]).toLocaleString() + (+a[1] ? '  (' + a[1] + ' 趟)' : ''); var tries = 0, t = setInterval(function () { if (window.unityInstance) { U('SetMoney', w); clearInterval(t); } else if (++tries > 600) clearInterval(t); }, 500); } })();
 
   // ---- touch: held buttons (data-k), one-shot actions (data-a), the steering wheel pad
   var held = { gas: 0, brake: 0, hand: 0, horn: 0 }, steer = 0, steerId = null, steerX0 = 0;
@@ -256,7 +272,8 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   function tick() {
     if (isTouch) {
       wheel.style.transform = 'rotate(' + (steer * 120) + 'deg)';
-      var s = steer.toFixed(2) + ',' + held.gas + ',' + held.brake + ',' + held.hand; // every change goes to the game if (s !== last) { U('TouchInput', s); last = s; }
+      var s = steer.toFixed(2) + ',' + held.gas + ',' + held.brake + ',' + held.hand; // every change goes to the game
+      if (s !== last) { U('TouchInput', s); last = s; }
       if (held.horn !== hornWas) { U('Action', held.horn ? 'hornOn' : 'hornOff'); hornWas = held.horn; }
     }
     padTick(); requestAnimationFrame(tick);
