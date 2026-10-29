@@ -220,6 +220,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   <div id="jdPause"><div class="panel">
     <h1>⏸ 暫停</h1>
     <button id="pzGo">▶ 繼續駕駛</button> <button id="pzPol">🚓 取消警察追捕</button>
+    <label style="display:block;margin:8px 0;font-size:14px;cursor:pointer"><input type="checkbox" id="pzNoPol"> 🚫 不要再出現警察 (勾選後永遠不會被追)</label>
     <div style="font-size:13px;opacity:.8;margin:10px 0 2px">📍 選一個城市重新出發</div>
     <div><button class="city" data-c="0">札幌</button><button class="city" data-c="1">東京</button><button class="city" data-c="2">横浜</button><button class="city" data-c="3">大阪</button><button class="city" data-c="4">キロロ山路</button><button class="city" data-c="5">小樽</button><button class="city" data-c="6">新千歳空港</button><button class="city" data-c="7">国道5号 海岸線</button></div>
     <div><button class="sec" id="pzCam">🎥 切換視角</button><button class="sec" id="pzNight">🌙 日 / 夜</button><button class="sec" id="pzWx">🌦 換天氣</button><button class="sec" id="pzQ">🖥 畫質</button><button class="sec" id="pzWheel">🎮 方向盤設定</button></div>
@@ -257,6 +258,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   var paused = false;
   function pause(on) { paused = on; $('jdPause').style.display = on ? 'flex' : 'none'; U('SetPause', on ? 1 : 0); }
   $('pzGo').onclick = function () { pause(false); }; $('pzPol').onclick = function () { U('Action', 'police'); pause(false); };
+  (function () { var on = false; try { on = localStorage.getItem('jdNoPolice') === '1'; } catch (e) { } $('pzNoPol').checked = on; function send() { U('Action', $('pzNoPol').checked ? 'policeOff' : 'policeOn'); } $('pzNoPol').onchange = function () { try { localStorage.setItem('jdNoPolice', $('pzNoPol').checked ? '1' : '0'); } catch (e) { } send(); }; if (on) { var tries = 0, t = setInterval(function () { if (window.unityInstance) { send(); clearInterval(t); } else if (++tries > 600) clearInterval(t); }, 500); } })();
   $('pzCam').onclick = function () { U('Action', 'cam'); }; $('pzNight').onclick = function () { U('Action2', 'night'); }; $('pzWx').onclick = function () { U('Action2', 'weather'); }; $('pzQ').onclick = function () { U('Action2', 'quality'); };
   [].forEach.call(document.querySelectorAll('[data-a2]'), function (el) { el.addEventListener('pointerdown', function (e) { U('Action2', el.dataset.a2); e.preventDefault(); }); });
   $('pzWheel').onclick = function () { pause(false); wzOpen(); };
