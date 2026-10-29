@@ -219,7 +219,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   <div id="jdKeysPanel"><div><b>W</b><b>S</b> 油門 / 煞車</div><div><b>A</b><b>D</b> 方向盤</div><div><b>Space</b> 手煞車</div><div><b>R</b> 切換 D / R</div><div><b>Q</b><b>E</b> 方向燈</div><div><b>X</b> 雙閃</div><div><b>H</b> 喇叭 (行人會回頭)</div><div><b>V</b> 滑鼠轉頭看 開/關</div><div><b>Tab</b> 切換視角</div><div><b>M</b> 地圖 / 全國地圖</div><div><b>N</b> 日 / 夜</div><div><b>T</b> 天氣</div><div><b>1</b>-<b>8</b> 換地點</div><div><b>C</b> 方向盤設定</div><div><b>⌫</b> 回到路上</div><div style="grid-column:1/3">🚃 踏切前一定要停車,柵欄放下時不能過</div><div><b>Esc</b> 暫停</div><div style="grid-column:1/3">⛽ 油不夠時開進加油站停著就會自動加油 ・ <b>G</b> 畫質</div><div style="grid-column:1/3">🚓 違規可能被警察追,靠邊停下會被開單,甩掉 220 m 以上就沒事</div><div style="grid-column:1/3;opacity:.7;margin-top:4px">北邊的牆有缺口可以開上山坡區 ・ 首都高接成「口」字環線,四個城市互通 ・ 札幌往西的隧道 → 国道5号海岸線 → 小樽市區 → 西邊隧道 → キロロ,札幌往南的隧道 → 新千歳空港 (跟著藍色路牌)</div></div>
   <div id="jdPause"><div class="panel">
     <h1>⏸ 暫停</h1>
-    <button id="pzGo">▶ 繼續駕駛</button>
+    <button id="pzGo">▶ 繼續駕駛</button> <button id="pzPol">🚓 取消警察追捕</button>
     <div style="font-size:13px;opacity:.8;margin:10px 0 2px">📍 選一個城市重新出發</div>
     <div><button class="city" data-c="0">札幌</button><button class="city" data-c="1">東京</button><button class="city" data-c="2">横浜</button><button class="city" data-c="3">大阪</button><button class="city" data-c="4">キロロ山路</button><button class="city" data-c="5">小樽</button><button class="city" data-c="6">新千歳空港</button><button class="city" data-c="7">国道5号 海岸線</button></div>
     <div><button class="sec" id="pzCam">🎥 切換視角</button><button class="sec" id="pzNight">🌙 日 / 夜</button><button class="sec" id="pzWx">🌦 換天氣</button><button class="sec" id="pzQ">🖥 畫質</button><button class="sec" id="pzWheel">🎮 方向盤設定</button></div>
@@ -256,7 +256,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   [].forEach.call(document.querySelectorAll('[data-c]'), function (d) { d.addEventListener('click', function () { setCity(+d.dataset.c); pause(false); }); });
   var paused = false;
   function pause(on) { paused = on; $('jdPause').style.display = on ? 'flex' : 'none'; U('SetPause', on ? 1 : 0); }
-  $('pzGo').onclick = function () { pause(false); };
+  $('pzGo').onclick = function () { pause(false); }; $('pzPol').onclick = function () { U('Action', 'police'); pause(false); };
   $('pzCam').onclick = function () { U('Action', 'cam'); }; $('pzNight').onclick = function () { U('Action2', 'night'); }; $('pzWx').onclick = function () { U('Action2', 'weather'); }; $('pzQ').onclick = function () { U('Action2', 'quality'); };
   [].forEach.call(document.querySelectorAll('[data-a2]'), function (el) { el.addEventListener('pointerdown', function (e) { U('Action2', el.dataset.a2); e.preventDefault(); }); });
   $('pzWheel').onclick = function () { pause(false); wzOpen(); };
