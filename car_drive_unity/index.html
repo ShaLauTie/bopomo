@@ -272,6 +272,14 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   (function () { var t0 = performance.now(); var iv = setInterval(function () { var bar = document.querySelector('#unity-progress-bar-full'), w = bar ? parseFloat(bar.style.width) || 0 : 0, s = ((performance.now() - t0) / 1000).toFixed(0);
     if (window.unityInstance) { var l = $('jdLoad'); if (l) l.remove(); clearInterval(iv); return; }
     $('jdLoadT').textContent = w < 90 ? '下載中 ' + Math.round(w) + '%  (' + s + ' 秒)' : '啟動遊戲中… (' + s + ' 秒)'; }, 250); })();
+  var mapLayer = null; // the big map's sight names: text is drawn here because the game has no Japanese font
+  window.jdMapLabels = function (s) {
+    if (!mapLayer) { mapLayer = document.createElement('div'); mapLayer.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5'; document.body.appendChild(mapLayer); }
+    if (!s) { mapLayer.innerHTML = ''; return; }
+    var cv = document.querySelector('canvas'), r = cv ? cv.getBoundingClientRect() : { left: 0, top: 0, width: innerWidth, height: innerHeight }, h = '';
+    s.split(';').forEach(function (e) { var a = e.split(','); if (a.length < 3) return; var nm = a[0] === '_hint' ? '滑鼠滾輪縮放 ・ M 關閉' : NAMES[a[0]]; if (!nm) return;
+      h += '<div style="position:absolute;left:' + (r.left + a[1] * r.width) + 'px;top:' + (r.top + a[2] * r.height) + 'px;transform:translate(-50%,0);white-space:nowrap;font:700 ' + (a[0] === '_hint' ? 13 : 12) + 'px sans-serif;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,1px 1px 2px #000">' + nm + '</div>'; });
+    mapLayer.innerHTML = h; };
   window.jdInfo = function (s) { var a = s.split('|'); var wx = ['☀ 晴', '☁ 陰', '🌧 雨', '❄ 雪'][+a[1]] || ''; $('jdInfo').textContent = '🕐 ' + a[0] + '  ' + wx + '  ・ ' + a[2] + ' fps'; };
   window.jdGear = function (rev) { $('tRev').textContent = rev ? 'R' : 'D'; };
   var lastFuel = -1; window.jdSpeed = function (k, r, l, f) { if (f !== undefined && f !== lastFuel) { lastFuel = f; var n8 = Math.ceil(f / 12.5); $('spdFuel').innerHTML = '⛽ <b class="' + (f < 15 ? 'low' : '') + '">' + '▮'.repeat(n8) + '</b><span style="opacity:.25">' + '▮'.repeat(8 - n8) + '</span>'; } var n = $('spdNum'); n.textContent = k; n.classList.toggle('over', k > l + 10); var g = $('spdGear'); g.textContent = r ? 'R' : 'D'; g.classList.toggle('r', !!r); $('spdLim').textContent = l; };
