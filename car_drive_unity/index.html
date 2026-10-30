@@ -282,7 +282,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
     s.split(';').forEach(function (e) { var a = e.split(','); if (a.length < 3) return; var nm = a[0] === '_hint' ? '滑鼠滾輪縮放 ・ M 關閉' : NAMES[a[0]]; if (!nm) return;
       h += '<div style="position:absolute;left:' + (r.left + a[1] * r.width) + 'px;top:' + (r.top + a[2] * r.height) + 'px;transform:translate(-50%,0);white-space:nowrap;font:700 ' + (a[0] === '_hint' ? 13 : 12) + 'px sans-serif;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,1px 1px 2px #000">' + nm + '</div>'; });
     mapLayer.innerHTML = h; };
-  window.jdInfo = function (s) { var a = s.split('|'); var wx = ['☀ 晴', '☁ 陰', '🌧 雨', '❄ 雪'][+a[1]] || ''; $('jdInfo').textContent = '🕐 ' + a[0] + '  ' + wx + '  ・ ' + a[2] + ' fps'; };
+  window.jdInfo = function (s) { var a = s.split('|'); var wx = ['☀ 晴', '☁ 陰', '🌧 雨', '❄ 雪', '🌨 暴風雪'][+a[1]] || ''; $('jdInfo').textContent = '🕐 ' + a[0] + '  ' + wx + '  ・ ' + a[2] + ' fps'; };
   window.jdGear = function (rev) { $('tRev').textContent = rev ? 'R' : 'D'; };
   var lastFuel = -1; window.jdSpeed = function (k, r, l, f) { if (f !== undefined && f !== lastFuel) { lastFuel = f; var n8 = Math.ceil(f / 12.5); $('spdFuel').innerHTML = '⛽ <b class="' + (f < 15 ? 'low' : '') + '">' + '▮'.repeat(n8) + '</b><span style="opacity:.25">' + '▮'.repeat(8 - n8) + '</span>'; } var n = $('spdNum'); n.textContent = k; n.classList.toggle('over', k > l + 10); var g = $('spdGear'); g.textContent = r ? 'R' : 'D'; g.classList.toggle('r', !!r); $('spdLim').textContent = l; };
   // the key list shows for a while at the start, then folds away; F1 or a click brings it back
