@@ -245,7 +245,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
     <div class="tb" id="tBrk" data-k="brake">煞車</div>
     <div class="tb" id="tGas" data-k="gas">油門</div>
   </div>
-  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 88 MB,之後會快很多(瀏覽器會存起來)</div></div>
+  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 97 MB,之後會快很多(瀏覽器會存起來)</div></div>
   <div id="jdRot"><div style="font-size:60px">📱↻</div>請把手機轉成橫向來玩</div>
 </div>
 <script>
@@ -318,7 +318,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   window.jdNotify = function (t) { var d = document.createElement('div'); d.className = 'msg' + (/🚨|💥/.test(t) ? ' bad' : /💴|✅/.test(t) ? ' good' : ''); d.textContent = t; var box = $('jdMsgs'); box.appendChild(d); while (box.children.length > 4) box.removeChild(box.firstChild); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 4000); };
   var NAMES = { tokyotower: '東京タワー', skytree: '東京スカイツリー', sensoji: '浅草寺', tocho: '東京都庁', station: '東京駅', shibuya: '渋谷スクランブル交差点', wako: '銀座 和光', meiji: '明治神宮', odaiba: 'お台場', airport: '羽田空港', tvtower: 'さっぽろテレビ塔', clocktower: '札幌市時計台', snowfes: '雪まつり会場', odori0: '大通公園', odori1: '大通公園', sapporoSt: 'JR 札幌駅', tanuki: '狸小路', susukino: 'すすきの', goryokaku: '五稜郭', jump: '大倉山ジャンプ競技場', otaru: '小樽運河', ski: 'ニセコ スキー場', wheel: 'コスモワールド 観覧車', brick: '赤レンガ倉庫', landmark: 'ランドマークタワー', castle: '大阪城', tsutenkaku: '通天閣', taiyo: '太陽の塔', shinsai: '心斎橋筋商店街', dotonbori: '道頓堀', shrine: '稲荷神社', gas: 'ガソリンスタンド', konbini: 'コンビニ', place: '住宅街', moiwa: '藻岩山スキー場', jrst0: 'JR 桑園駅', view0: '藻岩山 展望台', view1: '青山 展望台', view2: '山手 展望台', view3: '上町 展望台', jrst1: 'JR 上野駅', jrst2: 'JR 桜木町駅', jrst3: 'JR 天王寺駅', hill0: '旭山公園通', hill1: '青山一丁目', hill2: '山手町', hill3: '上町', hotel0: 'ホテル札幌グランデ', hotel1: '定山渓ビューホテル', hotel2: 'ホテル東京ベイ', hotel3: '浅草ビジネスホテル', hotel4: '横浜ハーバーホテル', hotel5: 'みなとみらいイン', hotel6: 'ホテル大阪キャッスル', hotel7: '難波シティホテル', hotel8: 'ニセコ スキーリゾートホテル', hotel9: '藻岩山ホテル', hotel10: 'ホテル青山ヒルズ', hotel11: '山手ヒルトップホテル', hotel12: '上町ヒルズホテル', hotel13: 'ホテル小樽ベイサイド', hotel14: '天狗山ヒルズホテル', hill5: '天狗山入口', view5: '天狗山 展望台', jrst5: 'JR 小樽駅' };
   // ---- 觀光導覽: the game sends a sight's key the first time you drive past it (Bridge.Sight -> jdSight); the card shows its name and what it is
-  var NAMES2 = { chinatown: '横浜中華街', yamashita: '山下公園・氷川丸', akiba: '秋葉原電気街', shinsekai: '新世界', kuromon: '黒門市場', hitsuji: 'さっぽろ羊ヶ丘展望台', clocktower: '札幌市時計台', nijo: '二条市場', sushi: '回転寿司', izakaya: '海鮮居酒屋', sakaimachi: '堺町通り', temiya: '旧手宮線', sankaku: '三角市場', denuki: '出抜小路', machiya: '町家の町並み' };
+  var NAMES2 = { chinatown: '横浜中華街', yamashita: '山下公園・氷川丸', akiba: '秋葉原電気街', kabuki: '歌舞伎町一番街', shinsekai: '新世界', kuromon: '黒門市場', hitsuji: 'さっぽろ羊ヶ丘展望台', clocktower: '札幌市時計台', nijo: '二条市場', sushi: '回転寿司', izakaya: '海鮮居酒屋', sakaimachi: '堺町通り', temiya: '旧手宮線', sankaku: '三角市場', denuki: '出抜小路', machiya: '町家の町並み' };
   for (var nk in NAMES2) NAMES[nk] = NAMES2[nk];
   var SIGHTS = {
     c_sapporo: ['札幌', 'さっぽろ・北海道的首府', '人口約 196 萬的北海道最大城市，1869 年設「開拓使」後才照著棋盤格規劃，所以地址都是「北○条西○丁目」這種座標。冬天積雪常超過 1 公尺，路面會結冰，煞車要提早、轉彎放慢。'],
@@ -356,6 +356,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
     meiji: ['明治神宮', 'めいじじんぐう', '1920 年創建，祭祀明治天皇與昭憲皇太后。約 70 公頃的森林是從全國捐來約 10 萬棵樹人工種出來的。大鳥居高 12 公尺，用台灣的千年扁柏建造，是日本最大的木造明神鳥居。新年參拜人數全日本第一。'],
     odaiba: ['お台場', '台場', '名字來自 1853 年黑船來航後，江戶幕府在海上築的砲台「台場」。現在是填海造的臨海副都心，有丹下健三設計、帶著大球體的富士電視台、自由女神像複製品，以及 1993 年通車的彩虹大橋。'],
     airport: ['羽田空港', '東京國際機場', '1931 年開港，是日本最繁忙的機場，旅客數排名世界前五。有 4 條跑道，第 1、第 2 航廈飛國內線，第 3 航廈飛國際線。離市中心很近，搭單軌電車或京急線約 15 到 30 分鐘。'],
+    kabuki: ['歌舞伎町一番街', 'かぶきちょういちばんがい', '新宿東口的不夜城。戰後原本打算在這裡蓋歌舞伎劇場來復興，雖然劇場最後沒蓋成，「歌舞伎町」這個名字卻留了下來。紅色燈泡拱門下的一番街兩旁全是居酒屋、卡拉OK、拉麵店和一層一塊的直立招牌，晚上燈光通明。'],
     akiba: ['秋葉原電気街', 'あきはばら', '1869 年大火後這裡設了防火空地和鎮火神社，民間稱「秋葉大權現」，地名由此而來。戰後從賣收音機零件的黑市起家，變成家電街，1990 年代後成了電腦、動漫、遊戲和女僕咖啡店的「御宅族聖地」。總武線的黃色電車就從高架上開過，週日中央通是步行者天國。'],
     hill1: ['青山一丁目', 'あおやま', '港區青山一帶是高台上的辦公和住宅區，東京的「山之手」就是指這些台地。附近明治神宮外苑的銀杏大道約 300 公尺、146 棵銀杏，11 月下旬到 12 月初變成一片金黃。'],
     view1: ['青山 展望台', '東京的台地', '東京西半部是武藏野台地的邊緣，被河谷切成許多高台和坡道 (坂)，所以東京有很多「○○坂」的地名。從高處可以看到新宿、六本木的高樓群。'],
