@@ -245,7 +245,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
     <div class="tb" id="tBrk" data-k="brake">煞車</div>
     <div class="tb" id="tGas" data-k="gas">油門</div>
   </div>
-  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 97 MB,之後會快很多(瀏覽器會存起來)</div></div>
+  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 67 MB,之後會快很多(瀏覽器會存起來)</div></div>
   <div id="jdRot"><div style="font-size:60px">📱↻</div>請把手機轉成橫向來玩</div>
 </div>
 <script>
@@ -411,8 +411,8 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   function sightList() {
     var box = $('pzSights'); if (!box) return; var h = '';
     sightSeen.forEach(function (k) { h += '<button class="sec" data-sight="' + k + '" style="font-size:12px;padding:4px 10px;margin:2px">' + SIGHTS[k][0] + '</button>'; });
-    box.innerHTML = h ? '<div style="opacity:.8;margin-bottom:2px">📖 看過的景點 (點一下再看一次)</div>' + h : '';
-    [].forEach.call(box.querySelectorAll('[data-sight]'), function (b) { b.onclick = function () { pause(false); sightQ.unshift(b.dataset.sight); if (!sightBusy) sightNext(); else sightHide(); }; });
+    box.innerHTML = h ? '<div style="opacity:.8;margin-bottom:2px">📖 看過的景點 (點一下瞬間移動過去)</div>' + h : '';
+    [].forEach.call(box.querySelectorAll('[data-sight]'), function (b) { b.onclick = function () { pause(false); U('GoSight', b.dataset.sight); sightQ.unshift(b.dataset.sight); if (!sightBusy) sightNext(); else sightHide(); }; });
   }
   window.jdSight = function (k) {
     if (!SIGHTS[k]) return;
