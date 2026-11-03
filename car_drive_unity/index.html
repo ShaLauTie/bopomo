@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
+    <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="日本ドライブ"><meta name="theme-color" content="#000000"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png">
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Unity Web Player | 日本ドライブ Unity</title>
@@ -252,6 +253,28 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none}
   var $ = function (id) { return document.getElementById(id); };
   var isTouch = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
   if (isTouch) document.body.classList.add('jdtouch');
+  // ---- phones: fullscreen from the first touch (Android / iPad), held in landscape; a button to go back in; iPhone: the home-screen hint
+  (function () {
+    if (!isTouch) return;
+    var d = document, el = d.documentElement, ua = navigator.userAgent;
+    var standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches);
+    var can = !!(el.requestFullscreen || el.webkitRequestFullscreen);
+    function isFS() { return !!(d.fullscreenElement || d.webkitFullscreenElement); }
+    function lock() { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(function () { }); } catch (e) { } }
+    function go() { if (isFS() || standalone || !can) return; try { var p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen(); if (p && p.then) p.then(lock).catch(function () { }); else lock(); } catch (e) { } }
+    var btn = d.createElement('div'); btn.textContent = '⛶ 全螢幕';
+    btn.style.cssText = 'position:fixed;left:10px;top:8px;z-index:150;background:rgba(0,0,0,.6);color:#fff;font:600 15px sans-serif;padding:7px 16px;border-radius:18px;display:none;cursor:pointer';
+    d.body.appendChild(btn); btn.addEventListener('click', function (e) { go(); e.stopPropagation(); });
+    function upd() { btn.style.display = can && !standalone && !isFS() ? 'block' : 'none'; setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 250); }
+    d.addEventListener('fullscreenchange', upd); d.addEventListener('webkitfullscreenchange', upd);
+    if (can) { var first = function () { go(); }; d.addEventListener('touchend', first, true); d.addEventListener('click', first, true); upd(); } /* every tap while not fullscreen tries again (a browser may refuse the first) */
+    else if (!standalone && /iPhone|iPod/.test(ua)) {
+      var seen = false; try { seen = localStorage.getItem('jdIosFS') === '1'; } catch (e) { }
+      if (!seen) { var h = d.createElement('div'); h.innerHTML = '📱 iPhone 要全螢幕玩：按 Safari 下方的 <b>分享</b> ⬆️ → <b>加入主畫面</b>，再從主畫面的圖示開啟　<span style="opacity:.7">（點這裡關閉）</span>';
+        h.style.cssText = 'position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:150;background:rgba(0,0,0,.75);color:#fff;font:14px/1.5 sans-serif;padding:8px 14px;border-radius:10px;max-width:86vw;text-align:center';
+        h.addEventListener('click', function () { h.remove(); try { localStorage.setItem('jdIosFS', '1'); } catch (e) { } }); d.body.appendChild(h); }
+    }
+  })();
   // ---- city buttons (top left) and the pause menu
   var city = 1;
   function setCity(k) { city = k; U('DebugCity', k); [].forEach.call(document.querySelectorAll('#jdCities div'), function (d) { d.classList.toggle('on', +d.dataset.c === k); }); }
