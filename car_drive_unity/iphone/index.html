@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="日本ドライブ"><meta name="theme-color" content="#000000"><link rel="manifest" href="../manifest.webmanifest"><link rel="apple-touch-icon" href="../icon-192.png"><script>if (navigator.userAgent.indexOf(' Line/') >= 0 && !/openExternalBrowser/.test(location.search)) location.replace(location.href.split('#')[0] + (location.search ? '&' : '?') + 'openExternalBrowser=1');</script><script>window.jdErr=[];(function(){var oe=console.error;console.error=function(){try{jdErr.push(Array.prototype.join.call(arguments,' ').slice(0,300));}catch(e){}return oe.apply(console,arguments);};})();</script>
+  <head><script>(function(){var K='jdlog',t0=Date.now();function put(s){try{var a=JSON.parse(localStorage.getItem(K)||'[]');a.push(((Date.now()-t0)/1000).toFixed(1)+'s '+s);if(a.length>60)a=a.slice(-60);localStorage.setItem(K,JSON.stringify(a));}catch(e){}}window.jdPut=put;try{localStorage.setItem(K,'[]');localStorage.setItem('jdlogAt',new Date().toLocaleString());}catch(e){}put('start');var ol=console.log;console.log=function(){try{var s=Array.prototype.join.call(arguments,' ');if(/^(LITE|LITELOAD|LITEMEM|FARE|DOOR cut)/.test(s))put(s.slice(0,160));}catch(e){}return ol.apply(console,arguments);};var oe=console.error;console.error=function(){try{put('ERR '+Array.prototype.join.call(arguments,' ').slice(0,200));}catch(e){}return oe.apply(console,arguments);};window.addEventListener('error',function(e){put('ERR '+e.message)});})();</script><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="日本ドライブ"><meta name="theme-color" content="#000000"><link rel="manifest" href="../manifest.webmanifest"><link rel="apple-touch-icon" href="../icon-192.png"><script>if (navigator.userAgent.indexOf(' Line/') >= 0 && !/openExternalBrowser/.test(location.search)) location.replace(location.href.split('#')[0] + (location.search ? '&' : '?') + 'openExternalBrowser=1');</script><script>window.jdErr=[];(function(){var oe=console.error;console.error=function(){try{jdErr.push(Array.prototype.join.call(arguments,' ').slice(0,300));}catch(e){}return oe.apply(console,arguments);};})();</script>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Unity Web Player | 日本ドライブ Unity</title>
@@ -129,11 +129,11 @@
         if (/[?&]nc=1/.test(location.search)) config.cacheControl = function () { return 'no-store'; }; createUnityInstance(canvas, config, (progress) => {
           if (progress < 1) {
             loadingContainer.style.display = "block";
-            progressBarFull.style.width = 100 * progress + "%";
+            progressBarFull.style.width = 100 * progress + "%"; if (window.jdPut) { var pq = Math.floor(progress * 10); if (pq !== window.jdPq) { window.jdPq = pq; jdPut('load ' + pq * 10 + '%'); } }
           } else {
             loadingContainer.style.display = "none";
           }
-        }).then((unityInstance) => { window.unityInstance = unityInstance;
+        }).then((unityInstance) => { if (window.jdPut) jdPut('instance ok'); window.unityInstance = unityInstance;
                 document.querySelector("#unity-fullscreen-button").onclick = () => {
                   unityInstance.SetFullscreen(1);
                 };
@@ -246,7 +246,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none} body.jdt
     <div class="tb" id="tBrk" data-k="brake">煞車</div>
     <div class="tb" id="tGas" data-k="gas">油門</div>
   </div>
-  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 71 MB,之後會快很多(瀏覽器會存起來)</div></div>
+  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 54 MB,之後會快很多(瀏覽器會存起來)</div></div>
   <div id="jdRot"><div style="font-size:60px">📱↻</div>請把手機轉成橫向來玩</div>
 </div>
 <script>
