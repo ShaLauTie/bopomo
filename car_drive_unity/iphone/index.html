@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="日本ドライブ"><meta name="theme-color" content="#000000"><link rel="manifest" href="../manifest.webmanifest"><link rel="apple-touch-icon" href="../icon-192.png">
+  <head><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="日本ドライブ"><meta name="theme-color" content="#000000"><link rel="manifest" href="../manifest.webmanifest"><link rel="apple-touch-icon" href="../icon-192.png"><script>window.jdErr=[];(function(){var oe=console.error;console.error=function(){try{jdErr.push(Array.prototype.join.call(arguments,' ').slice(0,300));}catch(e){}return oe.apply(console,arguments);};})();</script>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Unity Web Player | 日本ドライブ Unity</title>
@@ -56,13 +56,13 @@
         updateBannerVisibility();
       }
 
-      var buildUrl = "../Build";
-      var loaderUrl = buildUrl + "/WebGL.loader.js";
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/WebGL_i.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/WebGL_i.data.unityweb",
-        frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
-        codeUrl: buildUrl + "/WebGL.wasm.unityweb",
+        dataUrl: buildUrl + "/WebGL_i.data",
+        frameworkUrl: buildUrl + "/WebGL_i.framework.js",
+        codeUrl: buildUrl + "/WebGL_i.wasm",
         streamingAssetsUrl: "StreamingAssets",
 
         // If you have a custom web site structure, or want to place multiple Unity build instances on the same page,
@@ -126,7 +126,7 @@
         const loadingContainer = document.querySelector("#unity-loading-container");
         const progressBarFull = document.querySelector("#unity-progress-bar-full");
 
-        createUnityInstance(canvas, config, (progress) => {
+        if (/[?&]nc=1/.test(location.search)) config.cacheControl = function () { return 'no-store'; }; createUnityInstance(canvas, config, (progress) => {
           if (progress < 1) {
             loadingContainer.style.display = "block";
             progressBarFull.style.width = 100 * progress + "%";
@@ -139,7 +139,7 @@
                 };
 
               }).catch((message) => {
-                alert(message);
+                if (/wasm|download/i.test(String(message)) && !/[?&]nc=1/.test(location.search)) { location.replace(location.pathname + '?nc=1'); return; } alert(message + (window.jdErr && jdErr.length ? String.fromCharCode(10, 10) + jdErr.slice(-4).join(String.fromCharCode(10)) : ''));
               });
             };
 
@@ -246,7 +246,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none} body.jdt
     <div class="tb" id="tBrk" data-k="brake">煞車</div>
     <div class="tb" id="tGas" data-k="gas">油門</div>
   </div>
-  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 68 MB,之後會快很多(瀏覽器會存起來)</div></div>
+  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 71 MB,之後會快很多(瀏覽器會存起來)</div></div>
   <div id="jdRot"><div style="font-size:60px">📱↻</div>請把手機轉成橫向來玩</div>
 </div>
 <script>
