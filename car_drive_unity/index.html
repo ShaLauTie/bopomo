@@ -56,11 +56,11 @@
         updateBannerVisibility();
       }
 
-      var buildUrl = "Build";
+      var buildUrl = "Build"; function jdTexMobile() { try { var g = document.createElement('canvas').getContext('webgl2'); if (!g) return false; var dxt = g.getExtension('WEBGL_compressed_texture_s3tc'), etc = g.getExtension('WEBGL_compressed_texture_etc'); console.log('JDTEX s3tc=' + !!dxt + ' etc=' + !!etc); return !dxt && !!etc; } catch (e) { return false; } }
       var loaderUrl = buildUrl + "/WebGL.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/WebGL.data.unityweb",
+        dataUrl: buildUrl + (jdTexMobile() ? "/WebGL_m.data.unityweb" : "/WebGL.data.unityweb"),
         frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
         codeUrl: buildUrl + "/WebGL.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
