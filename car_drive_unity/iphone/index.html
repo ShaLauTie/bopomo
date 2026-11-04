@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="日本ドライブ"><meta name="theme-color" content="#000000"><link rel="manifest" href="../manifest.webmanifest"><link rel="apple-touch-icon" href="../icon-192.png">
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity Web Player | 日本ドライブ Unity</title>
+    <link rel="shortcut icon" href="../TemplateData/favicon.ico">
+    <link rel="stylesheet" href="../TemplateData/style.css">
+  </head>
+  <body style="background:#000;overflow:hidden">
+    <div id="unity-container" class="unity-desktop">
+      <div id="unity-fullscreen-container">
+        <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+        <div id="unity-loading-container">
+          <div id="unity-loading-bar">
+            <div id="unity-logo"></div>
+            <div id="unity-progress-bar-empty">
+              <div id="unity-progress-bar-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="unity-warning"> </div>
+      <div id="unity-footer">
+        <div id="unity-logo-title-footer"></div>
+        <div id="unity-fullscreen-button"></div>
+        <div id="unity-build-title">日本ドライブ Unity</div>
+      </div>
+    </div>
+    <script>
+      let canvas = document.querySelector("#unity-canvas");
+      let fullscreenContainer = document.querySelector("#unity-fullscreen-container");
+
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
+      function unityShowBanner(msg, type) {
+        var warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "../Build";
+      var loaderUrl = buildUrl + "/WebGL.loader.js";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/WebGL_i.data.unityweb",
+        frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
+        codeUrl: buildUrl + "/WebGL.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+
+        // If you have a custom web site structure, or want to place multiple Unity build instances on the same page,
+        // you can pass fullscreenElementID: "my-unity-fullscreen-container-id", in this configuration field to
+        // explicitly point to the element tree root that is displayed in fullscreen mode.
+        fullscreenElementID: "unity-fullscreen-container",
+
+        companyName: "ShaLauTie",
+        productName: "日本ドライブ Unity",
+        productVersion: "0.1.0",
+        showBanner: unityShowBanner,
+        // errorHandler: function(err, url, line) {
+        //    alert("error " + err + " occurred at line " + line);
+        //    // Return 'true' if you handled this error and don't want Unity
+        //    // to process it further, 'false' otherwise.
+        //    return true;
+        // },
+      };
+
+      // By default, Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
+
+      // If you would like all file writes inside Unity Application.persistentDataPath
+      // directory to automatically persist so that the contents are remembered when
+      // the user revisits the site the next time, uncomment the following line:
+      // config.autoSyncPersistentDataPath = true;
+      // This autosyncing is currently not the default behavior to avoid regressing
+      // existing user projects that might rely on the earlier manual
+      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
+      // expected to change.
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        document.querySelector("#unity-container").className = "unity-mobile";
+        canvas.className = "unity-mobile";
+
+        // To lower canvas resolution on mobile devices to gain some
+        // performance, uncomment the following line:
+        config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5); /* a 3x iPhone screen at full resolution costs a lot of GPU memory */
+
+
+      } else {
+        // Desktop style: Render the game canvas container in a window that can be maximized to fullscreen:
+        document.querySelector("#unity-container").className = "unity-mobile"; canvas.className = "unity-mobile"; document.querySelector("#unity-footer").style.display = "none"; fullscreenContainer.style.width = "100%";
+        fullscreenContainer.style.height = "100%";
+      }
+
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        const loadingContainer = document.querySelector("#unity-loading-container");
+        const progressBarFull = document.querySelector("#unity-progress-bar-full");
+
+        createUnityInstance(canvas, config, (progress) => {
+          if (progress < 1) {
+            loadingContainer.style.display = "block";
+            progressBarFull.style.width = 100 * progress + "%";
+          } else {
+            loadingContainer.style.display = "none";
+          }
+        }).then((unityInstance) => { window.unityInstance = unityInstance;
+                document.querySelector("#unity-fullscreen-button").onclick = () => {
+                  unityInstance.SetFullscreen(1);
+                };
+
+              }).catch((message) => {
+                alert(message);
+              });
+            };
+
+      document.body.appendChild(script);
+
+    </script>
+  <!-- ===== Japan Drive overlay: the same controls as the three.js version (touch pedals + wheel, pause menu, USB wheel setup, gyro look) ===== -->
+<style>
+#jd{position:fixed;inset:0;pointer-events:none;z-index:50;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;color:#fff}
+#jd .pe{pointer-events:auto}
+#jdHelp{position:fixed;left:16px;bottom:16px;font-size:13px;padding:6px 12px;border-radius:999px;background:rgba(12,16,24,.55);border:1px solid rgba(255,255,255,.18);cursor:pointer;pointer-events:auto;backdrop-filter:blur(6px)}
+#jdKeysPanel{position:fixed;left:16px;bottom:56px;display:grid;grid-template-columns:auto auto;gap:4px 14px;padding:12px 16px;border-radius:14px;background:rgba(12,16,24,.72);border:1px solid rgba(255,255,255,.15);font-size:13px;backdrop-filter:blur(6px);transition:opacity .4s}
+#jdKeysPanel.hide{opacity:0;pointer-events:none} #jdKeysPanel b{display:inline-block;min-width:22px;padding:1px 6px;margin-right:3px;border-radius:5px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);text-align:center;font-weight:700;font-size:12px}
+.card{background:rgba(12,16,24,.58);border:1px solid rgba(255,255,255,.16);border-radius:16px;backdrop-filter:blur(6px);box-shadow:0 4px 18px rgba(0,0,0,.25)}
+#jdSpd{position:fixed;right:16px;bottom:16px;display:flex;align-items:center;gap:12px;padding:10px 16px}
+#spdNum{font-size:54px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;min-width:2.1em;text-align:right;letter-spacing:-1px}
+#spdNum.over{color:#ff6b5a}
+#spdSide{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;opacity:.85}
+#spdGear{font-size:20px;font-weight:800;padding:1px 9px;border-radius:7px;background:rgba(255,255,255,.14)} #spdGear.r{background:#e0a21e;color:#111}
+#spdFuel{font-size:11px;letter-spacing:-1px;white-space:nowrap} #spdFuel b{color:#7f7} #spdFuel b.low{color:#ff5a48}
+#spdLim{width:46px;height:46px;border-radius:50%;background:#fff;border:6px solid #d42a1e;box-sizing:border-box;color:#1a2a7a;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center}
+#jdTR{position:fixed;right:16px;top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+body.jdtouch #jdSpd{top:8px;bottom:auto;right:12px;padding:6px 12px;gap:8px} body.jdtouch #spdNum{font-size:38px} body.jdtouch #spdLim{width:38px;height:38px;font-size:15px;border-width:5px}
+body.jdtouch #jdTR{top:76px;right:12px} body.jdtouch #jdCities{display:none} body.jdtouch #jdKeysPanel{display:none} body.jdtouch #jdSig{display:none!important}
+#jdCities{position:fixed;left:10px;top:10px;display:flex;gap:6px}
+#jdCities{padding:4px;gap:2px;border-radius:12px;background:rgba(12,16,24,.55);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(6px)}
+#jdCities div{padding:6px 13px;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px;opacity:.8;transition:background .2s}
+#jdCities div:hover{background:rgba(255,255,255,.1);opacity:1} #jdCities div.on{background:#e6aa28;color:#111;opacity:1}
+#jdMsgs{position:fixed;left:50%;top:60px;transform:translateX(-50%);width:min(92vw,620px);text-align:center;pointer-events:none}
+#jdMsgs .msg{display:inline-block;margin:3px;padding:5px 12px;border-radius:9px;background:rgba(0,0,0,.6);font-size:16px;font-weight:700;text-shadow:0 1px 2px #000;animation:jdfade 4s forwards}
+#jdMsgs .msg.bad{background:rgba(170,30,30,.75)}#jdMsgs .msg.good{background:rgba(30,140,70,.75)}
+@keyframes jdfade{0%{opacity:0;transform:translateY(-6px)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+#jdMission{padding:10px 14px;font-size:14px;line-height:1.5;width:250px;display:none} #jdMission.compact{padding:4px 10px;font-size:13px;width:auto;opacity:.85}
+#jdMission .t{font-size:16px;font-weight:800;margin-bottom:2px} #jdMission .bar{height:6px;border-radius:3px;background:rgba(255,255,255,.15);margin-top:6px;overflow:hidden} #jdMission .bar i{display:block;height:100%;background:linear-gradient(90deg,#ffd24a,#ff9a3a);border-radius:3px;transition:width .3s}
+#jdInfo{padding:4px 12px;font-size:13px;opacity:.9} #jdInfo:empty{display:none}
+#jdMoney{padding:6px 14px;font-size:20px;font-weight:800;color:#ffd24a}
+#jdSig{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);font-size:34px;letter-spacing:60px;text-shadow:0 0 8px #3f3;display:none}
+#jdPause,#jdWz{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;pointer-events:auto;z-index:80}
+#jd .panel{background:rgba(16,20,30,.95);border:1px solid #3c4c6c;border-radius:14px;padding:22px 26px;max-width:560px;text-align:center}
+#jd .panel h1{margin:0 0 10px;font-size:28px}
+#jd button{font-size:17px;padding:9px 20px;margin:6px 4px;border:0;border-radius:8px;background:#2a9d5c;color:#fff;cursor:pointer;font-family:inherit}
+#jd button.sec{background:#3a4560} #jd button.city{background:#2c5f55;border:1px solid #4fa58f}
+#jdKeys{font-size:13px;opacity:.8;margin-top:12px;line-height:1.7;text-align:left}
+#wzText{font-size:22px;margin:12px 0}#wzAxes{font-family:monospace;font-size:12px;color:#9ab;white-space:pre;text-align:left}
+/* touch controls (phones / tablets): same layout as the web version */
+#jdTouch{display:none;position:fixed;inset:0;z-index:60;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none} body.jdtouch #jdEsc{display:none}
+#jdEsc{position:fixed;left:150px;bottom:16px;font-size:13px;padding:6px 12px;border-radius:999px;background:rgba(12,16,24,.55);border:1px solid rgba(255,255,255,.18);cursor:pointer;pointer-events:auto;backdrop-filter:blur(6px)} #jdEsc b{display:inline-block;padding:0 6px;margin-right:4px;border-radius:5px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);font-size:12px}
+.tb{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:16px;background:rgba(20,26,36,.42);border:2px solid rgba(255,255,255,.35);color:#fff;font-weight:700;font-size:20px;box-sizing:border-box;text-shadow:0 1px 2px #000;pointer-events:auto}
+.tb.on{background:rgba(80,180,255,.45);border-color:#9df}
+#tGas{right:18px;bottom:22px;width:96px;height:150px;background:rgba(40,150,80,.4)}
+#tBrk{right:126px;bottom:22px;width:96px;height:110px;background:rgba(190,50,50,.4)}
+#tHand{right:126px;bottom:144px;width:96px;height:52px;font-size:15px}
+#tRev{right:18px;bottom:182px;width:96px;height:52px;font-size:26px;background:rgba(230,160,30,.38)}
+#tSteer{left:14px;bottom:14px;width:min(44vw,300px);height:170px;border-radius:24px;background:rgba(20,26,36,.25)}
+#tWheel{width:120px;height:120px;border-radius:50%;border:12px solid rgba(255,255,255,.55);box-sizing:border-box;position:relative;pointer-events:none}
+#tWheel:after{content:'';position:absolute;left:50%;top:-12px;width:8px;height:20px;margin-left:-4px;background:#ff7a30;border-radius:3px}
+#tTop{position:absolute;left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:112px;transform:translateX(-50%);display:flex;gap:8px}
+#tHorn{left:calc(50% + (14px + min(44vw,300px) - 222px) / 2);bottom:16px;transform:translateX(-50%);width:88px;height:88px;border-radius:50%;font-size:30px;flex-direction:column;background:rgba(230,170,40,.35);border-color:rgba(255,220,120,.7)} #tHorn small{font-size:12px;margin-top:-2px}
+#tTop .tb{position:static;width:62px;height:52px;font-size:24px;border-radius:14px}
+#tTop .tb.lit{background:rgba(40,220,90,.75);border-color:#bfb;box-shadow:0 0 14px #3f3}
+#tSide{position:absolute;left:50%;top:8px;transform:translateX(-50%);display:flex;gap:6px}
+#tSide .tb{position:static;width:50px;height:40px;font-size:17px;border-radius:12px}
+@media (max-width:760px){#tTop .tb{width:52px;height:46px;font-size:20px}#tTop{gap:5px}#tSide .tb{width:44px}}
+#jdLoad{position:fixed;inset:0;z-index:150;background:#0d1220;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;text-align:center;pointer-events:none}
+#jdLoad .spin{width:46px;height:46px;border-radius:50%;border:5px solid rgba(255,255,255,.2);border-top-color:#e6aa28;animation:jdspin 1s linear infinite;margin-bottom:16px}
+@keyframes jdspin{to{transform:rotate(360deg)}}
+#jdRot{position:fixed;inset:0;z-index:200;background:#0d1220;color:#fff;display:none;align-items:center;justify-content:center;flex-direction:column;font-size:22px;text-align:center}
+@media (orientation:portrait){body.jdtouch #jdRot{display:flex}}
+</style>
+<div id="jd">
+  <div id="jdCities" class="pe"><div data-c="0">札幌</div><div data-c="1">東京</div><div data-c="2">横浜</div><div data-c="3">大阪</div><div data-c="4">キロロ</div><div data-c="5">小樽</div><div data-c="6">新千歳空港</div><div data-c="7">国道5号</div></div>
+  <div id="jdMsgs"></div>
+  <div id="jdTR"><div id="jdMoney" class="card">¥10,000</div><div id="jdInfo" class="card"></div><div id="jdMission" class="card"></div></div>
+  <div id="jdSpd" class="card"><div id="spdNum">0</div><div id="spdSide"><div id="spdGear">D</div><div>km/h</div><div id="spdFuel"></div></div><div id="spdLim">40</div></div>
+  <div id="jdSig"><span id="jdSigL">◀</span><span id="jdSigR">▶</span></div>
+  <div id="jdHelp">⌨ 操作說明 <span style="opacity:.6">F1</span></div><div id="jdEsc"><b>Esc</b> 回到選單</div>
+  <div id="jdKeysPanel"><div><b>W</b><b>S</b> 油門 / 煞車</div><div><b>A</b><b>D</b> 方向盤</div><div><b>Space</b> 手煞車</div><div><b>R</b> 切換 D / R</div><div><b>Q</b><b>E</b> 方向燈</div><div><b>X</b> 雙閃</div><div><b>H</b> 喇叭 (行人會回頭)</div><div><b>V</b> 滑鼠轉頭看 開/關</div><div><b>Tab</b> 切換視角</div><div><b>M</b> 地圖 / 全國地圖</div><div><b>N</b> 日 / 夜</div><div><b>T</b> 天氣</div><div><b>1</b>-<b>8</b> 換地點</div><div><b>C</b> 方向盤設定</div><div><b>⌫</b> 回到路上</div><div style="grid-column:1/3">🚃 踏切前一定要停車,柵欄放下時不能過</div><div><b>Esc</b> 暫停 / 回到選單</div><div style="grid-column:1/3">⛽ 油不夠時開進加油站停著就會自動加油 ・ <b>G</b> 畫質</div><div style="grid-column:1/3">🚓 違規可能被警察追,靠邊停下會被開單,甩掉 220 m 以上就沒事</div><div style="grid-column:1/3;opacity:.7;margin-top:4px">北邊的牆有缺口可以開上山坡區 ・ 首都高接成「口」字環線,四個城市互通 ・ 札幌往西的隧道 → 国道5号海岸線 → 小樽市區 → 西邊隧道 → キロロ,札幌往南的隧道 → 新千歳空港 (跟著藍色路牌)</div></div>
+  <div id="jdPause"><div class="panel">
+    <h1>⏸ 暫停</h1>
+    <button id="pzGo">▶ 繼續駕駛</button> <button id="pzPol">🚓 取消警察追捕</button>
+    <label style="display:block;margin:8px 0;font-size:14px;cursor:pointer"><input type="checkbox" id="pzNoPol"> 🚫 不要再出現警察 (勾選後永遠不會被追)</label>
+    <label style="display:block;margin:8px 0;font-size:14px;cursor:pointer"><input type="checkbox" id="pzMute"> 🔇 關閉所有音效 (引擎、喇叭、警笛、雨聲…全部靜音)</label>
+    <label style="display:block;margin:8px 0;font-size:14px;cursor:pointer"><input type="checkbox" id="pzSight"> 📖 開車經過景點時顯示觀光導覽卡片</label>
+    <div id="pzSights" style="font-size:13px;margin:2px 0 8px;max-height:96px;overflow:auto"></div>
+    <div style="font-size:13px;opacity:.8;margin:10px 0 2px">📍 選一個城市重新出發</div>
+    <div><button class="city" data-c="0">札幌</button><button class="city" data-c="1">東京</button><button class="city" data-c="2">横浜</button><button class="city" data-c="3">大阪</button><button class="city" data-c="4">キロロ山路</button><button class="city" data-c="5">小樽</button><button class="city" data-c="6">新千歳空港</button><button class="city" data-c="7">国道5号 海岸線</button></div>
+    <div><button class="sec" id="pzCam">🎥 切換視角</button><button class="sec" id="pzNight">🌙 日 / 夜</button><button class="sec" id="pzWx">🌦 換天氣</button><button class="sec" id="pzQ">🖥 畫質</button><button class="sec" id="pzWheel">🎮 方向盤設定</button></div>
+    <div id="jdKeys">W/S 油門/煞車 ・ A/D 方向 ・ Space 手煞車 ・ R 倒車<br>Q/E 方向燈 ・ X 雙閃 ・ H / 滑鼠左鍵 喇叭 ・ V 滑鼠視角<br>C 方向盤設定 ・ Tab 切換視角 ・ Backspace 回到路上 ・ [ ] 視野角度 ・ 1-4 換城市 ・ Esc 暫停 / 繼續<br>手機:左下拖曳方向盤,右下油門/煞車/手煞車/D·R,📱 陀螺儀轉頭看,🎯 歸零</div>
+  </div></div>
+  <div id="jdWz"><div class="panel">
+    <h1>🎮 方向盤設定</h1>
+    <div id="wzText">請先把方向盤放正、放開踏板,然後按「下一步」</div>
+    <div id="wzAxes"></div>
+    <button id="wzNext">下一步</button><button class="sec" id="wzReset">清除設定</button><button class="sec" id="wzClose">關閉</button>
+  </div></div>
+  <div id="jdTouch">
+    <div id="tTop"><div class="tb" data-a="sigL" id="tSigL">◀</div><div class="tb" data-a="haz" id="tHaz">⚠</div><div class="tb" data-a="sigR" id="tSigR">▶</div></div>
+    <div id="tSide"><div class="tb" data-a="pause" id="tPause">⏸</div><div class="tb" data-a="cam" id="tCam">🎥</div><div class="tb" data-a2="map" id="tMap">🗺</div><div class="tb" id="tGyro">📱</div><div class="tb" id="tCenter">🎯</div><div class="tb" data-a="reset" id="tReset">↺</div></div>
+    <div class="tb" id="tSteer"><div id="tWheel"></div></div>
+    <div class="tb" data-k="horn" id="tHorn">📢<small>喇叭</small></div>
+    <div class="tb" id="tHand" data-k="hand">手煞車</div>
+    <div class="tb" data-a="gear" id="tRev">D</div>
+    <div class="tb" id="tBrk" data-k="brake">煞車</div>
+    <div class="tb" id="tGas" data-k="gas">油門</div>
+  </div>
+  <div id="jdLoad"><div class="spin"></div><div id="jdLoadT">載入中…</div><div style="font-size:13px;opacity:.7;margin-top:6px">第一次要下載約 68 MB,之後會快很多(瀏覽器會存起來)</div></div>
+  <div id="jdRot"><div style="font-size:60px">📱↻</div>請把手機轉成橫向來玩</div>
+</div>
+<script>
+(function () {
+  var U = function (m, v) { if (window.unityInstance) window.unityInstance.SendMessage('Game', m, v === undefined ? '' : v); }; // numbers stay numbers (int parameters), strings stay strings
+  var $ = function (id) { return document.getElementById(id); };
+  var isTouch = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+  if (isTouch) document.body.classList.add('jdtouch');
+  // ---- phones: fullscreen from the first touch (Android / iPad), held in landscape; a button to go back in; iPhone: the home-screen hint
+  (function () {
+    if (!isTouch) return;
+    var d = document, el = d.documentElement, ua = navigator.userAgent;
+    var standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches);
+    var can = !!(el.requestFullscreen || el.webkitRequestFullscreen);
+    function isFS() { return !!(d.fullscreenElement || d.webkitFullscreenElement); }
+    function lock() { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(function () { }); } catch (e) { } }
+    function go() { if (isFS() || standalone || !can) return; try { var p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen(); if (p && p.then) p.then(lock).catch(function () { }); else lock(); } catch (e) { } }
+    var btn = d.createElement('div'); btn.textContent = '⛶ 全螢幕';
+    btn.style.cssText = 'position:fixed;left:10px;top:8px;z-index:150;background:rgba(0,0,0,.6);color:#fff;font:600 15px sans-serif;padding:7px 16px;border-radius:18px;display:none;cursor:pointer';
+    d.body.appendChild(btn); btn.addEventListener('click', function (e) { go(); e.stopPropagation(); });
+    function upd() { btn.style.display = can && !standalone && !isFS() ? 'block' : 'none'; setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 250); }
+    d.addEventListener('fullscreenchange', upd); d.addEventListener('webkitfullscreenchange', upd);
+    if (can) { var first = function () { go(); }; d.addEventListener('touchend', first, true); d.addEventListener('click', first, true); upd(); } /* every tap while not fullscreen tries again (a browser may refuse the first) */
+    else if (!standalone && /iPhone|iPod/.test(ua)) {
+      var seen = false; try { seen = localStorage.getItem('jdIosFS') === '1'; } catch (e) { }
+      if (!seen) { var h = d.createElement('div'); h.innerHTML = '📱 iPhone 要全螢幕玩：按 Safari 下方的 <b>分享</b> ⬆️ → <b>加入主畫面</b>，再從主畫面的圖示開啟　<span style="opacity:.7">（點這裡關閉）</span>';
+        h.style.cssText = 'position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:150;background:rgba(0,0,0,.75);color:#fff;font:14px/1.5 sans-serif;padding:8px 14px;border-radius:10px;max-width:86vw;text-align:center';
+        h.addEventListener('click', function () { h.remove(); try { localStorage.setItem('jdIosFS', '1'); } catch (e) { } }); d.body.appendChild(h); }
+    }
+  })();
+  // ---- city buttons (top left) and the pause menu
+  var city = 1;
+  function setCity(k) { city = k; U('DebugCity', k); [].forEach.call(document.querySelectorAll('#jdCities div'), function (d) { d.classList.toggle('on', +d.dataset.c === k); }); }
+  [].forEach.call(document.querySelectorAll('[data-c]'), function (d) { d.addEventListener('click', function () { setCity(+d.dataset.c); pause(false); }); });
+  var paused = false;
+  function pause(on) { paused = on; $('jdPause').style.display = on ? 'flex' : 'none'; U('SetPause', on ? 1 : 0); }
+  $('pzGo').onclick = function () { pause(false); }; $('pzPol').onclick = function () { U('Action', 'police'); pause(false); };
+  (function () { var on = false; try { on = localStorage.getItem('jdNoPolice') === '1'; } catch (e) { } $('pzNoPol').checked = on; function send() { U('Action', $('pzNoPol').checked ? 'policeOff' : 'policeOn'); } $('pzNoPol').onchange = function () { try { localStorage.setItem('jdNoPolice', $('pzNoPol').checked ? '1' : '0'); } catch (e) { } send(); }; if (on) { var tries = 0, t = setInterval(function () { if (window.unityInstance) { send(); clearInterval(t); } else if (++tries > 600) clearInterval(t); }, 500); } })();
+  (function () { var on = false; try { on = localStorage.getItem('jdMute') === '1'; } catch (e) { } $('pzMute').checked = on; function send() { U('Action', $('pzMute').checked ? 'soundOff' : 'soundOn'); } $('pzMute').onchange = function () { try { localStorage.setItem('jdMute', $('pzMute').checked ? '1' : '0'); } catch (e) { } send(); }; if (on) { var tries = 0, t = setInterval(function () { if (window.unityInstance) { send(); clearInterval(t); } else if (++tries > 600) clearInterval(t); }, 500); } })();
+  $('pzCam').onclick = function () { U('Action', 'cam'); }; $('pzNight').onclick = function () { U('Action2', 'night'); }; $('pzWx').onclick = function () { U('Action2', 'weather'); }; $('pzQ').onclick = function () { U('Action2', 'quality'); };
+  [].forEach.call(document.querySelectorAll('[data-a2]'), function (el) { el.addEventListener('pointerdown', function (e) { U('Action2', el.dataset.a2); e.preventDefault(); }); });
+  $('pzWheel').onclick = function () { pause(false); wzOpen(); };
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Escape') { if ($('jdWz').style.display === 'flex') wzClose(); else pause(!paused); e.preventDefault(); }
+    if (/^Digit[1-5]$/.test(e.code)) setCity(+e.code.slice(5) - 1);
+  });
+  window.jdCity = function (k) { city = k; [].forEach.call(document.querySelectorAll('#jdCities div'), function (d) { d.classList.toggle('on', +d.dataset.c === k); }); };
+  setTimeout(function () { jdCity(1); }, 100);
+  // turn signal lamps shown by the game (Game calls window.jdSig(l, r) through the page)
+  window.jdSig = function (l, r) { $('jdSig').style.display = (l || r) ? 'block' : 'none'; $('jdSigL').style.opacity = l ? 1 : 0.15; $('jdSigR').style.opacity = r ? 1 : 0.15; $('tSigL').classList.toggle('lit', !!l); $('tSigR').classList.toggle('lit', !!r); };
+  // the loading screen: download percentage from the stock progress bar, then the start-up phase, gone once the game runs
+  (function () { var t0 = performance.now(); var iv = setInterval(function () { var bar = document.querySelector('#unity-progress-bar-full'), w = bar ? parseFloat(bar.style.width) || 0 : 0, s = ((performance.now() - t0) / 1000).toFixed(0);
+    if (window.unityInstance) { var l = $('jdLoad'); if (l) l.remove(); clearInterval(iv); return; }
+    $('jdLoadT').textContent = w < 90 ? '下載中 ' + Math.round(w) + '%  (' + s + ' 秒)' : '啟動遊戲中… (' + s + ' 秒)'; }, 250); })();
+  var mapLayer = null; // the big map's sight names: text is drawn here because the game has no Japanese font
+  window.jdMapLabels = function (s) {
+    if (!mapLayer) { mapLayer = document.createElement('div'); mapLayer.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5'; document.body.appendChild(mapLayer); }
+    if (!s) { mapLayer.innerHTML = ''; return; }
+    var cv = document.querySelector('canvas'), r = cv ? cv.getBoundingClientRect() : { left: 0, top: 0, width: innerWidth, height: innerHeight }, h = '';
+    s.split(';').forEach(function (e) { var a = e.split(','); if (a.length < 3) return; var nm = a[0] === '_hint' ? '滑鼠滾輪縮放 ・ M 關閉' : NAMES[a[0]]; if (!nm) return;
+      h += '<div style="position:absolute;left:' + (r.left + a[1] * r.width) + 'px;top:' + (r.top + a[2] * r.height) + 'px;transform:translate(-50%,0);white-space:nowrap;font:700 ' + (a[0] === '_hint' ? 13 : 12) + 'px sans-serif;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,1px 1px 2px #000">' + nm + '</div>'; });
+    mapLayer.innerHTML = h; };
+  window.jdInfo = function (s) { var a = s.split('|'); var wx = ['☀ 晴', '☁ 陰', '🌧 雨', '❄ 雪', '🌨 暴風雪'][+a[1]] || ''; $('jdInfo').textContent = '🕐 ' + a[0] + '  ' + wx + '  ・ ' + a[2] + ' fps'; };
+  window.jdGear = function (rev) { $('tRev').textContent = rev ? 'R' : 'D'; };
+  var lastFuel = -1; window.jdSpeed = function (k, r, l, f) { if (f !== undefined && f !== lastFuel) { lastFuel = f; var n8 = Math.ceil(f / 12.5); $('spdFuel').innerHTML = '⛽ <b class="' + (f < 15 ? 'low' : '') + '">' + '▮'.repeat(n8) + '</b><span style="opacity:.25">' + '▮'.repeat(8 - n8) + '</span>'; } var n = $('spdNum'); n.textContent = k; n.classList.toggle('over', k > l + 10); var g = $('spdGear'); g.textContent = r ? 'R' : 'D'; g.classList.toggle('r', !!r); $('spdLim').textContent = l; };
+  // the key list shows for a while at the start, then folds away; F1 or a click brings it back
+  (function () { var kp = $('jdKeysPanel'), t = setTimeout(function () { kp.classList.add('hide'); }, 12000);
+    var tog = function () { clearTimeout(t); kp.classList.toggle('hide'); }; $('jdHelp').addEventListener('click', tog); var es = $('jdEsc'), place = function () { es.style.left = ($('jdHelp').getBoundingClientRect().right + 8) + 'px'; }; place(); setTimeout(place, 800); window.addEventListener('resize', place); es.addEventListener('click', function () { pause(!paused); }); window.addEventListener('keydown', function (e) { if (e.code === 'F1') { tog(); e.preventDefault(); } }); })();
+  // toasts, the taxi job panel, the wallet (kept in this browser)
+  window.jdNotify = function (t) { var d = document.createElement('div'); d.className = 'msg' + (/🚨|💥/.test(t) ? ' bad' : /💴|✅/.test(t) ? ' good' : ''); d.textContent = t; var box = $('jdMsgs'); box.appendChild(d); while (box.children.length > 4) box.removeChild(box.firstChild); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 4000); };
+  var NAMES = { tokyotower: '東京タワー', skytree: '東京スカイツリー', sensoji: '浅草寺', tocho: '東京都庁', station: '東京駅', shibuya: '渋谷スクランブル交差点', wako: '銀座 和光', meiji: '明治神宮', odaiba: 'お台場', airport: '羽田空港', tvtower: 'さっぽろテレビ塔', clocktower: '札幌市時計台', snowfes: '雪まつり会場', odori0: '大通公園', odori1: '大通公園', sapporoSt: 'JR 札幌駅', tanuki: '狸小路', susukino: 'すすきの', goryokaku: '五稜郭', jump: '大倉山ジャンプ競技場', otaru: '小樽運河', ski: 'ニセコ スキー場', wheel: 'コスモワールド 観覧車', brick: '赤レンガ倉庫', landmark: 'ランドマークタワー', castle: '大阪城', tsutenkaku: '通天閣', taiyo: '太陽の塔', shinsai: '心斎橋筋商店街', dotonbori: '道頓堀', shrine: '稲荷神社', gas: 'ガソリンスタンド', konbini: 'コンビニ', place: '住宅街', moiwa: '藻岩山スキー場', jrst0: 'JR 桑園駅', view0: '藻岩山 展望台', view1: '青山 展望台', view2: '山手 展望台', view3: '上町 展望台', jrst1: 'JR 上野駅', jrst2: 'JR 桜木町駅', jrst3: 'JR 天王寺駅', hill0: '旭山公園通', hill1: '青山一丁目', hill2: '山手町', hill3: '上町', hotel0: 'ホテル札幌グランデ', hotel1: '定山渓ビューホテル', hotel2: 'ホテル東京ベイ', hotel3: '浅草ビジネスホテル', hotel4: '横浜ハーバーホテル', hotel5: 'みなとみらいイン', hotel6: 'ホテル大阪キャッスル', hotel7: '難波シティホテル', hotel8: 'ニセコ スキーリゾートホテル', hotel9: '藻岩山ホテル', hotel10: 'ホテル青山ヒルズ', hotel11: '山手ヒルトップホテル', hotel12: '上町ヒルズホテル', hotel13: 'ホテル小樽ベイサイド', hotel14: '天狗山ヒルズホテル', hill5: '天狗山入口', view5: '天狗山 展望台', jrst5: 'JR 小樽駅' };
+  // ---- 觀光導覽: the game sends a sight's key the first time you drive past it (Bridge.Sight -> jdSight); the card shows its name and what it is
+  var NAMES2 = { kani: 'かに道頓堀 大かに看板', tako: 'たこ焼 たこ吉', robot: '巨大ロボット像', chinatown: '横浜中華街', yamashita: '山下公園・氷川丸', akiba: '秋葉原電気街', kabuki: '歌舞伎町一番街', shinsekai: '新世界', kuromon: '黒門市場', hitsuji: 'さっぽろ羊ヶ丘展望台', clocktower: '札幌市時計台', nijo: '二条市場', sushi: '回転寿司', izakaya: '海鮮居酒屋', sakaimachi: '堺町通り', orgel: '小樽オルゴール堂', temiya: '旧手宮線', sankaku: '三角市場', denuki: '出抜小路', machiya: '町家の町並み' };
+  for (var nk in NAMES2) NAMES[nk] = NAMES2[nk];
+  var SIGHTS = {
+    c_sapporo: ['札幌', 'さっぽろ・北海道的首府', '人口約 196 萬的北海道最大城市，1869 年設「開拓使」後才照著棋盤格規劃，所以地址都是「北○条西○丁目」這種座標。冬天積雪常超過 1 公尺，路面會結冰，煞車要提早、轉彎放慢。'],
+    c_tokyo: ['東京', '日本的首都', '東京都人口約 1400 萬，加上周邊的首都圈約 3700 萬，是全世界人口最多的都市圈。江戶時代叫「江戶」，1868 年明治維新後改名東京並成為首都。路口多、行人多，記得禮讓斑馬線上的人。'],
+    c_yokohama: ['横浜', '日本第二大城市', '1859 年開港前只是個小漁村，開港後成為日本對外貿易的窗口，留下許多洋館、中華街和紅磚倉庫。人口約 377 萬，是人口最多的「市」。港邊的みなとみらい21是 1980 年代起填海開發的新都心。'],
+    c_osaka: ['大阪', '天下の台所', '江戶時代全國的米和物產都集中到這裡交易，被稱為「天下的廚房」。大阪人以「食い倒れ」(吃到破產) 和幽默的關西腔聞名。在電扶梯上大阪人站右邊、東京人站左邊。'],
+    c_otaru: ['小樽', '北海道的港町', '明治到昭和初期是北海道的金融與貿易中心，被稱為「北方的華爾街」，運河旁的石造倉庫和銀行建築就是那時留下的。冬天的坡道很滑，又靠海風大，開車要特別小心。'],
+    c_kiroro: ['キロロ', 'KIRORO 度假區', '位於赤井川村的滑雪度假區，1991 年開業，年降雪量超過 20 公尺，以乾爽的粉雪出名。山路彎多又常有暴風雪，注意落石和路面結冰，視線不好時開霧燈、放慢速度。'],
+    c_airport: ['新千歳空港', '新千歲機場', '北海道的空中玄關，現在的國內線航廈 1992 年啟用。東京羽田到新千歲是全世界最繁忙的航線之一。航廈裡有「北海道拉麵道場」、哆啦A夢空中樂園，甚至有溫泉。'],
+    c_coast: ['国道5号', '函館–札幌的國道', '國道 5 號從函館經小樽通到札幌，全長約 280 公里。札幌到小樽這段沿著石狩灣海岸，冬天海風捲起地上的雪會形成「地吹雪」，一下子什麼都看不見，要打開大燈、拉開車距。'],
+    odori0: ['大通公園', 'おおどおりこうえん', '札幌市中心東西長約 1.5 公里的帶狀公園，1871 年開拓使把它規劃成「防火帶」，隔開北邊的官廳街和南邊的住商區。冬天是雪祭會場，夏天有啤酒花園，秋天有美食節 (オータムフェスト)。'],
+    snowfes: ['さっぽろ雪まつり', '札幌雪祭', '1950 年當地的中學生在大通公園堆了 6 座雪像開始，現在每年 2 月上旬舉辦約一週，大型雪像高達 15 公尺，用卡車運來的雪多達數千車，每年吸引超過 200 萬人次。晚上點燈後特別漂亮。'],
+    tvtower: ['さっぽろテレビ塔', '札幌電視塔', '1957 年完工，高 147.2 公尺，設計者是有「塔博士」之稱的內藤多仲 (他也設計了東京鐵塔和通天閣)。塔身上的大型電子時鐘是札幌的象徵，90 公尺高的展望台可以俯瞰整條大通公園。'],
+    clocktower: ['札幌市時計台', '舊札幌農學校演武場', '1878 年作為札幌農學校 (北海道大學的前身) 的演武場建成，1881 年加上鐘塔，裝的是美國 Howard 公司的時鐘，到今天仍每小時敲鐘報時。是國家重要文化財，現在是開放參觀的資料館。'],
+    sapporoSt: ['JR 札幌駅', '札幌車站', '北海道最大的車站，函館本線、千歲線、札沼線都在這裡交會，往新千歲機場的快速 Airport 約 37 分鐘。站上的 JR Tower (2003 年，173 公尺) 有 38 樓展望室 T38，北海道新幹線也預計延伸到這裡。'],
+    tanuki: ['狸小路商店街', 'たぬきこうじ', '札幌最古老的商店街，明治初年就形成了，1 丁目到 7 丁目約 900 公尺都有拱廊遮雪，約 200 家店。名字的由來有一說是：從前在這裡拉客的人像會迷惑人的狸貓一樣。下雪天逛街也不會淋到雪。'],
+    susukino: ['すすきの', '薄野', '北海道最大的鬧區，和東京歌舞伎町、福岡中洲並稱日本三大歡樂街，約有四千家餐廳酒吧。路口那塊 NIKKA 威士忌「King of Blenders」大看板從 1969 年就在那裡。雪祭期間這裡有冰雕會場。'],
+    nijo: ['二条市場', 'にじょういちば', '明治初期漁民在這裡擺攤賣魚開始，是札幌的「市民廚房」，約 50 家店賣毛蟹、帝王蟹、海膽、鮭魚卵。小提示：早上來吃一碗海鮮丼最划算，很多店 7 點就開門。'],
+    sushi: ['回転寿司', '迴轉壽司', '1958 年大阪「元祿壽司」的白石義明從啤酒工廠的輸送帶得到靈感發明了迴轉壽司。北海道的迴轉壽司因為魚料新鮮又便宜而特別有名，常常要排隊。盤子的顏色代表價格。'],
+    izakaya: ['海鮮居酒屋', 'いざかや', '居酒屋是日本人下班後喝酒吃小菜的地方。北海道必點：烤花魚一夜干 (ホッケ)、炸雞「ザンギ」、成吉思汗烤羊肉、毛蟹。先點一杯「とりあえずビール」(先來杯啤酒) 是日本的習慣。'],
+    shrine: ['稲荷神社', 'いなりじんじゃ', '祭祀五穀豐收與生意興隆之神「稻荷神」，狐狸是神的使者，所以門口有一對石狐。全日本約有 3 萬座，總本社是京都伏見稻荷大社。參拜的方式：鞠躬兩次、拍手兩次、再鞠躬一次 (二拝二拍手一拝)。'],
+    moiwa: ['藻岩山スキー場', '藻岩山滑雪場', '藻岩山 (531 公尺) 就在札幌市區南邊，從市中心開車約 20 分鐘就能滑雪，是全世界少數離百萬人口大城這麼近的滑雪場。晚上有夜間滑雪，滑下坡時正對著札幌的夜景。'],
+    view0: ['藻岩山 展望台', 'もいわやま', '藻岩山山頂展望台海拔 531 公尺，可以搭纜車加迷你登山車上去。從這裡看到的札幌夜景被選為「日本新三大夜景」之一，石狩平原上的燈海一路延伸到海邊。'],
+    hill0: ['旭山公園通', 'あさひやま', '通往旭山記念公園的坡道，公園是 1970 年為紀念札幌開拓 100 年而建，從高處可以看到市中心和石狩灣。札幌西邊和南邊都是山，市區就在山腳的扇狀地上。'],
+    jrst0: ['JR 桑園駅', 'そうえん', '札幌站往西一站，函館本線和學園都市線在此分岔。「桑園」這個地名來自 1875 年開拓使讓舊庄內藩士在這裡開墾、種桑樹養蠶的桑田。'],
+    jump: ['大倉山ジャンプ競技場', '大倉山跳台滑雪場', '1931 年由大倉喜七郎出資興建，1972 年札幌冬季奧運的 90 公尺級跳台比賽就在這裡舉行。現在是 HS137 的大跳台，選手時速約 90 公里飛出 130 公尺以上。可以搭吊椅到跳台頂端的展望台。'],
+    hitsuji: ['さっぽろ羊ヶ丘展望台', '羊之丘展望台', '1959 年開放的展望台，原本是農林省的綿羊牧場，看得到札幌巨蛋和市區。克拉克博士像 1976 年為紀念札幌農學校創校 100 年而立，手指的方向就是他留下的名言「Boys, be ambitious (少年們，要胸懷大志)」。冬天羊群都待在羊舍裡。'],
+    tokyotower: ['東京タワー', '東京鐵塔', '1958 年完工，高 333 公尺，設計者是內藤多仲。為了航空安全依法漆成國際橘和白色。主展望台在 150 公尺、頂部展望台在 250 公尺。2012 年晴空塔啟用前，它一直是東京的電波塔。'],
+    skytree: ['東京スカイツリー', '東京晴空塔', '2012 年開業，高 634 公尺 (634 的日文念法「むさし」就是這一帶的古國名「武藏」)，是世界最高的自立式電波塔。350 公尺有天望甲板、450 公尺有天望迴廊，晚上的燈光有藍色的「粹」和紫色的「雅」。'],
+    sensoji: ['浅草寺・雷門・仲見世', 'せんそうじ', '東京最古老的寺院，傳說 628 年一對漁夫兄弟在隅田川撈到觀音像而創建。雷門的大紅燈籠高約 3.9 公尺、重約 700 公斤。從雷門到寶藏門約 250 公尺的「仲見世通」兩旁有約 90 家店，必買人形燒和雷おこし。'],
+    tocho: ['東京都庁', '東京都廳', '丹下健三設計、1990 年完工 (1991 年啟用)，高 243 公尺，在 1993 年橫濱地標塔完工前是日本最高的大樓。45 樓 (202 公尺) 南北兩個展望室免費開放，天氣好可以看到富士山，晚上外牆還有光雕投影秀。'],
+    station: ['東京駅 丸の内駅舎', '東京車站', '1914 年由辰野金吾設計的紅磚站舍，紅磚配白色花崗岩飾帶。1945 年空襲燒毀了南北兩座圓頂，戰後簡化成兩層樓，2012 年才復原成創建時的三層樓和圓頂。每天約 3000 班列車進出，是新幹線的起點。'],
+    shibuya: ['渋谷スクランブル交差点', '澀谷十字路口', '世界最有名的行人全向通行路口，綠燈一亮一次最多約 3000 人同時穿越。旁邊的忠犬八公像紀念每天到車站等主人的秋田犬，現在的銅像是 1948 年重鑄的第二代。開車經過時行人很多，慢慢來。'],
+    wako: ['銀座 和光', 'ぎんざ わこう', '銀座四丁目路口的地標，鐘塔大樓 1932 年完成，原本是精工錶創辦人服部金太郎的服部鐘錶店。整點會響起西敏寺鐘聲。週末和假日中央通會封路變成「步行者天國」。'],
+    meiji: ['明治神宮', 'めいじじんぐう', '1920 年創建，祭祀明治天皇與昭憲皇太后。約 70 公頃的森林是從全國捐來約 10 萬棵樹人工種出來的。大鳥居高 12 公尺，用台灣的千年扁柏建造，是日本最大的木造明神鳥居。新年參拜人數全日本第一。'],
+    odaiba: ['お台場', '台場', '名字來自 1853 年黑船來航後，江戶幕府在海上築的砲台「台場」。現在是填海造的臨海副都心，有丹下健三設計、帶著大球體的富士電視台、自由女神像複製品，以及 1993 年通車的彩虹大橋。'],
+    airport: ['羽田空港', '東京國際機場', '1931 年開港，是日本最繁忙的機場，旅客數排名世界前五。有 4 條跑道，第 1、第 2 航廈飛國內線，第 3 航廈飛國際線。離市中心很近，搭單軌電車或京急線約 15 到 30 分鐘。'],
+    kabuki: ['歌舞伎町一番街', 'かぶきちょういちばんがい', '新宿東口的不夜城。戰後原本打算在這裡蓋歌舞伎劇場來復興，雖然劇場最後沒蓋成，「歌舞伎町」這個名字卻留了下來。紅色燈泡拱門下的一番街兩旁全是居酒屋、卡拉OK、拉麵店和一層一塊的直立招牌，晚上燈光通明。'],
+    akiba: ['秋葉原電気街', 'あきはばら', '1869 年大火後這裡設了防火空地和鎮火神社，民間稱「秋葉大權現」，地名由此而來。戰後從賣收音機零件的黑市起家，變成家電街，1990 年代後成了電腦、動漫、遊戲和女僕咖啡店的「御宅族聖地」。總武線的黃色電車就從高架上開過，週日中央通是步行者天國。'],
+    hill1: ['青山一丁目', 'あおやま', '港區青山一帶是高台上的辦公和住宅區，東京的「山之手」就是指這些台地。附近明治神宮外苑的銀杏大道約 300 公尺、146 棵銀杏，11 月下旬到 12 月初變成一片金黃。'],
+    view1: ['青山 展望台', '東京的台地', '東京西半部是武藏野台地的邊緣，被河谷切成許多高台和坡道 (坂)，所以東京有很多「○○坂」的地名。從高處可以看到新宿、六本木的高樓群。'],
+    jrst1: ['JR 上野駅', 'うえの', '1883 年開業，從前是往東北、北海道的「北方玄關」。旁邊的上野公園有東京國立博物館、上野動物園 (大貓熊)，對面的「阿美橫町」是熱鬧的商店街。'],
+    wheel: ['コスモクロック21', 'COSMO CLOCK 21 摩天輪', '1989 年為橫濱博覽會建造，1999 年移到現址並加高到 112.5 公尺，是世界最大的「時鐘型」摩天輪，輪子中間就是一個大時鐘。60 個車廂，轉一圈約 15 分鐘，晚上的燈光秀很漂亮。'],
+    brick: ['赤レンガ倉庫', '紅磚倉庫', '明治政府建的保稅倉庫，2 號館 1911 年、1 號館 1913 年完工，設計者是妻木賴黃。1923 年關東大地震時 1 號館倒了一半。2002 年改裝成商店和展演空間，冬天有聖誕市集和溜冰場。'],
+    landmark: ['横浜ランドマークタワー', '橫濱地標塔', '1993 年完工，高 296.3 公尺，到 2014 年大阪阿倍野 HARUKAS 完工前都是日本最高的大樓。69 樓的展望台「Sky Garden」在 273 公尺高，當年的電梯分速 750 公尺，曾是世界最快。'],
+    chinatown: ['横浜中華街', '橫濱中華街', '1859 年橫濱開港後華僑聚居而成，約 500 家店，是日本最大的中華街。街區四周有 10 座牌樓，正門善鄰門的匾額寫著「中華街」；東西南北四座門依風水漆成青、白、紅、黑。關帝廟現在的建築是 1990 年重建的。必吃：肉包、小籠包、北京烤鴨。'],
+    yamashita: ['山下公園・氷川丸', 'やましたこうえん', '用 1923 年關東大地震的瓦礫填海建成、1930 年開園的臨海公園。停在岸邊的冰川丸是 1930 年完工、跑橫濱–西雅圖航線的遠洋客輪，二戰時當醫院船倖存下來，1961 年起停在這裡當博物館船，是國家重要文化財。對面那座十角形的鐵塔是 1961 年的橫濱海洋塔 (106 公尺)。'],
+    hill2: ['山手町', 'やまて', '開港後外國人居住的高台，現在還保留外交官之家、Berrick Hall 等洋館 (多數免費參觀) 和外國人墓地。坡道多又窄，開慢一點。'],
+    view2: ['山手 展望台', '港の見える丘', '山手的高台，像 1962 年開園的「港の見える丘公園」可以眺望橫濱港和 1989 年通車的橫濱海灣大橋。晚上看港口夜景很受情侶歡迎。'],
+    jrst2: ['JR 桜木町駅', 'さくらぎちょう', '1872 年日本第一條鐵路 (新橋–橫濱) 開通時的「橫濱站」就是現在的櫻木町站，站前有紀念碑。旁邊的 YOKOHAMA AIR CABIN 是 2021 年啟用的日本第一條都市循環式空中纜車。'],
+    dotonbori: ['道頓堀', 'どうとんぼり', '1615 年完成的運河，名字來自開鑿者之一的安井道頓 (他在完工前戰死於大坂夏之陣)。兩岸的固力果跑跑人看板第一代是 1935 年，現在是 2014 年的第 6 代 LED。這裡就是「吃到倒 (食い倒れ)」的大阪。'],
+    kani: ['かに道頓堀 本店', '大螃蟹招牌', '道頓堀名物的會動螃蟹招牌：店門上方一隻腳展開約 7 公尺的紅色松葉蟹，兩隻大螯慢慢開合、八隻腳跟著擺動，晚上有聚光燈照著。道頓堀的螃蟹料理店從 1960 年代起就用這種會動的巨大螃蟹招攬客人，是大阪「看板文化」的代表 (遊戲裡的店名是虛構的)。'],
+    tako: ['たこ焼 たこ吉', '章魚燒燈籠', '掛在章魚燒店門口上方的巨大紅色章魚燈籠：紙燈籠做的圓頭配大眼睛和嘟起來的嘴，八隻腳往外捲，晚上從裡面亮起來。章魚燒大約 1935 年在大阪誕生，道頓堀一帶到處都是現烤的店，外脆內軟、小心燙口 (店名是虛構的)。'],
+    shinsai: ['心斎橋筋商店街', 'しんさいばし', '大阪最具代表性的拱廊購物街，長約 580 公尺。名字來自 1622 年岡田心齋在長堀川上架的橋，河後來填平、橋也拆了，只留下地名。從這裡一路往南走就到道頓堀。'],
+    tsutenkaku: ['通天閣', 'つうてんかく', '現在的塔是 1956 年的第二代，高 103 公尺 (含避雷針 108 公尺)，也是內藤多仲設計。第一代 (1912 年) 模仿巴黎的凱旋門加艾菲爾鐵塔。展望台上有幸運之神「比利肯」，摸他的腳底會帶來好運；塔頂霓虹燈的顏色是明天的天氣預報。'],
+    shinsekai: ['新世界', 'しんせかい', '1912 年開發的新市街，北半部仿巴黎、南半部仿紐約康尼島的遊樂園 Luna Park 規劃。現在以串炸 (串カツ) 聞名，醬汁大家共用，所以規矩是「醬汁禁止二度沾 (二度づけ禁止)」。巨大的河豚燈籠、章魚、串炸立體看板是這裡的招牌風景；ジャンジャン橫丁則有老派的將棋會所。'],
+    kuromon: ['黒門市場', 'くろもんいちば', '「大阪的廚房」，約 1822 年魚販聚集開始，名字來自從前附近圓明寺的黑色山門。全長約 580 公尺的拱廊裡有約 150 家店，鮪魚、河豚、螃蟹、水果都有，很多店可以現切現吃。'],
+    castle: ['大阪城', 'おおさかじょう', '1583 年豐臣秀吉開始築城。現在的天守閣是 1931 年大阪市民捐款以鋼筋混凝土重建的第三代，1997 年列為國家登錄有形文化財，8 樓是展望台。石牆上最大的「蛸石」估計超過 100 噸。春天是賞櫻名所。'],
+    robot: ['巨大ロボット像', '原創巨大機器人像', '萬博會場廣場上一尊約 20 公尺高的原創巨大機器人像 (遊戲原創設計，不是任何現有角色)：左膝高抬、右腳踏著大方塊腳掌，右手五指張開舉向天空、左拳向前。白色裝甲上有分割線，藍色胸甲配淺藍色面板和灰色進氣格柵，紅色腹部與腰部、黃色標示燈，膝蓋與手肘露出液壓桿，背上有四具推進器。圓弧頭盔上一片向後掠的冠翼、一條橫向綠色護目鏡 (晚上微微發光)，頭會慢慢轉動。後面是鏡面鰭片的展覽館。大阪在 1970 年和 2025 年兩度舉辦萬國博覽會。'],
+    taiyo: ['太陽の塔', '太陽之塔', '岡本太郎為 1970 年大阪萬博創作，高約 70 公尺，有三張臉：頂端金色的「黃金之臉」代表未來、正面的「太陽之臉」代表現在、背面的「黑色太陽」代表過去。2018 年起可以進到塔內參觀「生命之樹」。'],
+    machiya: ['町家の町並み', '町家老街', '大阪周邊還保留江戶時代商家的町家 (如富田林寺內町)：木格子窗、白色灰泥牆、瓦屋頂，門面窄、屋子深。酒藏門口掛的杉樹葉球叫「杉玉」，綠色代表新酒剛釀好，變成茶色就代表酒已經熟成。'],
+    hill3: ['上町', '上町台地', '大阪市中心南北延伸的台地，大阪城、四天王寺、生國魂神社都蓋在上面。台地西側有七條古老石坡道，合稱「天王寺七坂」。'],
+    view3: ['上町 展望台', '眺望大阪', '從上町台地往南可以看到阿倍野 HARUKAS (2014 年完工，300 公尺，當時日本最高的大樓)，往西是一路延伸到大阪灣的平地，從前這一帶大部分都是海。'],
+    jrst3: ['JR 天王寺駅', 'てんのうじ', '1889 年開業，大阪環狀線、阪和線 (往關西機場、和歌山) 在這裡交會。站前就是阿倍野 HARUKAS，走路到通天閣和新世界約 10 分鐘。'],
+    otaru: ['小樽運河', 'おたるうんが', '1923 年完工、長 1140 公尺，用填海方式做出來的運河。1970 年代原本要整條填平改成道路，引發長達十年的保存運動，最後 1986 年一半填成道路、一半保留並整修成散步道，立了 63 盞瓦斯燈。旁邊的石造倉庫現在多是餐廳和店。'],
+    sakaimachi: ['堺町通り', 'さかいまち', '明治到大正時代的商家和石造倉庫街，有北一硝子的玻璃工房、許多甜點店和音樂盒店，一路通到運河旁的メルヘン交差点。'],
+    orgel: ['小樽オルゴール堂・蒸気時計', 'おたるオルゴールどう', 'メルヘン交差点旁的本館是 1912 年 (明治 45 年) 蓋的舊共成株式會社大樓，紅磚牆配灰色軟石，現在是日本最大的音樂盒專賣店之一。門前高約 5.5 公尺的蒸汽鐘由溫哥華煤氣鎮蒸汽鐘的製作者、加拿大鐘錶師 Raymond Saunders 打造，每 15 分鐘噴出蒸汽、用 5 支汽笛奏出旋律。'],
+    temiya: ['旧手宮線跡', 'てみやせん', '1880 年開通的北海道第一條鐵路 (手宮–札幌)，是日本第三條鐵路，運送幌內煤礦的煤到小樽港。1985 年廢線，現在留下鐵軌當散步道，每年 2 月「小樽雪あかりの路」時沿線點滿蠟燭燈。'],
+    sankaku: ['三角市場', 'さんかくいちば', '就在 JR 小樽站旁，因為土地是三角形而得名，起源於戰後的露天市場。窄窄的斜坡通道兩邊都是海鮮店，可以現挑螃蟹請店家燙，或吃一碗放滿海膽和鮭魚卵的海鮮丼。'],
+    denuki: ['出抜小路', 'でぬきこうじ', '小樽運河旁重現明治、大正時期街景的小吃街，木造的「火之見櫓」(消防瞭望台) 可以爬上去看運河。名字來自從前往港口抄近路的小巷「出し抜く」。'],
+    hill5: ['天狗山入口', 'てんぐやま', '往天狗山 (532 公尺) 的坡道，小樽的市區就在山和海之間的斜坡上，所以整座城都是坡。冬天坡道結冰，路邊的砂箱裡的沙子可以撒來防滑。'],
+    view5: ['天狗山 展望台', '小樽夜景', '天狗山可以搭纜車上山，從展望台俯瞰小樽市區和石狩灣，夜景和函館山、札幌藻岩山並稱「北海道三大夜景」。山頂有天狗的大面具，摸它的鼻子可以許願。'],
+    jrst5: ['JR 小樽駅', 'おたる', '現在的站舍 1934 年完工，外觀很像上野車站，是國家登錄有形文化財。站內掛著 333 盞北一硝子的油燈，4 號月台叫「裕次郎月台」，紀念在小樽長大的明星石原裕次郎。'],
+    goryokaku: ['五稜郭', 'ごりょうかく', '1864 年完成的西式星形要塞，在函館，是戊辰戰爭最後一戰「箱館戰爭」的舞台。'],
+    ski: ['ニセコ', 'NISEKO', '北海道的滑雪勝地，以粉雪「Japow」聞名世界，正對著被稱為「蝦夷富士」的羊蹄山。']
+  };
+  var SIGHT_ON = true; try { SIGHT_ON = localStorage.getItem('jdNoSights') !== '1'; } catch (e) { }
+  var sightQ = [], sightBusy = false, sightTimer = 0, sightSeen = [];
+  var sightCard = document.createElement('div'); sightCard.id = 'jdSight'; sightCard.className = 'card';
+  sightCard.style.cssText = 'background:rgba(10,14,22,.84);position:fixed;left:16px;top:62px;width:min(380px,40vw);box-sizing:border-box;padding:12px 16px 10px;font-size:14px;line-height:1.6;opacity:0;transform:translateX(-14px);transition:opacity .35s,transform .35s;pointer-events:none;z-index:55;cursor:pointer';
+  $('jd').appendChild(sightCard);
+  function sightHide() { clearTimeout(sightTimer); sightCard.style.opacity = '0'; sightCard.style.transform = 'translateX(-14px)'; sightCard.style.pointerEvents = 'none'; setTimeout(sightNext, 450); }
+  function sightNext() {
+    if (!sightQ.length) { sightBusy = false; return; }
+    sightBusy = true; var k = sightQ.shift(), s = SIGHTS[k]; if (!s) { sightNext(); return; }
+    var touch = document.body.classList.contains('jdtouch');
+    sightCard.style.top = touch ? '8px' : '62px'; sightCard.style.width = touch ? 'min(330px,44vw)' : 'min(380px,40vw)'; sightCard.style.fontSize = touch ? '12.5px' : '14px';
+    sightCard.innerHTML = '<div style="font-size:11px;letter-spacing:2px;color:#ffd24a">📖 觀光導覽</div><div style="font-size:19px;font-weight:800;line-height:1.3;margin-top:2px">' + s[0] + '</div>' +
+      (s[1] ? '<div style="font-size:12px;opacity:.7;margin-bottom:4px">' + s[1] + '</div>' : '') + '<div>' + s[2] + '</div><div style="font-size:11px;opacity:.5;margin-top:6px;text-align:right">點一下關閉 ・ 暫停選單裡可以再看一次</div>';
+    sightCard.style.pointerEvents = 'auto'; sightCard.style.opacity = '1'; sightCard.style.transform = 'none';
+    clearTimeout(sightTimer); sightTimer = setTimeout(sightHide, Math.min(15000, 6000 + s[2].length * 60)); /* about 8 s, longer for a longer text */
+  }
+  sightCard.addEventListener('click', function (e) { sightHide(); e.stopPropagation(); });
+  function sightList() {
+    var box = $('pzSights'); if (!box) return; var h = '';
+    sightSeen.forEach(function (k) { h += '<button class="sec" data-sight="' + k + '" style="font-size:12px;padding:4px 10px;margin:2px">' + SIGHTS[k][0] + '</button>'; });
+    box.innerHTML = h ? '<div style="opacity:.8;margin-bottom:2px">📖 看過的景點 (點一下瞬間移動過去)</div>' + h : '';
+    [].forEach.call(box.querySelectorAll('[data-sight]'), function (b) { b.onclick = function () { pause(false); U('GoSight', b.dataset.sight); sightQ.unshift(b.dataset.sight); if (!sightBusy) sightNext(); else sightHide(); }; });
+  }
+  window.jdSight = function (k) {
+    if (!SIGHTS[k]) return;
+    if (sightSeen.indexOf(k) < 0) { sightSeen.push(k); sightList(); }
+    if (!SIGHT_ON) return; sightQ.push(k); if (!sightBusy) sightNext();
+  };
+  (function () { var cb = $('pzSight'); if (!cb) return; cb.checked = SIGHT_ON; cb.onchange = function () { SIGHT_ON = cb.checked; try { localStorage.setItem('jdNoSights', SIGHT_ON ? '0' : '1'); } catch (e) { } if (!SIGHT_ON) { sightQ = []; sightHide(); } }; })();
+  var d0 = 0, lastKey = '';
+  window.jdMission = function (s) { var box = $('jdMission'); if (!s) { box.style.display = 'none'; lastKey = ''; return; } var a = s.split(':'); box.style.display = 'block'; var key = a[0] + (a[1] || ''), d = +(a[0] === 'hail' ? a[1] : a[2]);
+    if (a[0] === 'hail') key = 'hail'; if (key !== lastKey) { lastKey = key; d0 = Math.max(d, 1); window.jdMissionAt = Date.now(); } var compact = Date.now() - (window.jdMissionAt || 0) > 5000; box.className = compact ? 'card compact' : 'card'; /* the full card for 5 s, then a small pill out of the way */ var pct = Math.max(0, Math.min(100, 100 - d / d0 * 100));
+    if (compact) { box.innerHTML = a[0] === 'hail' ? '🙋 <b>' + d + ' m</b>' : '🚕 <b>' + d + ' m</b> ・ <b style="color:#ffd24a">¥' + (+a[3]).toLocaleString() + '</b>'; return; }
+    if (a[0] === 'hail') box.innerHTML = '<div class="t">🙋 有人招手</div>距離 <b>' + d + ' m</b> ・ 開到旁邊停下來<div class="bar"><i style="width:' + pct + '%"></i></div>';
+    else box.innerHTML = '<div class="t">🚕 ' + (NAMES[a[1]] || a[1]) + '</div>剩 <b>' + d + ' m</b> ・ 車資 <b style="color:#ffd24a">¥' + (+a[3]).toLocaleString() + '</b><div class="bar"><i style="width:' + pct + '%"></i></div>'; };
+  window.jdMoney = function (m, f) { $('jdMoney').textContent = '¥' + m.toLocaleString() + (f ? '  (' + f + ' 趟)' : ''); try { localStorage.setItem('jdWallet', m + ',' + f); } catch (e) { } };
+  (function () { var w = null; try { w = localStorage.getItem('jdWallet'); } catch (e) { } if (w) { var a = w.split(','); $('jdMoney').textContent = '¥' + (+a[0]).toLocaleString() + (+a[1] ? '  (' + a[1] + ' 趟)' : ''); var tries = 0, t = setInterval(function () { if (window.unityInstance) { U('SetMoney', w); clearInterval(t); } else if (++tries > 600) clearInterval(t); }, 500); } })();
+
+  // ---- touch: held buttons (data-k), one-shot actions (data-a), the steering wheel pad
+  var held = { gas: 0, brake: 0, hand: 0, horn: 0 }, steer = 0, steerId = null, steerX0 = 0;
+  function touchesOn(el) { return el; }
+  [].forEach.call(document.querySelectorAll('#jdTouch [data-k]'), function (el) {
+    var k = el.dataset.k;
+    el.addEventListener('pointerdown', function (e) { held[k] = 1; el.classList.add('on'); el.setPointerCapture(e.pointerId); e.preventDefault(); });
+    var up = function () { held[k] = 0; el.classList.remove('on'); }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  });
+  [].forEach.call(document.querySelectorAll('#jdTouch [data-a]'), function (el) {
+    el.addEventListener('pointerdown', function (e) { var a = el.dataset.a; if (a === 'pause') pause(!paused); else U('Action', a); e.preventDefault(); });
+  });
+  var pad = $('tSteer'), wheel = $('tWheel');
+  pad.addEventListener('pointerdown', function (e) { steerId = e.pointerId; steerX0 = e.clientX; pad.setPointerCapture(e.pointerId); e.preventDefault(); });
+  pad.addEventListener('pointermove', function (e) { if (e.pointerId !== steerId) return; var w = pad.clientWidth; steer = Math.max(-1, Math.min(1, (e.clientX - steerX0) / (w * 0.36))); });
+  var steerUp = function (e) { if (e.pointerId === steerId) { steerId = null; steer = 0; } }; pad.addEventListener('pointerup', steerUp); pad.addEventListener('pointercancel', steerUp);
+  var hornWas = 0, last = '';
+  function tick() {
+    if (isTouch) {
+      wheel.style.transform = 'rotate(' + (steer * 120) + 'deg)';
+      var s = steer.toFixed(2) + ',' + held.gas + ',' + held.brake + ',' + held.hand; // every change goes to the game
+      if (s !== last) { U('TouchInput', s); last = s; }
+      if (held.horn !== hornWas) { U('Action', held.horn ? 'hornOn' : 'hornOff'); hornWas = held.horn; }
+    }
+    padTick(); requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---- gyro look-around (📱 toggles, 🎯 recentres)
+  var gyroOn = false, gyroAsked = false, ref = null, q = null, lastG = 0;
+  function quat(a, b, g, orient) { var d = Math.PI / 180, x = b * d, y = a * d, z = -g * d, c1 = Math.cos(x / 2), c2 = Math.cos(y / 2), c3 = Math.cos(z / 2), s1 = Math.sin(x / 2), s2 = Math.sin(y / 2), s3 = Math.sin(z / 2);
+    var r = [s1 * c2 * c3 + c1 * s2 * s3, c1 * s2 * c3 - s1 * c2 * s3, c1 * c2 * s3 - s1 * s2 * c3, c1 * c2 * c3 + s1 * s2 * s3]; r = mul(r, [-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)]); var o = -(orient || 0) * d / 2; return mul(r, [0, 0, Math.sin(o), Math.cos(o)]); }
+  function mul(a, b) { return [a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1], a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0], a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3], a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]]; }
+  var gyroEvents = 0, relSeen = false, lastYaw = 0, lastPitch = 0;
+  function onOrient(e) {
+    if (e.alpha !== null && e.alpha !== undefined) gyroEvents++;
+    if (!gyroOn || e.alpha === null) return; var orient = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    q = quat(e.alpha, e.beta, e.gamma, orient); if (!ref) ref = q; var now = performance.now(); if (now - lastG < 33) return; lastG = now;
+    var r = mul([-ref[0], -ref[1], -ref[2], ref[3]], q), x = r[0], y = r[1], z = r[2], w = r[3];
+    var yaw = Math.atan2(2 * (w * y + x * z), 1 - 2 * (y * y + x * x)) * 180 / Math.PI, pitch = Math.asin(Math.max(-1, Math.min(1, 2 * (w * x - y * z)))) * 180 / Math.PI;
+    yaw = -yaw; pitch = -pitch; var dy = ((yaw - lastYaw + 540) % 360) - 180;
+    if (Math.abs(dy) > 50 || Math.abs(pitch - lastPitch) > 40) return; // a sudden jump is a sensor glitch, not your head turning
+    yaw = Math.max(-150, Math.min(150, yaw)); lastYaw = yaw; lastPitch = pitch;
+    U('GyroLook', yaw.toFixed(1) + ',' + pitch.toFixed(1));
+  }
+  function gyroStart() {
+    var go = function () {
+      if (!gyroAsked) { window.addEventListener('deviceorientation', function (e) { relSeen = true; onOrient(e); }); window.addEventListener('deviceorientationabsolute', function (e) { if (!relSeen) onOrient(e); }); window.addEventListener('orientationchange', function () { ref = null; }); if (screen.orientation) screen.orientation.addEventListener('change', function () { ref = null; }); } // one frame of reference only: the compass-based one just when there is nothing else
+      gyroAsked = true; gyroOn = true; ref = null; lastYaw = 0; lastPitch = 0; $('tGyro').classList.add('on'); if (window.jdNotify) jdNotify('📱 陀螺儀轉頭:開 (🎯 回正)');
+      var before = gyroEvents; setTimeout(function () { if (gyroOn && gyroEvents === before && window.jdNotify) jdNotify(location.protocol !== 'https:' ? '⚠ 陀螺儀需要 https 網址 (請用 github.io 的連結)' : '⚠ 收不到陀螺儀資料,這台手機或瀏覽器可能不支援'); }, 2500);
+    };
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().then(function (s) { if (s === 'granted') go(); }).catch(function () { });
+    else go();
+  }
+  $('tGyro').addEventListener('pointerdown', function (e) { e.preventDefault(); if (gyroOn) { gyroOn = false; $('tGyro').classList.remove('on'); U('GyroLook', '0,0'); U('GyroOff'); if (window.jdNotify) jdNotify('📱 陀螺儀轉頭:關'); } else gyroStart(); });
+  $('tCenter').addEventListener('pointerdown', function (e) { e.preventDefault(); ref = q; lastYaw = 0; lastPitch = 0; U('GyroLook', '0,0'); });
+  if (isTouch) window.addEventListener('pointerup', function first() { gyroStart(); window.removeEventListener('pointerup', first); }); // on by default after the first tap (iOS asks once)
+
+  // ---- USB steering wheel / pedals: the setup wizard finds which axis does what (saved in this browser)
+  var map = null; try { map = JSON.parse(localStorage.getItem('jdPadMap') || 'null'); } catch (e) { }
+  function gp() { var a = navigator.getGamepads ? navigator.getGamepads() : []; for (var k = 0; k < a.length; k++) if (a[k] && a[k].axes && a[k].axes.length) return a[k]; return null; }
+  var padLast = '';
+  function norm(v, rest, full) { var t = (v - rest) / ((full - rest) || 1); return Math.max(0, Math.min(1, t)); }
+  function padTick() {
+    if (wz.on) { wzTick(); return; } var p = gp(); if (!p || !map) return;
+    var s = (p.axes[map.steer] - map.c) / (map.steer === undefined ? 1 : (map.span || 1)); s = Math.max(-1, Math.min(1, s * (map.inv ? -1 : 1)));
+    var g = map.gas >= 0 ? norm(p.axes[map.gas], map.gasRest, map.gasFull) : 0, b = map.brk >= 0 ? norm(p.axes[map.brk], map.brkRest, map.brkFull) : 0;
+    var btn = 0; for (var k = 0; k < p.buttons.length; k++) if (p.buttons[k].pressed) btn |= (1 << k);
+    var str = s.toFixed(3) + ',' + g.toFixed(3) + ',' + b.toFixed(3) + ',' + btn; if (str !== padLast) { U('PadInput', str); padLast = str; }
+  }
+  var wz = { on: false, step: 0, rest: null, left: null, right: null, gasFull: null, brkFull: null };
+  var steps = ['請先把方向盤放正、放開踏板,然後按「下一步」', '把方向盤轉到最左邊,按「下一步」', '把方向盤轉到最右邊,按「下一步」', '把油門踩到底,按「下一步」', '把煞車踩到底,按「下一步」', '完成!設定已經記住了'];
+  function wzOpen() { wz.on = true; wz.step = 0; $('jdWz').style.display = 'flex'; $('wzText').textContent = gp() ? steps[0] : '轉一下方向盤或按任一鍵讓瀏覽器偵測到它…'; }
+  function wzClose() { wz.on = false; $('jdWz').style.display = 'none'; }
+  function wzTick() { var p = gp(); if (!p) return; $('wzAxes').textContent = p.id.slice(0, 60) + '\n' + p.axes.map(function (v, k) { return 'axis ' + k + ': ' + v.toFixed(2); }).join('\n'); }
+  function big(a, b) { var best = -1, bi = -1; for (var k = 0; k < a.length; k++) { var d = Math.abs(a[k] - b[k]); if (d > best) { best = d; bi = k; } } return best > 0.25 ? bi : -1; }
+  $('wzNext').onclick = function () {
+    var p = gp(); if (!p) return; var ax = p.axes.slice();
+    if (wz.step === 0) wz.rest = ax; else if (wz.step === 1) wz.left = ax; else if (wz.step === 2) wz.right = ax; else if (wz.step === 3) wz.gasFull = ax; else if (wz.step === 4) wz.brkFull = ax;
+    wz.step++;
+    if (wz.step === 5) {
+      var st = big(wz.left, wz.right), gi = big(wz.rest, wz.gasFull), bi = big(wz.rest, wz.brkFull);
+      map = { steer: st, c: wz.rest[st], span: Math.abs(wz.right[st] - wz.left[st]) / 2 || 1, inv: wz.right[st] < wz.left[st], gas: gi, gasRest: gi >= 0 ? wz.rest[gi] : 0, gasFull: gi >= 0 ? wz.gasFull[gi] : 1, brk: bi, brkRest: bi >= 0 ? wz.rest[bi] : 0, brkFull: bi >= 0 ? wz.brkFull[bi] : 1 };
+      try { localStorage.setItem('jdPadMap', JSON.stringify(map)); } catch (e) { }
+    }
+    $('wzText').textContent = steps[Math.min(wz.step, 5)]; if (wz.step >= 5) setTimeout(wzClose, 1500);
+  };
+  $('wzReset').onclick = function () { map = null; try { localStorage.removeItem('jdPadMap'); } catch (e) { } U('PadInput', '0,0,0,0'); $('wzText').textContent = '已清除'; };
+  $('wzClose').onclick = wzClose;
+  window.addEventListener('keydown', function (e) { if (e.code === 'KeyC' && !e.repeat && $('jdWz').style.display !== 'flex') wzOpen(); }); // C = wheel setup, like the web version
+})();
+</script>
+<div id="jdhelp" onclick="this.remove()" style="position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9;background:rgba(0,0,0,.6);color:#fff;font:15px/1.6 'Microsoft JhengHei','PingFang TC',sans-serif;padding:10px 16px;border-radius:10px;transition:opacity 1s;text-align:center">🚕 日本ドライブ Unity 版(測試中)<br>W/S 油門/煞車(停住後按住 S 倒車)・A/D 方向・Space 手煞車・C 切換視角・R 回到路上<br>USB 方向盤/手把直接可用・手機用畫面按鈕・點這裡關閉</div><script>setTimeout(function(){var h=document.getElementById('jdhelp');if(h){h.style.opacity=0;setTimeout(function(){h.remove()},1200)}},12000)</script></body>
+</html>
