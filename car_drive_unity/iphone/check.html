@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>手機檢測</title>
+<style>
+body{margin:0;padding:16px;font:15px/1.5 -apple-system,system-ui,sans-serif;background:#111;color:#eee}
+h1{font-size:20px;margin:0 0 12px}
+.row{padding:8px 10px;border-radius:8px;background:#1d1f23;margin:6px 0;word-break:break-all}
+.ok{color:#5fd38a}.bad{color:#ff6b6b}.mid{color:#ffcf5c}
+button{font-size:16px;padding:10px 14px;border-radius:8px;border:0;background:#f0b429;color:#111;margin:8px 0}
+</style></head><body>
+<h1>手機檢測（請截圖這一頁給我）</h1>
+<div id="out"></div>
+<button id="go">第二步：試載入遊戲</button>
+<div id="out2"></div>
+<script>
+var out=document.getElementById('out'),out2=document.getElementById('out2');
+function row(el,label,val,cls){var d=document.createElement('div');d.className='row';d.innerHTML='<b>'+label+'</b>：<span class="'+(cls||'')+'">'+val+'</span>';el.appendChild(d);}
+row(out,'瀏覽器',navigator.userAgent);
+row(out,'螢幕',screen.width+'×'+screen.height+' @'+(window.devicePixelRatio||1)+'x');
+try{var c=document.createElement('canvas'),gl=c.getContext('webgl2');
+ if(gl){row(out,'WebGL2','有','ok');row(out,'最大貼圖',gl.getParameter(gl.MAX_TEXTURE_SIZE));
+  var e=['WEBGL_compressed_texture_etc','WEBGL_compressed_texture_s3tc','WEBGL_compressed_texture_astc'].map(function(n){return n.replace('WEBGL_compressed_texture_','')+(gl.getExtension(n)?'✓':'✗')}).join(' ');row(out,'壓縮貼圖',e);
+  var di=gl.getExtension('WEBGL_debug_renderer_info');if(di)row(out,'GPU',gl.getParameter(di.UNMASKED_RENDERER_WEBGL));}
+ else row(out,'WebGL2','沒有','bad');}catch(e){row(out,'WebGL2','錯誤 '+e,'bad');}
+row(out,'WebAssembly',typeof WebAssembly==='object'?'有':'沒有',typeof WebAssembly==='object'?'ok':'bad');
+var mb=[256,512,768,1024,1280,1536,2048],got=0;
+for(var i=0;i<mb.length;i++){try{var m=new WebAssembly.Memory({initial:mb[i]*16});got=mb[i];m=null;}catch(e){break;}}
+row(out,'可用記憶體（單次）',got+' MB',got>=1024?'ok':got>=512?'mid':'bad');
+document.getElementById('go').onclick=function(){
+ this.disabled=true;var t0=Date.now();function log(s,cls){row(out2,((Date.now()-t0)/1000).toFixed(1)+' 秒',s,cls);}
+ window.addEventListener('error',function(e){log('錯誤：'+e.message,'bad')});
+ var f=document.createElement('iframe');f.src='./?full=0';f.style.cssText='width:100%;height:260px;border:0;background:#000;margin-top:8px';
+ log('開始載入遊戲（大約 85 MB）…');
+ f.onload=function(){log('頁面載入完成，等待遊戲啟動…');
+  var w=f.contentWindow,n=0,last='';
+  var iv=setInterval(function(){n++;try{
+    var bar=w.document.querySelector('#unity-progress-bar-full'),p=bar?bar.style.width:'';
+    var errs=(w.jdErr||[]).slice(-3).join(' | ');
+    var s='進度 '+(p||'?')+(w.unityInstance?' · 遊戲已啟動 ✓':'')+(errs?' · 錯誤：'+errs:'');
+    if(s!==last){log(s,w.unityInstance?'ok':errs?'bad':'');last=s;}
+    if(w.unityInstance||n>240)clearInterval(iv);}catch(e){log('讀不到遊戲頁：'+e,'bad');clearInterval(iv);}},1000);};
+ out2.appendChild(f);
+};
+</script></body></html>
