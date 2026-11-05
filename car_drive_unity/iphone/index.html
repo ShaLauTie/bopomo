@@ -425,6 +425,43 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none} body.jdt
     if (!SIGHT_ON) return; sightQ.push(k); if (!sightBusy) sightNext();
   };
   (function () { var cb = $('pzSight'); if (!cb) return; cb.checked = SIGHT_ON; cb.onchange = function () { SIGHT_ON = cb.checked; try { localStorage.setItem('jdNoSights', SIGHT_ON ? '0' : '1'); } catch (e) { } if (!SIGHT_ON) { sightQ = []; sightHide(); } }; })();
+  // ---- passengers with a story (Taxi.cs / Stories.cs): their story and three places to choose from, a question on the way, the rating at the kerb
+  var storyCard = document.createElement('div'); storyCard.id = 'jdStory'; storyCard.className = 'card';
+  storyCard.style.cssText = 'background:rgba(10,14,22,.9);position:fixed;left:50%;top:60px;transform:translateX(-50%);width:min(560px,92vw);box-sizing:border-box;padding:14px 18px 12px;font-size:15px;line-height:1.6;display:none;z-index:60;color:#fff';
+  $('jd').appendChild(storyCard);
+  var storyT = 0;
+  function storyHide() { clearTimeout(storyT); storyCard.style.display = 'none'; storyCard.innerHTML = ''; }
+  function placeName(k) { return (SIGHTS[k] && SIGHTS[k][0]) || NAMES[k] || k; }
+  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function storyShow(html, touchTop) { var touch = document.body.classList.contains('jdtouch'); storyCard.style.top = touch ? '6px' : '60px'; storyCard.style.fontSize = touch ? '13px' : '15px'; storyCard.onclick = null; storyCard.innerHTML = html; storyCard.style.display = 'block'; }
+  var BTN = 'display:block;width:100%;text-align:left;margin:6px 0 0;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:#25304a;color:#fff;font:inherit;cursor:pointer';
+  window.jdStory = function (json) {
+    var m; try { m = JSON.parse(json); } catch (e) { return; }
+    clearTimeout(storyT);
+    if (m.t === 'hide') { storyHide(); return; }
+    if (m.t === 'ask') {
+      var h = '<div style="font-size:11px;letter-spacing:2px;color:#ffd24a">🧑 乘客的故事 ・ ' + esc(m.who) + '</div><div style="margin:4px 0 8px">「' + esc(m.text) + '」</div><div style="font-weight:700">要載客人去哪裡？</div>';
+      m.opts.forEach(function (o, i) { h += '<button data-i="' + i + '" style="' + BTN + '"><b>' + esc(placeName(o.k)) + '</b><br><span style="font-size:.85em;opacity:.75">' + esc(o.h) + '</span></button>'; });
+      storyShow(h);
+      [].forEach.call(storyCard.querySelectorAll('button'), function (b) { b.onclick = function (e) { e.stopPropagation(); U('StoryPick', +b.dataset.i); storyShow('<div style="text-align:center">🗺 出發！導航到 <b>' + esc(placeName(m.opts[+b.dataset.i].k)) + '</b></div>'); storyT = setTimeout(storyHide, 2200); }; });
+      return;
+    }
+    if (m.t === 'talk') {
+      var h2 = '<div style="font-size:11px;letter-spacing:2px;color:#ffd24a">💬 乘客說</div><div style="margin:4px 0 6px">「' + esc(m.text) + '」</div>';
+      m.r.forEach(function (r, i) { h2 += '<button data-i="' + i + '" style="' + BTN + '">' + esc(r) + '</button>'; });
+      storyShow(h2);
+      [].forEach.call(storyCard.querySelectorAll('button'), function (b) { b.onclick = function (e) { e.stopPropagation(); U('StoryReply', +b.dataset.i); storyHide(); }; });
+      storyT = setTimeout(storyHide, 30000); /* no answer is an answer too */
+      return;
+    }
+    if (m.t === 'end') {
+      var st = '<span style="color:#ffd24a">' + '★★★★★'.slice(0, m.stars) + '</span><span style="opacity:.3">' + '★★★★★'.slice(m.stars) + '</span>';
+      var why = '地點 ' + ['✗ 不適合', '△ 普通', '○ 還可以', '◎ 最適合'][m.place] + ' ・ 駕駛 ' + (m.clean ? '◎ 沒有違規' : '✗ 有違規') + ' ・ 對話 ' + (m.reply === -9 ? '— 沒有回答' : m.reply > 0 ? '◎ 說得好' : m.reply < 0 ? '✗ 說錯話' : '△ 普通');
+      storyShow('<div style="text-align:center;font-size:30px;letter-spacing:4px;line-height:1.2">' + st + '</div><div style="margin:6px 0">「' + esc(m.text) + '」</div><div style="font-size:.8em;opacity:.7">' + why + '</div><div style="margin-top:4px">車資 ¥' + m.fare.toLocaleString() + ' → <b style="color:#ffd24a">¥' + m.pay.toLocaleString() + '</b></div><div style="font-size:11px;opacity:.5;text-align:right">點一下關閉</div>');
+      storyCard.onclick = function () { storyHide(); storyCard.onclick = null; };
+      storyT = setTimeout(storyHide, 10000);
+    }
+  };
   var d0 = 0, lastKey = '';
   window.jdMission = function (s) { var box = $('jdMission'); if (!s) { box.style.display = 'none'; lastKey = ''; return; } var a = s.split(':'); box.style.display = 'block'; var key = a[0] + (a[1] || ''), d = +(a[0] === 'hail' ? a[1] : a[2]);
     if (a[0] === 'hail') key = 'hail'; if (key !== lastKey) { lastKey = key; d0 = Math.max(d, 1); window.jdMissionAt = Date.now(); } var compact = Date.now() - (window.jdMissionAt || 0) > 5000; box.className = compact ? 'card compact' : 'card'; /* the full card for 5 s, then a small pill out of the way */ var pct = Math.max(0, Math.min(100, 100 - d / d0 * 100));
