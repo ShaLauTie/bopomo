@@ -171,6 +171,7 @@ body.jdtouch #jdTR{top:76px;right:12px} body.jdtouch #jdCities{display:none} bod
 #jdMsgs{position:fixed;left:50%;top:60px;transform:translateX(-50%);width:min(92vw,620px);text-align:center;pointer-events:none}
 #jdMsgs .msg{display:inline-block;margin:3px;padding:5px 12px;border-radius:9px;background:rgba(0,0,0,.6);font-size:16px;font-weight:700;text-shadow:0 1px 2px #000;animation:jdfade 4s forwards}
 #jdMsgs .msg.bad{background:rgba(170,30,30,.75)}#jdMsgs .msg.good{background:rgba(30,140,70,.75)}
+body.jdtouch #jdStory button{display:inline-block!important;width:32.4%!important;margin:5px .45% 0!important;vertical-align:top;padding:6px 8px!important;line-height:1.35} body.jdtouch #jdStory{width:min(640px,94vw)!important;padding:8px 12px 8px!important}
 body.jdtouch #jdMsgs{left:8px;top:38px;transform:none;width:34vw;text-align:left} body.jdtouch #jdMsgs .msg{display:table;margin:0 0 3px;padding:3px 8px;border-radius:7px;font-size:12px;font-weight:600;line-height:1.35}
 @keyframes jdfade{0%{opacity:0;transform:translateY(-6px)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
 #jdMission{padding:10px 14px;font-size:14px;line-height:1.5;width:250px;display:none} #jdMission.compact{padding:4px 10px;font-size:13px;width:auto;opacity:.85}
@@ -428,7 +429,7 @@ body.jdtouch #jdTouch{display:block} body.jdtouch #jdHelp{display:none} body.jdt
   (function () { var cb = $('pzSight'); if (!cb) return; cb.checked = SIGHT_ON; cb.onchange = function () { SIGHT_ON = cb.checked; try { localStorage.setItem('jdNoSights', SIGHT_ON ? '0' : '1'); } catch (e) { } if (!SIGHT_ON) { sightQ = []; sightHide(); } }; })();
   // ---- passengers with a story (Taxi.cs / Stories.cs): their story and three places to choose from, a question on the way, the rating at the kerb
   var storyCard = document.createElement('div'); storyCard.id = 'jdStory'; storyCard.className = 'card';
-  storyCard.style.cssText = 'background:rgba(10,14,22,.9);position:fixed;left:50%;top:60px;transform:translateX(-50%);width:min(560px,92vw);box-sizing:border-box;padding:14px 18px 12px;font-size:15px;line-height:1.6;display:none;z-index:60;color:#fff';
+  storyCard.style.cssText = 'background:rgba(10,14,22,.9);position:fixed;left:50%;top:60px;transform:translateX(-50%);width:min(560px,92vw);box-sizing:border-box;padding:14px 18px 12px;font-size:15px;line-height:1.6;display:none;z-index:70;color:#fff;pointer-events:auto;touch-action:manipulation';
   $('jd').appendChild(storyCard);
   var storyT = 0;
   function storyHide() { clearTimeout(storyT); storyCard.style.display = 'none'; storyCard.innerHTML = ''; }
