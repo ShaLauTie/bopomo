@@ -4,7 +4,8 @@
   "計程車乘客故事。改完推上 GitHub 就會生效，不用重新 build（瀏覽器重新整理即可）。",
   "places: 景點 key、卡片上的說明 hint、標籤 tags（給沒有 city 的通用故事自動挑地點用）。",
   "stories: city 留空 = 每個城市都可能出現，用 want 的標籤自動挑三個地點；有 city 的只在那個城市出現，用 opts 指定三個地點和星數（3 最適合、1 普通、0 選錯）。",
-  "city: sapporo / tokyo / yokohama / osaka / otaru。replies 三個回答對應 scores（1 說得好、0 普通、-1 說錯話）。good / ok / bad 是下車時的台詞。"
+  "city: sapporo / tokyo / yokohama / osaka / otaru。replies 三個回答對應 scores（1 說得好、0 普通、-1 說錯話）。good / ok / bad 是下車時的台詞。",
+  "cast: 誰會講這個故事，乘客的外型要對得上。男 / 女 / 老婆婆 / 阿姨（女或老婆婆）/ 老人（老婆婆或男）/ 老爺爺（目前沒有老爺爺模型，由男性模型演）/ 年輕人（不是老婆婆就好）/ 不限。"
  ],
  "places": [
   {
@@ -361,6 +362,7 @@
  "stories": [
   {
    "id": "heartbreak",
+   "cast": "男",
    "who": "二十多歲的上班族",
    "text": "我剛被甩了……交往五年，她說只是「不再心動」。我現在不想回家，也不想看到成雙成對的人。帶我去一個看得很遠、可以靜一靜的地方好嗎？",
    "want": "view:3 quiet:2 nature:1 sea:1 romance:-2 lively:-2",
@@ -381,6 +383,7 @@
   },
   {
    "id": "laidoff",
+   "cast": "男",
    "who": "五十歲的西裝男子",
    "text": "在那家公司做了十八年，今天早上十分鐘就把我請走了。我還不敢跟老婆說……想先找個地方喝一杯、吃點東西，壯壯膽再回家。",
    "want": "drink:3 food:2 luxury:-2 romance:-1 travel:-1",
@@ -401,6 +404,7 @@
   },
   {
    "id": "ex_wife",
+   "cast": "男",
    "who": "拿著一束花的中年男子",
    "text": "今天要跟離婚三年的前妻見面，她說有重要的事要跟我說。我心裡很亂……想先去一個安靜的地方拜一拜，求個平靜。",
    "want": "pray:3 quiet:2 luck:1 drink:-3 lively:-2",
@@ -421,6 +425,7 @@
   },
   {
    "id": "proposal",
+   "cast": "男",
    "who": "緊張得一直摸口袋的年輕人",
    "text": "我口袋裡有一枚戒指，今晚要跟交往七年的女朋友求婚！我需要一個夜景很美、很浪漫的地方，拜託了！",
    "want": "romance:3 view:2 night:2 sea:1 drink:-2 travel:-3 cheap:-1",
@@ -441,6 +446,7 @@
   },
   {
    "id": "tourist",
+   "cast": "不限",
    "who": "背著大背包的外國觀光客",
    "text": "第一次來日本！我想看最有「日本味」的地方，歷史越久越好，最好還能拍很多照片！",
    "want": "history:3 pray:1 shop:1 travel:-3 rest:-3",
@@ -461,10 +467,11 @@
   },
   {
    "id": "widower",
-   "who": "拄著拐杖的老先生",
+   "cast": "老人",
+   "who": "拄著拐杖的老人家",
    "text": "老伴走了以後，我每天都不知道要去哪裡。年輕時我們常去一個看得到海的地方坐著……司機，帶我去有海、又安靜的地方好嗎？",
    "want": "sea:3 quiet:2 nature:1 lively:-2 drink:-1",
-   "ask": "她以前最喜歡看海了。你有喜歡的人嗎？",
+   "ask": "老伴以前最喜歡看海了。你有喜歡的人嗎？",
    "replies": [
     "有的。聽您這麼說，我會好好珍惜。",
     "沒有耶，單身比較自由。",
@@ -475,12 +482,13 @@
     0,
     1
    ],
-   "good": "就是這種海風……好像她還在旁邊一樣。謝謝你，年輕人。",
+   "good": "就是這種海風……好像老伴還在旁邊一樣。謝謝你，年輕人。",
    "ok": "謝謝，我在這裡坐坐。",
    "bad": "這裡太吵了……不是我要的地方。"
   },
   {
    "id": "overtime",
+   "cast": "年輕人",
    "who": "黑眼圈很重的上班族",
    "text": "連續加班一個月，今天終於結案了！我現在只想吃一頓熱騰騰、好吃的東西，便宜一點也沒關係！",
    "want": "food:3 cheap:1 drink:1 quiet:-1 travel:-2 pray:-2",
@@ -501,6 +509,7 @@
   },
   {
    "id": "weekend_dad",
+   "cast": "男",
    "who": "看著手機照片微笑的男人",
    "text": "下週末八歲的女兒要來找我，我們很久沒見了。我想先去看看，哪裡適合帶小孩玩一整天？",
    "want": "family:3 fun:2 nature:1 drink:-3 night:-2",
@@ -521,6 +530,7 @@
   },
   {
    "id": "freshman",
+   "cast": "年輕人",
    "who": "穿著高中制服、很興奮的學生",
    "text": "我考上第一志願了！！爸媽在國外工作，我想一個人好好慶祝一下，帶我去最熱鬧、最好玩的地方！",
    "want": "lively:3 fun:2 food:1 shop:1 quiet:-2 drink:-3 pray:-1",
@@ -541,6 +551,7 @@
   },
   {
    "id": "interview",
+   "cast": "女",
    "who": "一直在練習自我介紹的年輕女生",
    "text": "兩個小時後有一個很重要的面試，我好緊張。可以先帶我去求個好運嗎？",
    "want": "luck:3 pray:2 quiet:1 drink:-3 lively:-1",
@@ -561,6 +572,7 @@
   },
   {
    "id": "writer",
+   "cast": "不限",
    "who": "戴著圓眼鏡、抱著筆記本的人",
    "text": "我是寫小說的，已經卡稿三個月了。想去一個有故事、有老房子的地方晃晃，找點靈感。",
    "want": "history:3 quiet:2 lively:-1 travel:-2",
@@ -581,6 +593,7 @@
   },
   {
    "id": "farewell",
+   "cast": "不限",
    "who": "拖著行李箱的外國人",
    "text": "我在這座城市住了十年，明天就要回國了。最後一晚……我想再看一次這座城市的全景。",
    "want": "view:3 night:2 quiet:1 travel:-2",
@@ -601,6 +614,7 @@
   },
   {
    "id": "cheated",
+   "cast": "女",
    "who": "眼睛紅紅的女生",
    "text": "我男朋友劈腿！！我現在只想把海鮮吃到撐，越新鮮越好，然後把他忘掉！",
    "want": "seafood:3 food:2 romance:-3 quiet:-1",
@@ -621,6 +635,7 @@
   },
   {
    "id": "birthday",
+   "cast": "女",
    "who": "抱著公事包的女生",
    "text": "今天是我生日，結果整間辦公室沒有一個人記得。帶我去吃甜的、買點東西犒賞自己吧！",
    "want": "sweet:3 shop:2 luxury:1 pray:-1 travel:-2 drink:-1",
@@ -641,6 +656,7 @@
   },
   {
    "id": "health",
+   "cast": "女",
    "who": "剛從醫院出來的中年女性",
    "text": "醫生說檢查都沒事，只是虛驚一場。我想去一個有很多樹、可以好好深呼吸的地方。",
    "want": "nature:3 quiet:2 pray:1 lively:-2 drink:-2",
@@ -661,6 +677,7 @@
   },
   {
    "id": "brothers",
+   "cast": "男",
    "who": "坐立不安的男人",
    "text": "我跟我哥十年沒說話了，今天他打電話說想見面。約在哪裡比較好……要能坐下來慢慢聊、又不會太尷尬的地方。",
    "want": "drink:2 food:2 quiet:1 romance:-2 view:-1 travel:-2",
@@ -681,6 +698,7 @@
   },
   {
    "id": "otaku",
+   "cast": "年輕人",
    "who": "背包上掛滿徽章的年輕人",
    "text": "我存了一整年的錢就是為了今天！動漫、遊戲、模型，帶我去最好玩的地方！",
    "want": "otaku:3 fun:3 shop:2 quiet:-2 pray:-2",
@@ -701,6 +719,7 @@
   },
   {
    "id": "closed_shop",
+   "cast": "男",
    "who": "穿著圍裙沒脫的男人",
    "text": "我開了兩年的店，今天正式關門了。我想去一個很高的地方，提醒自己還要往上爬。",
    "want": "view:3 luck:1 drink:-2 lively:-1",
@@ -721,6 +740,7 @@
   },
   {
    "id": "surprise",
+   "cast": "男",
    "who": "笑得很害羞的新婚先生",
    "text": "我太太在飯店睡午覺，我想偷偷去買個紀念品給她當驚喜。",
    "want": "shop:3 sweet:2 romance:1 drink:-2 travel:-1",
@@ -741,6 +761,7 @@
   },
   {
    "id": "nurse",
+   "cast": "女",
    "who": "穿著護理師外套、一臉疲倦的女生",
    "text": "剛下大夜班……我好累，但肚子好餓。想吃點簡單、熱的東西，然後回去睡覺。",
    "want": "food:2 cheap:2 rest:1 lively:-2 drink:-1 fun:-1",
@@ -761,6 +782,7 @@
   },
   {
    "id": "old_photo",
+   "cast": "年輕人",
    "who": "拿著一張泛黃照片的年輕人",
    "text": "這張照片是我爺爺五十年前在這座城市拍的，背景好像是什麼很有名的老建築……我想去看看它現在的樣子。",
    "want": "history:3 view:1 shop:-1 drink:-2",
@@ -781,6 +803,7 @@
   },
   {
    "id": "comedian",
+   "cast": "年輕人",
    "who": "表情很僵的年輕人",
    "text": "剛剛試鏡失敗了，評審說我「一點都不好笑」。帶我去最熱鬧、最有活力的地方，我要重新找回笑點！",
    "want": "lively:3 fun:2 food:1 quiet:-2 pray:-1",
@@ -801,6 +824,7 @@
   },
   {
    "id": "first_date",
+   "cast": "男",
    "who": "頭髮梳得很整齊的大學生",
    "text": "等一下是我人生第一次約會！對方說地點讓我決定……拜託幫我選一個不會冷場的地方！",
    "want": "romance:2 fun:2 food:1 sea:1 drink:-2 pray:-1 travel:-3",
@@ -820,7 +844,92 @@
    "bad": "在這裡約會……會被笑吧。"
   },
   {
+   "id": "will",
+   "cast": "老婆婆",
+   "who": "戴著珍珠項鍊、穿得很體面的老奶奶",
+   "text": "孩子們只有要錢的時候才會來看我。下午要去找律師改遺囑……先帶我去吃一頓最貴、最好吃的。",
+   "want": "food:3 luxury:2 seafood:1 cheap:-3 travel:-2",
+   "ask": "你覺得，遺產全部捐給貓咪協會，會不會太過分？",
+   "replies": [
+    "那是您的錢，您開心最重要。",
+    "孩子們會很難過吧。",
+    "可以留一點當車資嗎？"
+   ],
+   "scores": [
+    1,
+    -1,
+    0
+   ],
+   "good": "好吃！決定了，一半給貓，一半我自己吃掉。孩子們？讓他們自己去賺。",
+   "ok": "嗯，比孩子們帶我去的好一點。",
+   "bad": "這種地方……跟我兒子帶我去的一樣寒酸。"
+  },
+  {
+   "id": "first_love",
+   "cast": "老婆婆",
+   "who": "擦了口紅、一直照小鏡子的老婆婆",
+   "text": "五十年前的初戀，聽說還住在這附近。我不要讓他認出我，只想遠遠看一眼……看他是不是老得比我難看。",
+   "want": "history:2 quiet:2 romance:1 shop:1 travel:-3 drink:-1",
+   "ask": "你覺得女人老了，還需要化妝嗎？",
+   "replies": [
+    "當然，是為了自己。",
+    "這個年紀不用了吧。",
+    "很漂亮喔。"
+   ],
+   "scores": [
+    1,
+    -1,
+    1
+   ],
+   "good": "……他禿了。很好，我今晚可以睡得很好。",
+   "ok": "沒看到他，不過口紅至少沒白擦。",
+   "bad": "這裡人來人往的，被他看到怎麼辦！"
+  },
+  {
+   "id": "secret_money",
+   "cast": "老婆婆",
+   "who": "緊緊抱著紫色布包的老婆婆",
+   "text": "我找到老頭子藏在佛壇後面的私房錢了。藏了三十年，他一直以為我不知道。今天我要全部花掉。",
+   "want": "shop:3 sweet:2 fun:1 food:1 pray:-2 travel:-2",
+   "ask": "你覺得我應該跟他說嗎？",
+   "replies": [
+    "花完再說。",
+    "還是還給他吧。",
+    "分一點給司機，我就什麼都沒看到。"
+   ],
+   "scores": [
+    1,
+    -1,
+    0
+   ],
+   "good": "這個、這個、還有那個……老頭子的三十年，一個下午就花完了。好痛快！",
+   "ok": "先買一點，剩下的慢慢花。",
+   "bad": "這裡什麼都沒賣，你是老頭子派來的嗎？"
+  },
+  {
+   "id": "no_license",
+   "cast": "老婆婆",
+   "who": "拿著被剪角的駕照的老婆婆",
+   "text": "孩子們說我年紀大了，把我的駕照收走了。所以今天我要坐計程車，去所有他們不准我去的地方。",
+   "want": "lively:3 fun:2 drink:1 night:1 quiet:-2 pray:-2 rest:-2",
+   "ask": "司機，你開車有我年輕時快嗎？",
+   "replies": [
+    "應該沒有，您一定很厲害。",
+    "安全第一啦。",
+    "那您的駕照是怎麼被收走的？"
+   ],
+   "scores": [
+    1,
+    0,
+    -1
+   ],
+   "good": "就是這種熱鬧！老太婆今天要玩到最後一班電車。",
+   "ok": "嗯，還可以，下次去更吵的。",
+   "bad": "安安靜靜的……跟養老院一樣，掉頭！"
+  },
+  {
    "id": "alibi",
+   "cast": "男",
    "city": "tokyo",
    "opts": "station:3 konbini:1 kabuki:0",
    "who": "鬆開領帶的中年上班族",
@@ -842,6 +951,7 @@
   },
   {
    "id": "fake_sick",
+   "cast": "年輕人",
    "city": "tokyo",
    "opts": "view1:3 akiba:1 station:0",
    "who": "戴著口罩卻很有精神的年輕人",
@@ -863,6 +973,7 @@
   },
   {
    "id": "influencer",
+   "cast": "年輕人",
    "city": "tokyo",
    "opts": "tokyotower:3 meiji:1 konbini:0",
    "who": "拿著自拍棒的網紅",
@@ -884,6 +995,7 @@
   },
   {
    "id": "card_revenge",
+   "cast": "女",
    "city": "tokyo",
    "opts": "wako:3 shibuya:1 konbini:0",
    "who": "穿著最好的大衣、面無表情的太太",
@@ -905,6 +1017,7 @@
   },
   {
    "id": "salary",
+   "cast": "年輕人",
    "city": "tokyo",
    "opts": "tocho:3 odaiba:1 station:0",
    "who": "握著手機、指節發白的上班族",
@@ -926,6 +1039,7 @@
   },
   {
    "id": "diet",
+   "cast": "年輕人",
    "city": "osaka",
    "opts": "dotonbori:3 konbini:1 castle:0",
    "who": "瘦了一圈、眼神危險的人",
@@ -947,6 +1061,7 @@
   },
   {
    "id": "lost_vote",
+   "cast": "男",
    "city": "osaka",
    "opts": "machiya:3 konbini:1 dotonbori:0",
    "who": "西裝上還別著名牌的男人",
@@ -968,9 +1083,10 @@
   },
   {
    "id": "fake_funeral",
+   "cast": "老人",
    "city": "osaka",
    "opts": "tsutenkaku:3 castle:1 dotonbori:0",
-   "who": "穿著喪服、精神很好的老爺爺",
+   "who": "穿著喪服、精神很好的老人家",
    "text": "我想知道我死了以後誰會哭，所以辦了一場假喪禮。先去摸摸幸運之神的腳底，順便看看誰來了。",
    "ask": "要是沒有人哭怎麼辦？",
    "replies": [
@@ -989,6 +1105,7 @@
   },
   {
    "id": "scalper",
+   "cast": "年輕人",
    "city": "osaka",
    "opts": "shinsai:3 dotonbori:1 machiya:0",
    "who": "抱著鞋盒、三天沒睡的年輕人",
@@ -1010,6 +1127,7 @@
   },
   {
    "id": "rival_chef",
+   "cast": "男",
    "city": "osaka",
    "opts": "dotonbori:3 kuromon:1 konbini:0",
    "who": "穿著廚師鞋的男人",
@@ -1031,6 +1149,7 @@
   },
   {
    "id": "fake_doctor",
+   "cast": "男",
    "city": "yokohama",
    "opts": "wheel:3 landmark:1 chinatown:0",
    "who": "穿著借來的西裝的男人",
@@ -1052,6 +1171,7 @@
   },
   {
    "id": "divorce",
+   "cast": "女",
    "city": "yokohama",
    "opts": "yamashita:3 view2:1 wheel:0",
    "who": "抱著一疊照片的女人",
@@ -1073,6 +1193,7 @@
   },
   {
    "id": "errand",
+   "cast": "男",
    "city": "yokohama",
    "opts": "chinatown:3 konbini:1 brick:0",
    "who": "滿頭大汗的小弟",
@@ -1094,6 +1215,7 @@
   },
   {
    "id": "ex_wedding",
+   "cast": "女",
    "city": "yokohama",
    "opts": "landmark:3 brick:1 konbini:0",
    "who": "收到喜帖的女生",
@@ -1115,6 +1237,7 @@
   },
   {
    "id": "translator",
+   "cast": "不限",
    "city": "yokohama",
    "opts": "view2:3 brick:1 landmark:0",
    "who": "抱著一箱字典的翻譯",
@@ -1136,6 +1259,7 @@
   },
   {
    "id": "gps_wife",
+   "cast": "女",
    "city": "sapporo",
    "opts": "susukino:3 sapporoSt:1 shrine:0",
    "who": "盯著手機定位的太太",
@@ -1157,6 +1281,7 @@
   },
   {
    "id": "free_wife",
+   "cast": "女",
    "city": "sapporo",
    "opts": "nijo:3 shrine:1 snowfes:0",
    "who": "剛脫下喪服外套的女人",
@@ -1178,6 +1303,7 @@
   },
   {
    "id": "heir",
+   "cast": "男",
    "city": "sapporo",
    "opts": "shrine:3 clocktower:1 susukino:0",
    "who": "西裝筆挺、一點都不悲傷的姪子",
@@ -1199,6 +1325,7 @@
   },
   {
    "id": "amnesia",
+   "cast": "年輕人",
    "city": "sapporo",
    "opts": "clocktower:3 tvtower:1 susukino:0",
    "who": "眼神飄來飄去的上班族",
@@ -1220,6 +1347,7 @@
   },
   {
    "id": "coffee",
+   "cast": "男",
    "city": "sapporo",
    "opts": "tvtower:3 konbini:1 shrine:0",
    "who": "抱著一台咖啡機的男人",
@@ -1241,6 +1369,7 @@
   },
   {
    "id": "groom_ski",
+   "cast": "男",
    "city": "sapporo",
    "opts": "moiwa:3 tanuki:1 sapporoSt:0",
    "who": "揹著滑雪板的準新郎",
@@ -1262,6 +1391,7 @@
   },
   {
    "id": "crab_broker",
+   "cast": "年輕人",
    "city": "sapporo",
    "opts": "nijo:3 sushi:1 shrine:0",
    "who": "拿著兩支手機的代購",
@@ -1283,6 +1413,7 @@
   },
   {
    "id": "escape_party",
+   "cast": "年輕人",
    "city": "sapporo",
    "opts": "hitsuji:3 konbini:1 susukino:0",
    "who": "領帶歪掉的新進員工",
@@ -1304,6 +1435,7 @@
   },
   {
    "id": "omamori_mom",
+   "cast": "女",
    "city": "sapporo",
    "opts": "shrine:3 clocktower:1 susukino:0",
    "who": "提著大袋子的媽媽",
@@ -1325,6 +1457,7 @@
   },
   {
    "id": "lost_ring",
+   "cast": "男",
    "city": "sapporo",
    "opts": "tanuki:3 odori0:1 susukino:0",
    "who": "一直摸著無名指的丈夫",
@@ -1346,6 +1479,7 @@
   },
   {
    "id": "second_lap",
+   "cast": "男",
    "city": "yokohama",
    "opts": "wheel:3 chinatown:1 brick:0",
    "who": "抱著花束、一個人的男人",
@@ -1367,6 +1501,7 @@
   },
   {
    "id": "old_sailor",
+   "cast": "老爺爺",
    "city": "yokohama",
    "opts": "yamashita:3 brick:1 landmark:0",
    "who": "皮膚黝黑的老船員",
@@ -1388,6 +1523,7 @@
   },
   {
    "id": "food_blogger",
+   "cast": "年輕人",
    "city": "yokohama",
    "opts": "chinatown:3 brick:1 yamashita:0",
    "who": "拿著單眼相機的美食部落客",
@@ -1409,6 +1545,7 @@
   },
   {
    "id": "night_move",
+   "cast": "年輕人",
    "city": "yokohama",
    "opts": "jrst2:3 konbini:1 landmark:0",
    "who": "拖著三個行李箱的房客",
@@ -1430,6 +1567,7 @@
   },
   {
    "id": "relocated",
+   "cast": "年輕人",
    "city": "yokohama",
    "opts": "landmark:3 view2:1 konbini:0",
    "who": "抱著紙箱的上班族",
@@ -1451,6 +1589,7 @@
   },
   {
    "id": "manzai_split",
+   "cast": "男",
    "city": "osaka",
    "opts": "shinsekai:3 dotonbori:1 castle:0",
    "who": "穿著亮片西裝的搞笑藝人",
@@ -1472,6 +1611,7 @@
   },
   {
    "id": "gambler",
+   "cast": "男",
    "city": "osaka",
    "opts": "tsutenkaku:3 shinsekai:1 kuromon:0",
    "who": "手裡捏著馬票的男人",
@@ -1493,6 +1633,7 @@
   },
   {
    "id": "haggler",
+   "cast": "阿姨",
    "city": "osaka",
    "opts": "shinsai:3 dotonbori:1 machiya:0",
    "who": "戴著豹紋圍巾的大阪大嬸",
@@ -1514,6 +1655,7 @@
   },
   {
    "id": "sun_face",
+   "cast": "男",
    "city": "osaka",
    "opts": "taiyo:3 castle:1 dotonbori:0",
    "who": "表情很複雜的中年丈夫",
@@ -1535,6 +1677,7 @@
   },
   {
    "id": "brewery",
+   "cast": "老爺爺",
    "city": "osaka",
    "opts": "machiya:3 shinsekai:1 taiyo:0",
    "who": "穿著酒藏法被的老師傅",
@@ -1556,6 +1699,7 @@
   },
   {
    "id": "music_box",
+   "cast": "男",
    "city": "otaru",
    "opts": "orgel:3 sakaimachi:1 sankaku:0",
    "who": "拿著喜帖的男人",
@@ -1577,6 +1721,7 @@
   },
   {
    "id": "clout",
+   "cast": "女",
    "city": "otaru",
    "opts": "otaru:3 sakaimachi:1 temiya:0",
    "who": "補妝補了十分鐘的網紅",
@@ -1598,6 +1743,7 @@
   },
   {
    "id": "old_fisher",
+   "cast": "老爺爺",
    "city": "otaru",
    "opts": "sankaku:3 denuki:1 orgel:0",
    "who": "帶著孫子的老漁夫",
@@ -1619,6 +1765,7 @@
   },
   {
    "id": "rail_fan",
+   "cast": "不限",
    "city": "otaru",
    "opts": "temiya:3 otaru:1 denuki:0",
    "who": "背著三台相機的鐵道迷",
@@ -1640,6 +1787,7 @@
   },
   {
    "id": "gossip",
+   "cast": "老婆婆",
    "city": "otaru",
    "opts": "denuki:3 sankaku:1 view5:0",
    "who": "提著菜籃的阿嬤",
