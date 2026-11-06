@@ -953,7 +953,7 @@
    "id": "fake_sick",
    "cast": "年輕人",
    "city": "tokyo",
-   "opts": "view1:3 akiba:1 station:0",
+   "opts": "odaiba:3 akiba:1 station:0",
    "who": "戴著口罩卻很有精神的年輕人",
    "text": "我跟公司說我發燒了。帶我去一個絕對不會遇到同事的地方。",
    "ask": "要是被主管看到怎麼辦？",
