@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=48">
+<link rel="stylesheet" href="style.css?v=50">
 </head>
 <body>
 
@@ -161,7 +161,7 @@
 </div>
 
 <!-- 認識注音符號牌 -->
-<div class="screen" id="screen-flashcards">
+<div class="screen landscape-fit" id="screen-flashcards">
   <h2>認識注音符號</h2>
   <div class="flashcard" id="flashcard" onclick="speakCurrentFlashcard()">
     <div class="symbol-big" id="fcSymbol">ㄅ</div>
@@ -177,7 +177,7 @@
 </div>
 
 <!-- 聽音找符號 遊戲 -->
-<div class="screen" id="screen-match">
+<div class="screen landscape-split" id="screen-match">
   <h2>聽音找符號</h2>
   <div class="picture-header">
     <span id="matchProgress">第 1 / 10 題</span>
@@ -190,7 +190,7 @@
 </div>
 
 <!-- 小測驗 -->
-<div class="screen" id="screen-quiz">
+<div class="screen landscape-split" id="screen-quiz">
   <h2>小測驗</h2>
   <div class="quiz-header">
     <span id="quizProgress">第 1 / 10 題</span>
@@ -200,7 +200,7 @@
 </div>
 
 <!-- 記憶配對 -->
-<div class="screen" id="screen-memory">
+<div class="screen landscape-fit" id="screen-memory">
   <h2>記憶配對</h2>
   <div class="memory-header">
     <span id="memoryMoves">翻牌次數：0</span>
@@ -210,7 +210,7 @@
 </div>
 
 <!-- 聲調辨識 -->
-<div class="screen" id="screen-tone">
+<div class="screen landscape-split" id="screen-tone">
   <h2>聲調辨識</h2>
   <div class="picture-header">
     <span id="toneProgress">第 1 / 10 題</span>
@@ -283,7 +283,7 @@
 </div>
 
 <!-- 注音小火車 -->
-<div class="screen" id="screen-train">
+<div class="screen landscape-split" id="screen-train">
   <h2>注音小火車 🚂</h2>
   <div class="picture-header">
     <span id="trainProgress">第 1 / 8 題</span>
@@ -325,7 +325,7 @@
 </div>
 
 <!-- 怪獸吃錯音 -->
-<div class="screen" id="screen-monster">
+<div class="screen landscape-split" id="screen-monster">
   <h2>怪獸吃錯音 👾</h2>
   <div class="picture-header">
     <span id="monsterProgress">第 1 / 10 題</span>
@@ -373,7 +373,7 @@
 </div>
 
 <!-- 注音拼圖島 -->
-<div class="screen" id="screen-island">
+<div class="screen landscape-split" id="screen-island">
   <h2>注音拼圖島 🏝️</h2>
   <div class="picture-header">
     <span id="islandProgress">第 1 / 8 題</span>
@@ -405,7 +405,7 @@
 </div>
 
 <!-- 看圖選注音 -->
-<div class="screen" id="screen-picture">
+<div class="screen landscape-split" id="screen-picture">
   <h2>看圖選注音 🖼️</h2>
   <div class="picture-header">
     <span id="pictureProgress">第 1 / 10 題</span>
@@ -434,7 +434,7 @@
 </div>
 
 <!-- 拼字工廠 -->
-<div class="screen" id="screen-spell">
+<div class="screen landscape-split" id="screen-spell">
   <h2>拼字工廠 🏭</h2>
   <div class="prompt-box">
     <div class="flashcard" style="cursor:pointer;height:180px;width:min(280px,66vw)" onclick="replaySpellSound()">
@@ -461,8 +461,8 @@
   </div>
 </div>
 
-<script src="data.js?v=48"></script>
-<script src="tts-manifest.js?v=48"></script>
-<script src="app.js?v=48"></script>
+<script src="data.js?v=50"></script>
+<script src="tts-manifest.js?v=50"></script>
+<script src="app.js?v=50"></script>
 </body>
 </html>

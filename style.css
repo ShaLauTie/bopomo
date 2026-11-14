@@ -3800,7 +3800,7 @@ h1, h2 {
   left: 50%;
   transform: translateX(-50%);
   width: 4px;
-  height: 800px;
+  height: 3000px;   /* 直式平板夾爪會降到 1000px 以上，繩子要夠長 */
   background: linear-gradient(90deg, #d3d3d3, #a9a9a9, #d3d3d3);
   box-shadow: 0 0 4px rgba(0,0,0,0.4);
 }
@@ -5380,3 +5380,58 @@ h1, h2 {
 /* 夾娃娃機：搖桿往下拉就夾 */
 .joystick-stick.pull-down { transform: scaleY(0.75) translateY(12%) !important; transition: transform 0.12s ease; }
 .control-joystick-area { touch-action: none; }
+
+/* ---------- 平板橫放：題目在左、選項在右，填滿整個畫面 ---------- */
+@media (orientation: landscape) and (min-width: 700px) {
+  .screen.landscape-split.active {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-auto-rows: auto;
+    column-gap: 4vw;
+    row-gap: 0;
+    align-content: center;
+    justify-items: center;
+    padding: 70px 4vw 20px;
+  }
+  .landscape-split > * { grid-column: 1; margin-bottom: 14px; }
+  .landscape-split > h2 { margin-bottom: 8px; }
+  #quizQuestionArea { display: contents; }
+  #quizQuestionArea > * { grid-column: 1; margin-bottom: 14px; }
+  .landscape-split > .choices-grid,
+  #quizQuestionArea > .choices-grid {
+    grid-column: 2;
+    grid-row: 1 / span 12;
+    align-self: center;
+    margin: 0;
+    zoom: 1.3;
+  }
+  .landscape-split .picture-header,
+  .landscape-split .quiz-header { max-width: 100%; }
+  .landscape-split > .prompt-box,
+  .landscape-split > .picture-card,
+  .landscape-split > .train-board,
+  .landscape-split > .monster-stage,
+  .landscape-split > .island-stage,
+  .landscape-split > .spell-syllable-row,
+  #quizQuestionArea > .prompt-box { zoom: 1.15; }
+
+  /* 拼圖島：圖卡和拼圖目標並排放在左欄 */
+  .landscape-split > .island-stage {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    zoom: 1;
+  }
+  .landscape-split > .monster-stage { zoom: 1; max-width: 100%; }
+  /* 小火車：不要比左欄寬 */
+  .landscape-split > .train-board { width: 100%; max-width: 560px; }
+  .landscape-split .train-track { width: 100%; }
+  /* 量高度時先靠上排，才量得到超出的部分（app.js fitLandscape） */
+  .screen.landscape-split.active.fit-measure { align-content: start; }
+  .screen.landscape-fit.active.fit-measure { justify-content: flex-start; }
+
+  /* 記憶配對、認識注音符號、節奏台：放大填滿 */
+  #memoryGrid { zoom: 1.6; }
+  #flashcard { zoom: 1.35; height: auto; min-height: min(420px, 55vh); padding: 14px 0; }  /* 高度跟著內容，太高時 fitLandscape 會縮小 */
+  .rhythm-stage { zoom: 1.2; max-width: calc(96vw / 1.2); }
+}
