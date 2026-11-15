@@ -33,6 +33,19 @@ def duration(text):
     if re.fullmatch(r".+的，.。", text): d += 0.45   # 「的」後面停一下
     return d + EXTRA
 f5 = F5TTS(device="xpu")
+# 破音字：單獨念的最後一個字讀音要指定（「茄」會被念成 jia1）
+LAST_READING = {"番茄的，茄。": "qie2", "茄子的，茄。": "qie2", "干杯的，干。": "gan1"}
+import f5_tts.infer.utils_infer as _ui
+_orig_pinyin = _ui.convert_char_to_pinyin
+def _pinyin(text_list, polyphone=True):
+    out = _orig_pinyin(text_list, polyphone)
+    for src, toks in zip(text_list, out):
+        for k, py in LAST_READING.items():
+            if src.endswith(k):
+                i = max(n for n, t in enumerate(toks) if t.strip() and t[-1].isdigit())
+                toks[i] = py
+    return out
+_ui.convert_char_to_pinyin = _pinyin
 def synth(text, path):
     import numpy as np
     if HZ(text) <= MAXP:
