@@ -200,7 +200,7 @@ function speak(text, onEnd) {
   // 預先產生的語音檔（最穩定，不需要網路語音服務）
   const key = text.trim();
   if (typeof TTS_FILES !== "undefined" && TTS_FILES.has(ttsHash(key))) {
-    playAudioUrl(`sounds/tts/${ttsHash(key)}.mp3?v=yiyi4`, onEnd, 1);
+    playAudioUrl(`sounds/tts/${ttsHash(key)}.mp3?v=yiyi5`, onEnd, 1);
     return;
   }
   // 沒有音檔的文字 → 線上語音，再不行用裝置內建語音
@@ -252,7 +252,6 @@ function showScreen(name) {
   if (name === "train") startTrainGame();
   if (name === "monster") startMonsterGame();
   if (name === "island") startIslandGame();
-  if (name === "rhythm") startRhythmGame();
   if (name === "memory") startMemoryGame();
   if (name === "tone") startToneGame();
   if (name === "claw") startClawGame();
@@ -302,7 +301,6 @@ function goHome() {
   stopTrainGame();
   stopMonsterGame();
   stopIslandGame();
-  stopRhythmGame();
   showScreen(BASICS_SCREENS.includes(currentName) ? "basics" : "home");
 }
 
@@ -614,7 +612,6 @@ function animateScreenEntrance(screen, name) {
     train: ["🚂", "💨", "⭐", "✨"],
     monster: ["👾", "🍽️", "⭐", "✨"],
     island: ["🏝️", "🧩", "⭐", "✨"],
-    rhythm: ["🥁", "♪", "ㄅ", "⭐"]
   };
   const glyphs = glyphsByScreen[name] || ["✨", "⭐"];
   for (let i = 0; i < 10; i++) {
@@ -1378,7 +1375,7 @@ function startTrainGame() {
   trainStep = 0;
   trainRunning = true;
   trainLocked = false;
-  trainDeck = makeQuestionDeck(SPLIT_QUESTIONS, TRAIN_LENGTH);
+  trainDeck = makeQuestionDeck(SPLIT_QUESTIONS, TRAIN_LENGTH, "train");
   document.getElementById("trainGameover").style.display = "none";
   nextTrainRound();
 }
@@ -1595,7 +1592,7 @@ function startMonsterGame() {
   monsterQuestionNum = 0;
   monsterWrongCount = 0;
   monsterRunning = true;
-  monsterDeck = makeQuestionDeck(SYLLABLE_QUESTIONS, MONSTER_LENGTH);
+  monsterDeck = makeQuestionDeck(SYLLABLE_QUESTIONS, MONSTER_LENGTH, "monster");
   monsterLocked = false;
   document.getElementById("monsterGameover").style.display = "none";
   nextMonsterRound();
@@ -1847,7 +1844,7 @@ function startIslandGame() {
   islandSelectedPieces = [];
   islandRunning = true;
   islandLocked = false;
-  islandDeck = makeQuestionDeck(SYLLABLE_QUESTIONS, ISLAND_LENGTH);
+  islandDeck = makeQuestionDeck(SYLLABLE_QUESTIONS, ISLAND_LENGTH, "island");
   document.getElementById("islandGameover").style.display = "none";
   nextIslandRound();
 }
@@ -2039,237 +2036,6 @@ function animateIslandComplete() {
     void tower.offsetWidth;
     tower.classList.add("island-tower-complete");
   }
-}
-
-// ========== 注音節奏台 ==========
-
-const RHYTHM_LENGTH = 8;
-let rhythmDeck = [];
-const RHYTHM_COUNT_MS = 820;
-const RHYTHM_ANSWER_MS = 2600;
-
-let rhythmScore = 0;
-let rhythmBeatNum = 0;
-let rhythmLives = 5;
-let rhythmStreak = 0;
-let rhythmCombo = null;
-let rhythmChoices = [];
-let rhythmCorrectIndex = -1;
-let rhythmCountStep = 0;
-let rhythmAnswerOpen = false;
-let rhythmRunning = false;
-let rhythmLocked = false;
-let rhythmMissTimer = null;
-let rhythmNextTimer = null;
-let rhythmCountTimer = null;
-
-function startRhythmGame() {
-  stopRhythmGame();
-  rhythmScore = 0;
-  rhythmBeatNum = 0;
-  rhythmLives = 5;
-  rhythmStreak = 0;
-  rhythmRunning = true;
-  rhythmLocked = false;
-  rhythmDeck = makeQuestionDeck(SYLLABLE_QUESTIONS, RHYTHM_LENGTH);
-  document.getElementById("rhythmGameover").style.display = "none";
-  nextRhythmBeat();
-}
-
-function nextRhythmBeat() {
-  if (!rhythmRunning) return;
-  clearTimeout(rhythmCountTimer);
-  clearTimeout(rhythmMissTimer);
-  clearTimeout(rhythmNextTimer);
-
-  if (rhythmBeatNum >= RHYTHM_LENGTH || rhythmLives <= 0) {
-    endRhythmGame();
-    return;
-  }
-
-  rhythmLocked = false;
-  rhythmCombo = rhythmDeck[rhythmBeatNum];
-  const correctSpelling = comboSpelling(rhythmCombo);
-  rhythmChoices = buildChoiceValues(correctSpelling, PINYIN_COMBOS.map(comboSpelling), 3);
-  rhythmCorrectIndex = rhythmChoices.indexOf(correctSpelling);
-  rhythmCountStep = 0;
-  rhythmAnswerOpen = false;
-
-  document.getElementById("rhythmEmoji").textContent = rhythmCombo.emoji;
-  document.getElementById("rhythmWord").innerHTML = questionWordHtml(rhythmCombo);
-  document.getElementById("rhythmStatus").textContent = "聽詞語，前三拍跟著答";
-  updateRhythmHud();
-  updateRhythmCount();
-  renderRhythmLanes();
-
-  speak(promptText(rhythmCombo), () => {
-    if (!rhythmRunning || rhythmLocked) return;
-    rhythmCountTimer = setTimeout(playRhythmCount, 260);
-  });
-}
-
-function updateRhythmHud() {
-  document.getElementById("rhythmProgress").textContent = `第 ${Math.min(rhythmBeatNum + 1, RHYTHM_LENGTH)} / ${RHYTHM_LENGTH} 題`;
-  document.getElementById("rhythmCombo").textContent = `連擊 ${rhythmStreak}`;
-  document.getElementById("rhythmLives").textContent = "❤".repeat(Math.max(0, rhythmLives));
-  document.getElementById("rhythmStars").textContent = `⭐ ${rhythmScore}`;
-}
-
-function renderRhythmLanes() {
-  const lanes = document.getElementById("rhythmLanes");
-  lanes.innerHTML = "";
-
-  rhythmChoices.forEach((value, index) => {
-    const lane = document.createElement("button");
-    lane.className = "rhythm-lane waiting";
-    lane.innerHTML = `
-      <div class="rhythm-note">♪</div>
-      <div class="rhythm-hit-line"></div>
-      <div class="rhythm-lane-label">${renderGameChoiceHtml(value, 56, "game-bopomofo rhythm-bopomofo")}</div>
-    `;
-    lane.onclick = () => handleRhythmTap(index, lane);
-    lanes.appendChild(lane);
-  });
-}
-
-function updateRhythmCount() {
-  const count = document.getElementById("rhythmCount");
-  if (!count) return;
-  [...count.children].forEach((item, index) => {
-    item.classList.toggle("active", index === rhythmCountStep - 1);
-    item.classList.toggle("answer", rhythmAnswerOpen && index === 3);
-  });
-}
-
-function playRhythmTapSound(accent = false) {
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtx) return;
-  if (!correctSfxContext) correctSfxContext = new AudioCtx();
-  if (correctSfxContext.state === "suspended") correctSfxContext.resume();
-  const ctx = correctSfxContext;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  const start = ctx.currentTime;
-  const end = start + (accent ? 0.16 : 0.13);
-  osc.type = "square";
-  osc.frequency.setValueAtTime(accent ? 523.25 : 261.63, start);
-  gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(accent ? 0.24 : 0.18, start + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.0001, end);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(start);
-  osc.stop(end + 0.02);
-}
-
-function speakRhythmBeat(text) {
-  speak(text);
-}
-
-function playRhythmCount() {
-  if (!rhythmRunning || rhythmLocked) return;
-  rhythmCountStep++;
-  rhythmAnswerOpen = rhythmCountStep >= 4;
-  updateRhythmCount();
-
-  if (rhythmCountStep < 4) {
-    document.getElementById("rhythmStatus").textContent = "答";
-    playRhythmTapSound(false);
-    speakRhythmBeat("答");
-    rhythmCountTimer = setTimeout(playRhythmCount, RHYTHM_COUNT_MS);
-    return;
-  }
-
-  document.getElementById("rhythmStatus").textContent = "第四拍，選答案！";
-  playRhythmTapSound(true);
-  speakRhythmBeat("選");
-  document.querySelectorAll("#rhythmLanes .rhythm-lane").forEach(lane => lane.classList.remove("waiting"));
-  rhythmMissTimer = setTimeout(() => missRhythmBeat(), RHYTHM_ANSWER_MS);
-}
-
-function handleRhythmTap(index, lane) {
-  if (!rhythmRunning || rhythmLocked || !rhythmCombo) return;
-  if (!rhythmAnswerOpen) {
-    document.getElementById("rhythmStatus").textContent = "還沒到第四拍";
-    playRhythmTapSound(false);
-    return;
-  }
-
-  const isCorrectLane = index === rhythmCorrectIndex;
-
-  if (!isCorrectLane) {
-    rhythmLives--;
-    rhythmStreak = 0;
-    lane.classList.add("wrong");
-    document.getElementById("rhythmStatus").textContent = "注音不對，再聽一次";
-    showFeedback(false, false);
-    updateRhythmHud();
-    if (rhythmLives <= 0) {
-      clearTimeout(rhythmMissTimer);
-      rhythmNextTimer = setTimeout(endRhythmGame, 700);
-      return;
-    }
-    setTimeout(() => {
-      lane.classList.remove("wrong");
-      if (rhythmRunning && !rhythmLocked) document.getElementById("rhythmStatus").textContent = "第四拍，選答案！";
-    }, 650);
-    return;
-  }
-
-  rhythmLocked = true;
-  rhythmAnswerOpen = false;
-  clearTimeout(rhythmCountTimer);
-  clearTimeout(rhythmMissTimer);
-  rhythmScore++;
-  rhythmStreak++;
-  rhythmBeatNum++;
-  lane.classList.add("correct");
-  document.getElementById("rhythmStatus").textContent = "選對了！";
-  updateRhythmHud();
-  burstAtElement(lane, true, 14);
-  playCorrectDingDing();
-  rewardCorrect();
-  rhythmNextTimer = setTimeout(nextRhythmBeat, 680);
-}
-
-function missRhythmBeat() {
-  if (!rhythmRunning || rhythmLocked) return;
-  rhythmLocked = true;
-  rhythmAnswerOpen = false;
-  rhythmLives--;
-  rhythmStreak = 0;
-  document.getElementById("rhythmStatus").textContent = "漏拍了";
-  document.querySelectorAll("#rhythmLanes .rhythm-lane").forEach(lane => lane.classList.add("missed"));
-  updateRhythmHud();
-  showFeedback(false, false);
-  rhythmNextTimer = setTimeout(() => {
-    rhythmBeatNum++;
-    nextRhythmBeat();
-  }, 900);
-}
-
-function replayRhythmSound() {
-  if (rhythmCombo) speak(promptText(rhythmCombo));
-}
-
-function endRhythmGame() {
-  rhythmRunning = false;
-  clearTimeout(rhythmMissTimer);
-  clearTimeout(rhythmNextTimer);
-  document.getElementById("rhythmFinalScore").textContent = rhythmScore;
-  document.getElementById("rhythmGameover").style.display = "flex";
-  const msg = rhythmScore >= RHYTHM_LENGTH ? "注音都選對了！節奏很穩！" :
-              rhythmScore >= 5 ? "很棒，聽音越來越準！" : "再試一次，先聽詞語再選注音！";
-  speak(msg);
-}
-
-function stopRhythmGame() {
-  rhythmRunning = false;
-  rhythmLocked = false;
-  rhythmAnswerOpen = false;
-  clearTimeout(rhythmCountTimer);
-  clearTimeout(rhythmMissTimer);
-  clearTimeout(rhythmNextTimer);
 }
 
 // ========== 記憑配對 ==========
@@ -2475,12 +2241,12 @@ function startClawGame() {
   caughtItem.innerHTML = '';
 
   document.getElementById('clawScore').textContent = '0';
-  document.getElementById('clawProgress').textContent = '第 1 / 5 題';
+  document.getElementById('clawProgress').textContent = `第 1 / ${CLAW_LENGTH} 題`;
   document.getElementById('clawGameover').style.display = 'none';
   document.getElementById('btnClawDrop').disabled = false;
 
-  initClawCapsules();
-  pickNextClawTarget();
+  clawDeck = makeQuestionDeck(CLAW_POOL, CLAW_LENGTH, "claw");
+  setupClawQuestion();
   initClawControls();
 }
 
@@ -2620,64 +2386,52 @@ function initClawControls() {
 // 扭蛋顏色交替 (綠色/橘色禮物盒)
 const boxColors = ['box-green', 'box-orange'];
 
+// 題目：聲母＋介音＋韻母，剛好三個分開的注音（花 ㄏㄨㄚ、小 ㄒㄧㄠ）
+const CLAW_LENGTH = 5;
+const CLAW_POOL = SYLLABLE_QUESTIONS.filter(q => {
+  const body = q.final.replace(BPMF_TONE_RE, "");
+  return q.initial && body.length === 2 && "ㄧㄨㄩ".includes(body[0]);
+});
+let clawDeck = [];
+let clawParts = [];   // 要依序夾的三個注音
+let clawStep = 0;     // 現在要夾第幾個
+
+function setupClawQuestion() {
+  clawTarget = clawDeck[clawQuestionNum - 1];
+  const body = clawTarget.final.replace(BPMF_TONE_RE, "");
+  clawParts = [clawTarget.initial, body[0], body[1]];
+  clawStep = 0;
+  initClawCapsules();
+  renderClawSlots();
+  replayClawSound();
+}
+
 function initClawCapsules() {
-  const isPinyinRound = Math.random() < 0.5; // 50% 機率出拼音組合題，50% 單個注音題
   const container = document.getElementById('clawCapsules');
   container.innerHTML = '';
   clawCapsulesData = [];
 
+  // 三個答案＋兩個容易搞混的
+  const allSymbols = BOPOMOFO_SYMBOLS.map(s => s.symbol).filter(s => !clawParts.includes(s));
+  const extra = [];
+  [clawParts[0], clawParts[2]].forEach(sym => {
+    const d = pickDistractorSymbols(sym, 1, allSymbols.filter(s => !extra.includes(s)))[0];
+    if (d) extra.push(d);
+  });
+  const symbols = shuffle([...clawParts, ...extra]);
   const singleRowX = [15, 32, 50, 68, 85];
-  let symbols = [];
 
-  if (isPinyinRound) {
-    // 5 個拼法都不同的音節，才不會有兩個正確答案
-    const first = SYLLABLE_QUESTIONS[randomInt(SYLLABLE_QUESTIONS.length)];
-    symbols = [first, ...pickOtherCombos(first, 4, SYLLABLE_QUESTIONS)];
-  } else {
-    // 5 個不同字頭，念的詞語字頭就是要夾的符號
-    const pool = symbolsWithListenWords();
-    const first = pool[randomInt(pool.length)];
-    symbols = [first, ...pickDistractorSymbols(first.symbol, 4, pool.map(s => s.symbol))
-      .map(sym => pool.find(s => s.symbol === sym))]
-      .map(s => {
-        const chosen = randomListenWordForHead(s.symbol);
-        // 考的是第一個字的字頭（念「汽車的汽」）
-        return { ...s, word: chosen.word, emoji: chosen.emoji, hl: 0 };
-      });
-    symbols = shuffle(symbols);
-  }
-
-  symbols.forEach((symObj, i) => {
+  symbols.forEach((symStr, i) => {
     const x = singleRowX[i];
     const el = document.createElement('div');
     const colorClass = boxColors[i % 2];
     el.className = `capsule ${colorClass}`;
     el.style.left = `calc(${x}% - 37px)`;
     el.style.bottom = `15px`;
-
-    let symStr = '';
-    let isPinyin = false;
-    if (isPinyinRound) {
-      symStr = symObj.initial + symObj.final;
-      isPinyin = true;
-    } else {
-      symStr = symObj.symbol;
-    }
-
     el.innerHTML = renderPinyinHtml(symStr, 34);
     container.appendChild(el);
 
-    clawCapsulesData.push({
-      el: el,
-      symbol: symStr,
-      isPinyin: isPinyin,
-      word: symObj.word || symStr,
-      colorClass: colorClass,
-      row: 1,
-      x: x,
-      isCaught: false,
-      symObj: symObj
-    });
+    clawCapsulesData.push({ el, symbol: symStr, isPinyin: false, word: symStr, colorClass, row: 1, x, isCaught: false });
 
     el.onclick = () => {
       if (!clawRunning || isGrabbing) return;
@@ -2688,25 +2442,15 @@ function initClawCapsules() {
   });
 }
 
-function pickNextClawTarget() {
-  const remaining = clawCapsulesData.filter(c => !c.isCaught);
-  if (remaining.length === 0) return;
-
-  const targetCap = remaining[randomInt(remaining.length)];
-  clawTarget = targetCap.symObj;
-
-  document.getElementById('clawRoofDisplay').textContent = '❓';
-  replayClawSound();
+// 聽題目旁邊：圖＋三個格子，夾到的填進去
+function renderClawSlots() {
+  const box = document.getElementById('clawSlots');
+  box.innerHTML = `<span class="claw-slot-emoji">${clawTarget.emoji}</span>` +
+    clawParts.map((p, i) => `<span class="claw-slot${i < clawStep ? ' filled' : ''}${i === clawStep ? ' next' : ''}">${i < clawStep ? p : ''}</span>`).join('');
 }
 
 function replayClawSound() {
-  if (clawTarget) {
-    if (clawTarget.word) {
-      speak(promptText(clawTarget));
-    } else {
-      speak(clawTarget.symbol);
-    }
-  }
+  if (clawTarget) speak(promptText(clawTarget));
 }
 
 function dropClaw() {
@@ -2735,15 +2479,8 @@ function dropClaw() {
     }
   });
 
-  let isCorrect = false;
-  if (caughtIdx !== -1) {
-    const cap = clawCapsulesData[caughtIdx];
-    if (cap.isPinyin) {
-      isCorrect = (cap.symbol === (clawTarget.initial + clawTarget.final));
-    } else {
-      isCorrect = (cap.symbol === clawTarget.symbol);
-    }
-  }
+  // 要照順序夾：先聲母、再介音、最後韻母
+  const isCorrect = caughtIdx !== -1 && clawCapsulesData[caughtIdx].symbol === clawParts[clawStep];
 
   // 只降到能碰到禮物盒的高度即可 (動態計算)
   const machineHeight = document.getElementById('clawMachine').offsetHeight;
@@ -2769,8 +2506,7 @@ function dropClaw() {
           const wrongCap = clawCapsulesData[caughtIdx];
           setTimeout(() => {
             if (!clawRunning) return;
-            if (wrongCap.isPinyin) speakSequence(["這是", promptText(wrongCap.symObj), "再聽一次", promptText(clawTarget)], 250);
-            else speakSequence(["這是", wrongCap.symbol, "再聽一次", promptText(clawTarget)], 250);
+            speakSequence(["這是", wrongCap.symbol, "再聽一次", promptText(clawTarget)], 250);
           }, 900);
 
           setTimeout(() => {
@@ -2843,10 +2579,18 @@ function dropClaw() {
                 fallEl.remove();
               }, 600);
 
-              // 答對結算
-              clawScore++;
-              document.getElementById('clawScore').textContent = clawScore;
-              showFeedback(true);
+              // 夾對一個：填進格子；三個都夾到才算答對一題
+              clawStep++;
+              renderClawSlots();
+              const wordDone = clawStep === clawParts.length;
+              if (wordDone) {
+                clawScore++;
+                document.getElementById('clawScore').textContent = clawScore;
+                showFeedback(true);
+              } else {
+                playCorrectDingDing();
+                speak(caughtSymbol);
+              }
 
               setTimeout(() => {
                 // 7. 夾完回到最左邊
@@ -2860,14 +2604,14 @@ function dropClaw() {
                   isGrabbing = false;
                   document.getElementById('btnClawDrop').disabled = false;
 
-                  if (clawQuestionNum === 5) {
-                    // 5 題全部答對，贏得挑戰！
+                  if (!wordDone) return;          // 繼續夾下一個注音
+                  if (clawQuestionNum === CLAW_LENGTH) {
                     endClawGame(true);
                   } else {
-                    // 進到下一題，從剩下的扭蛋挑選
+                    // 下一題：換一組扭蛋
                     clawQuestionNum++;
-                    document.getElementById('clawProgress').textContent = `第 ${clawQuestionNum} / 5 題`;
-                    if (clawRunning) pickNextClawTarget();
+                    document.getElementById('clawProgress').textContent = `第 ${clawQuestionNum} / ${CLAW_LENGTH} 題`;
+                    if (clawRunning) setTimeout(() => { if (clawRunning) setupClawQuestion(); }, 600);
                   }
                 }, 1200);
               }, 600);
@@ -2943,7 +2687,7 @@ function startSpellGame() {
   spellQuestionNum = 0;
   spellRunning = true;
   spellLocked = false;
-  spellDeck = makeQuestionDeck(SPLIT_QUESTIONS, SPELL_LENGTH);
+  spellDeck = makeQuestionDeck(SPLIT_QUESTIONS, SPELL_LENGTH, "spell");
   document.getElementById('spellGameover').style.display = 'none';
   nextSpellRound();
 }

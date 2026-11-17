@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=51">
+<link rel="stylesheet" href="style.css?v=52">
 </head>
 <body>
 
@@ -79,10 +79,6 @@
       <span class="icon">🏝️</span>
       <span>注音拼圖島</span>
     </button>
-    <button class="menu-card card-17" onclick="showScreen('rhythm')" style="background: linear-gradient(135deg, #ef4444, #f59e0b);">
-      <span class="icon">🥁</span>
-      <span>注音節奏台</span>
-    </button>
     <button class="menu-card card-8" onclick="showScreen('tone')">
       <span class="icon">🎵</span>
       <span>聲調辨識</span>
@@ -99,44 +95,6 @@
       <span class="icon">🎡</span>
       <span>夜市ㄅㄆㄇ</span>
     </button>
-  </div>
-</div>
-
-<!-- 注音節奏台 -->
-<div class="screen" id="screen-rhythm">
-  <h2>注音節奏台 🥁</h2>
-  <div class="picture-header rhythm-header">
-    <span id="rhythmProgress">第 1 / 8 題</span>
-    <span id="rhythmCombo">連擊 0</span>
-    <span id="rhythmLives">❤❤❤❤❤</span>
-    <span class="stars" id="rhythmStars">⭐ 0</span>
-  </div>
-
-  <div class="rhythm-stage">
-    <div class="rhythm-target" onclick="replayRhythmSound()">
-      <button class="picture-speaker" type="button" onclick="event.stopPropagation(); replayRhythmSound()">🔊</button>
-      <div class="rhythm-word-row">
-        <span class="rhythm-emoji" id="rhythmEmoji"></span>
-        <span class="rhythm-word" id="rhythmWord"></span>
-      </div>
-      <div class="rhythm-count" id="rhythmCount">
-        <span>答</span>
-        <span>答</span>
-        <span>答</span>
-        <span>選</span>
-      </div>
-      <div class="rhythm-status" id="rhythmStatus">聽詞語，前三拍跟著答，第四拍選答案</div>
-    </div>
-    <div class="rhythm-lanes" id="rhythmLanes"></div>
-  </div>
-
-  <div class="mole-gameover" id="rhythmGameover" style="display:none">
-    <div class="gameover-box">
-      <div style="font-size:3.5rem">🥁</div>
-      <div style="font-size:1.4rem;font-weight:bold;color:#5b4636">節奏結束</div>
-      <div class="big-score">⭐ <span id="rhythmFinalScore">0</span></div>
-      <button class="big-btn combine-btn" onclick="startRhythmGame()">再打一輪</button>
-    </div>
   </div>
 </div>
 
@@ -231,6 +189,7 @@
   <div class="mole-header">
     <div class="mole-target-box">
       <button class="listen-btn" id="clawSpeaker" onclick="replayClawSound()">🔊 聽題目</button>
+      <div class="claw-slots" id="clawSlots"></div>
     </div>
     <div class="mole-stats">
       <span>⭐ <span id="clawScore">0</span></span>
@@ -461,8 +420,8 @@
   </div>
 </div>
 
-<script src="data.js?v=51"></script>
-<script src="tts-manifest.js?v=51"></script>
-<script src="app.js?v=51"></script>
+<script src="data.js?v=52"></script>
+<script src="tts-manifest.js?v=52"></script>
+<script src="app.js?v=52"></script>
 </body>
 </html>

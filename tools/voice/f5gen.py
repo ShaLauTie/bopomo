@@ -34,12 +34,23 @@ def duration(text):
     return d + EXTRA
 f5 = F5TTS(device="xpu")
 # 破音字：單獨念的最後一個字讀音要指定（「茄」會被念成 jia1）
+WORD_READING = {"蛤蜊": ["ge3", "li4"]}   # 台灣念法，模型沒有同音字可用
 LAST_READING = {"番茄的，茄。": "qie2", "茄子的，茄。": "qie2", "干杯的，干。": "gan1"}
 import f5_tts.infer.utils_infer as _ui
 _orig_pinyin = _ui.convert_char_to_pinyin
 def _pinyin(text_list, polyphone=True):
     out = _orig_pinyin(text_list, polyphone)
     for src, toks in zip(text_list, out):
+        # 指定整個詞的讀音（蛤蜊 ㄍㄜˇ ㄌㄧˋ），「蛤蜊的，蛤。」最後那個字也一起改
+        han_idx = [n for n, t in enumerate(toks) if t.strip() and t not in "，。！？、"]
+        chars = [c for c in src if "一" <= c <= "鿿"]
+        for w, pys in WORD_READING.items():
+            for i in range(len(chars) - len(w) + 1):
+                if "".join(chars[i:i + len(w)]) == w and len(han_idx) == len(chars):
+                    for j, py in enumerate(pys): toks[han_idx[i + j]] = py
+            m = re.fullmatch(r"(.+)的，(.)。", src)
+            if m and w in m.group(1) and m.group(2) in w and len(han_idx) == len(chars):
+                toks[han_idx[-1]] = pys[w.index(m.group(2))]
         for k, py in LAST_READING.items():
             if src.endswith(k):
                 i = max(n for n, t in enumerate(toks) if t.strip() and t[-1].isdigit())

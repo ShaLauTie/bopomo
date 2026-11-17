@@ -107,7 +107,7 @@ const WORD_BANK_RAW = [
   ["果汁", "ㄍㄨㄛˇ ㄓ", "🧃"], ["哥哥", "ㄍㄜ ˙ㄍㄜ", "🧑"], ["鋼琴", "ㄍㄤ ㄑㄧㄣˊ", "🎹"],
   ["公車", "ㄍㄨㄥ ㄔㄜ", "🚌"], ["公主", "ㄍㄨㄥ ㄓㄨˇ", "👸"], ["乾杯", "ㄍㄢ ㄅㄟ", "🥂"],
   ["鍋子", "ㄍㄨㄛ ˙ㄗ", "🍲"], ["怪獸", "ㄍㄨㄞˋ ㄕㄡˋ", "👾"], ["公園", "ㄍㄨㄥ ㄩㄢˊ", "🏞️"],
-  ["鬼", "ㄍㄨㄟˇ", "👻"], ["蛤蜊", "ㄍㄜˊ ㄌㄧˊ", "🦪"],
+  ["鬼", "ㄍㄨㄟˇ", "👻"], ["蛤蜊", "ㄍㄜˇ ㄌㄧˋ", "🦪"],
   // ㄎ
   ["褲子", "ㄎㄨˋ ˙ㄗ", "👖"], ["咖啡", "ㄎㄚ ㄈㄟ", "☕"], ["可樂", "ㄎㄜˇ ㄌㄜˋ", "🥤"],
   ["恐龍", "ㄎㄨㄥˇ ㄌㄨㄥˊ", "🦖"], ["孔雀", "ㄎㄨㄥˇ ㄑㄩㄝˋ", "🦚"], ["卡車", "ㄎㄚˇ ㄔㄜ", "🚚"],
@@ -269,7 +269,7 @@ const LISTEN_WORDS_RAW = [
 ];
 
 // ── 單字音節庫：[字, 注音, 圖案] ──
-// 用於拼音、小火車、拼字工廠、怪獸、拼圖島、節奏台、迷宮等「拼一個音」的遊戲。
+// 用於拼音、小火車、拼字工廠、怪獸、拼圖島等「拼一個音」的遊戲。
 const SYLLABLE_BANK_RAW = [
   ["爸", "ㄅㄚˋ", "👨"], ["媽", "ㄇㄚ", "👩"], ["狗", "ㄍㄡˇ", "🐶"], ["貓", "ㄇㄠ", "🐱"],
   ["虎", "ㄏㄨˇ", "🐯"], ["兔", "ㄊㄨˋ", "🐰"], ["雞", "ㄐㄧ", "🐔"], ["鼠", "ㄕㄨˇ", "🐭"],
@@ -558,17 +558,36 @@ function promptText(q) {
   return `${q.word}的${q.word[q.hl || 0]}`;
 }
 
-// 一輪的題目：洗牌後取 n 題，同一個字、同一個詞都只出現一次
-function makeQuestionDeck(pool, n) {
+// 一輪的題目：洗牌後取 n 題，同一個字、同一個詞都只出現一次。
+// 有 gameKey 時記住這個遊戲最近出過的詞（存在這台平板），先出還沒出過的，
+// 全部出過一輪才會重複；同一局連續兩題盡量不用同一個聲母。
+function makeQuestionDeck(pool, n, gameKey) {
+  const storeKey = gameKey ? "recentWords:" + gameKey : null;
+  let recent = [];
+  try { if (storeKey) recent = JSON.parse(localStorage.getItem(storeKey) || "[]"); } catch (e) { recent = []; }
+  const allWords = new Set(pool.map(q => q.word));
+  recent = recent.filter(w => allWords.has(w));
+  if (allWords.size - new Set(recent).size < n) recent = [];   // 快出完一輪了：重新開始
+  const recentSet = new Set(recent);
+
+  const shuffled = _shuffleCopy(pool);
+  const ordered = [...shuffled.filter(q => !recentSet.has(q.word)), ...shuffled.filter(q => recentSet.has(q.word))];
   const usedChar = new Set();
   const usedWord = new Set();
   const deck = [];
-  for (const q of _shuffleCopy(pool)) {
-    if (deck.length >= n) break;
-    if (usedChar.has(q.char || q.word) || usedWord.has(q.word)) continue;
-    usedChar.add(q.char || q.word);
-    usedWord.add(q.word);
-    deck.push(q);
+  for (const pass of [0, 1]) {               // 第 0 輪：聲母不連續；第 1 輪：不夠再補滿
+    for (const q of ordered) {
+      if (deck.length >= n) break;
+      if (usedChar.has(q.char || q.word) || usedWord.has(q.word)) continue;
+      const prev = deck[deck.length - 1];
+      if (pass === 0 && prev && q.initial && prev.initial === q.initial) continue;
+      usedChar.add(q.char || q.word);
+      usedWord.add(q.word);
+      deck.push(q);
+    }
+  }
+  if (storeKey) {
+    try { localStorage.setItem(storeKey, JSON.stringify([...recent, ...deck.map(q => q.word)])); } catch (e) {}
   }
   return deck;
 }
@@ -614,7 +633,6 @@ const TTS_FIXED_PHRASES = [
   "小火車全部接對了！", "很棒，聲母韻符聲調越來越熟了！", "再玩一次，慢慢接每一節車廂！",
   "錯音獸吃到全部正確注音了！", "很棒，錯音獸吃得很開心！", "再試一次，先看圖再餵錯音獸！",
   "拼圖島全部完成了！", "很棒，注音順序越來越清楚！", "再試一次，一塊一塊慢慢拼！",
-  "注音都選對了！節奏很穩！", "很棒，聽音越來越準！", "再試一次，先聽詞語再選注音！",
   "太厲害了！全部拼對！", "太棒了！你全部過關了！",
 ];
 
