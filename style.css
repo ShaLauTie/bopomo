@@ -5534,3 +5534,7 @@ h1, h2 {
 .read-text.hide-han .read-cell:not(.done) .read-ch { display: none; }
 .read-text.hide-han .read-cell:not(.done) .read-zy { font-size: 34px !important; }
 .read-text.hide-han .read-cell { min-height: 64px; }
+
+/* 輕聲：點在注音上面 */
+.bopomofo-stack > .bopomofo-dot { display: flex; justify-content: center; align-items: flex-end; height: 0.5em; line-height: 0; color: #ff5d8f; }
+.bopomofo-dot .tone-svg { width: 0.7em !important; height: 0.7em !important; min-width: 0 !important; min-height: 0 !important; }

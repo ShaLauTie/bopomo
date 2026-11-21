@@ -874,7 +874,9 @@ function renderPinyinHtml(bopomofoStr, baseSize = 120, extraClass = '') {
   if (bodyChars.length === 2) fontSize = baseSize * 0.75;
   else if (bodyChars.length === 3) fontSize = baseSize * 0.55;
 
-  let symbolsHtml = '';
+  // 輕聲的點寫在注音的上面，不是右邊
+  const neutral = toneChar === '˙';
+  let symbolsHtml = neutral ? `<div class="bopomofo-dot">${toneSvg('˙')}</div>` : '';
   for (let char of bodyChars) {
     symbolsHtml += `<div>${char}</div>`;
   }
@@ -886,7 +888,7 @@ function renderPinyinHtml(bopomofoStr, baseSize = 120, extraClass = '') {
       <div class="bopomofo-stack">
         ${symbolsHtml}
       </div>
-      ${toneChar ? `<div class="bopomofo-tone">${toneSvg(toneChar)}</div>` : ''}
+      ${toneChar && !neutral ? `<div class="bopomofo-tone">${toneSvg(toneChar)}</div>` : ''}
     </div>
   `;
 }

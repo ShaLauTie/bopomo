@@ -20,13 +20,23 @@ function readingsOf(ch) {
   return _readCharMap.get(ch) || new Set();
 }
 
-// 聽到的句子裡有沒有念對：同一個字，或讀音一樣的字（語音辨識常給同音字）
+// 小朋友口音放寬：ㄓㄔㄕㄖ≈ㄗㄘㄙ、ㄣ≈ㄥ、ㄋ≈ㄌ、ㄈ≈ㄏㄨ
+const readLoose = zy => readBare(zy)
+  .replace(/ㄓ/g, "ㄗ").replace(/ㄔ/g, "ㄘ").replace(/ㄕ/g, "ㄙ").replace(/ㄖ/g, "ㄌ")
+  .replace(/ㄥ/g, "ㄣ").replace(/ㄋ/g, "ㄌ").replace(/^ㄈ/, "ㄏㄨ");
+// 只念一個音時，辨識常給英文字母（地 → D、逼 → B）
+const READ_LETTERS = { A: "ㄟ", B: "ㄅㄧ", C: "ㄙㄧ", D: "ㄉㄧ", E: "ㄧ", G: "ㄐㄧ", J: "ㄐㄟ", K: "ㄎㄟ",
+  O: "ㄡ", P: "ㄆㄧ", Q: "ㄎㄧㄡ", T: "ㄊㄧ", U: "ㄧㄡ", V: "ㄨㄟ", Y: "ㄨㄞ" };
+
+// 聽到的話裡有沒有念對：同一個字、讀音一樣或很像的字都算（語音辨識常給同音字）
 function readingHeardRight(transcripts, ch, zy) {
-  const want = readBare(zy);
+  const want = readLoose(zy);
   return transcripts.some(t => {
     const hz = [...t].filter(c => /[一-鿿]/.test(c));
-    if (!hz.length || hz.length > 4) return false;     // 念一整串不算
-    return hz.some(c => c === ch || readingsOf(c).has(want));
+    if (hz.length > 8) return false;                    // 念一整串不算
+    if (hz.some(c => c === ch || [...readingsOf(c)].some(r => readLoose(r) === want))) return true;
+    const letters = t.toUpperCase().replace(/[^A-Z]/g, "");
+    return letters.length > 0 && letters.length <= 2 && [...letters].some(L => READ_LETTERS[L] && readLoose(READ_LETTERS[L]) === want);
   });
 }
 
@@ -180,28 +190,48 @@ function readingMic() {
   const rec = new SR();
   readRecog = rec;
   rec.lang = "zh-TW";
-  rec.interimResults = false;
+  // 邊聽邊判斷：一聽到念對就算過，不用等辨識結束（念一個字時常常等不到最後結果）
+  rec.interimResults = true;
   rec.maxAlternatives = 5;
-  rec.continuous = false;
-  let got = false;
+  rec.continuous = true;
+  let done = false, heard = [];
   readBusy = true;
   document.getElementById("readMicBtn").classList.add("listening");
   setReadStatus("👂 正在聽…");
-  rec.onresult = e => {
-    got = true;
-    const alts = [...e.results[0]].map(a => a.transcript);
+  const finish = ok => {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    try { rec.stop(); } catch (e) {}
     finishListening();
-    judgeReading(readingHeardRight(alts, c.ch, c.zy), alts[0]);
+    if (ok) judgeReading(true, null);
+    else if (heard.length) judgeReading(false, heard[heard.length - 1]);
+    else {
+      readNoHear++;
+      setReadStatus(readNoHear >= 2 ? "沒聽到聲音，大聲一點再按 🎤；或請爸爸媽媽按 ✔ ✘" : "沒聽到，大聲一點再按 🎤 念一次");
+    }
+  };
+  const timer = setTimeout(() => finish(false), 5000);
+  rec.onresult = e => {
+    const alts = [];
+    for (let i = e.resultIndex; i < e.results.length; i++) for (const a of e.results[i]) alts.push(a.transcript);
+    const said = alts.filter(t => t.trim());
+    if (!said.length) return;
+    readNoHear = 0;
+    heard.push(said[0].trim());
+    if (readingHeardRight(said, c.ch, c.zy)) finish(true);
+    else if ([...e.results].some(r => r.isFinal)) finish(false);
   };
   rec.onerror = e => {
-    finishListening();
-    if (e.error === "not-allowed" || e.error === "service-not-allowed") setReadStatus("請允許使用麥克風 🎤", "bad");
-    else if (e.error === "network") setReadStatus("要連上網路才能聽喔", "bad");
-    else setReadStatus("沒聽清楚，再按 🎤 念一次");
+    if (done) return;
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") { done = true; clearTimeout(timer); finishListening(); setReadStatus("請允許使用麥克風 🎤", "bad"); }
+    else if (e.error === "network") { done = true; clearTimeout(timer); finishListening(); setReadStatus("要連上網路才能聽喔", "bad"); }
+    else finish(false);
   };
-  rec.onend = () => { if (!got && readBusy) { finishListening(); setReadStatus("沒聽到，再按 🎤 念一次"); } };
-  try { rec.start(); } catch (e) { finishListening(); }
+  rec.onend = () => finish(false);
+  try { rec.start(); } catch (e) { finish(false); }
 }
+let readNoHear = 0;
 
 function finishListening() {
   readBusy = false;
