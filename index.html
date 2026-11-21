@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>注音樂園</title>
-<link rel="stylesheet" href="style.css?v=52">
+<link rel="stylesheet" href="style.css?v=53">
 </head>
 <body>
 
@@ -78,6 +78,10 @@
     <button class="menu-card card-16" onclick="showScreen('island')" style="background: linear-gradient(135deg, #34d399, #38bdf8);">
       <span class="icon">🏝️</span>
       <span>注音拼圖島</span>
+    </button>
+    <button class="menu-card card-18" onclick="showScreen('reading')" style="background: linear-gradient(135deg, #f472b6, #a78bfa);">
+      <span class="icon">📖</span>
+      <span>注音導讀</span>
     </button>
     <button class="menu-card card-8" onclick="showScreen('tone')">
       <span class="icon">🎵</span>
@@ -181,6 +185,32 @@
     </div>
   </div>
   <div class="choices-grid" id="toneChoices"></div>
+</div>
+
+<!-- 注音導讀：一個字一個字念，念錯姨姨糾正 -->
+<div class="screen" id="screen-reading">
+  <h2>注音導讀 📖</h2>
+  <div class="read-menu" id="readMenu"></div>
+  <div class="read-book" id="readBook" style="display:none">
+    <div class="read-top">
+      <button class="read-back" onclick="startReading()">◀ 選課</button>
+      <span class="read-title" id="readTitle"></span>
+      <button class="read-hanzi-toggle" id="readHanziBtn" onclick="toggleReadingHanzi()"></button>
+    </div>
+    <div class="read-text" id="readText"></div>
+    <div class="read-status" id="readStatus"></div>
+    <div class="read-controls">
+      <button class="read-btn read-listen" onclick="readingListenChar()">🔊 聽姨姨念</button>
+      <button class="read-btn read-mic" id="readMicBtn" onclick="readingMic()">🎤 我念念看</button>
+      <button class="read-btn read-line-btn" onclick="readingListenLine()">📖 聽這一句</button>
+    </div>
+    <div class="read-parent">
+      <span>爸媽聽：</span>
+      <button onclick="readingParent(true)">✔ 念對了</button>
+      <button onclick="readingParent(false)">✘ 念錯了</button>
+      <button onclick="readingSkip()">⏭ 跳過</button>
+    </div>
+  </div>
 </div>
 
 <!-- 夾娃娃機 -->
@@ -420,8 +450,11 @@
   </div>
 </div>
 
-<script src="data.js?v=52"></script>
-<script src="tts-manifest.js?v=52"></script>
-<script src="app.js?v=52"></script>
+<script src="data.js?v=53"></script>
+<script src="reading-map.js?v=53"></script>
+<script src="reading-lessons.js?v=53"></script>
+<script src="tts-manifest.js?v=53"></script>
+<script src="app.js?v=53"></script>
+<script src="reading.js?v=53"></script>
 </body>
 </html>

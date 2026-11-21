@@ -624,6 +624,7 @@ const TONE_NAMES = { "": "一聲", "ˊ": "二聲", "ˇ": "三聲", "ˋ": "四聲
 
 // 遊戲裡固定會念的句子
 const TTS_FIXED_PHRASES = [
+  "這個字念", "再念一次", "我們先念下一個字",   // 注音導讀
   "再試一次", "這個是", "不是", "這是", "再聽一次", "答", "選",
   "哇！你得到一張新貼紙！", "恭喜你，完成小測驗！",
   "聽聽看，是哪一個注音？", "看注音，是哪一張圖？", "聽聽看，注音怎麼拼？", "聽聽看，是第幾聲？", "拼拼看，是哪一張圖？",
@@ -648,5 +649,7 @@ function allTtsTexts() {
   // 「汽車的汽」：拼音題的每個字、夾娃娃機的字頭題
   SYLLABLE_QUESTIONS.forEach(q => texts.add(promptText(q)));
   LISTEN_BANK.forEach(w => texts.add(promptText({ word: w.word, hl: 0 })));
+  // 注音導讀：課文每個字、每一句
+  if (typeof readingTtsKeys === "function") readingTtsKeys().forEach(k => texts.add(k));
   return [...texts];
 }

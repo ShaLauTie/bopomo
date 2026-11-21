@@ -256,6 +256,7 @@ function showScreen(name) {
   if (name === "tone") startToneGame();
   if (name === "claw") startClawGame();
   if (name === "spell") startSpellGame();
+  if (name === "reading") startReading();
   fitLandscapeSoon();
 }
 
@@ -297,6 +298,7 @@ function goHome() {
   const currentName = current ? current.id.replace("screen-", "") : "home";
   stopClawGame();
   stopSpellGame();
+  if (typeof stopReading === "function") stopReading();
   stopPictureGame();
   stopTrainGame();
   stopMonsterGame();
